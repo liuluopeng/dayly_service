@@ -1,0 +1,604 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "back": "Back",
+    "refresh": "Refresh",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "error": {
+      "loadFailed": "Failed to load",
+      "saveFailed": "Failed to save",
+      "deleteFailed": "Failed to delete"
+    },
+    "noData": "No data",
+    "unnamed": "Untitled",
+    "noContent": "No content",
+    "loadingMore": "Loading more...",
+    "emptyDirectory": "Empty directory",
+    "newWindowOpen": "Open in new window",
+    "unsupportedPreview": "Preview not supported for this file type",
+    "generateTree": "Generate directory tree",
+    "treeGenerated": "Directory tree generated: {filename}",
+    "treeFailed": "Generation failed: {error}",
+    "retry": "Retry",
+    "loadMore": "Load more",
+    "timeAgo": {
+      "justNow": "Just now",
+      "minutesAgo": "{n}m ago",
+      "hoursAgo": "{n}h ago",
+      "daysAgo": "{n}d ago"
+    }
+  },
+  "app": {
+    "sidebar": {
+      "pin": "Pin sidebar",
+      "unpin": "Unpin sidebar"
+    }
+  },
+  "menu": {
+    "title": "Menu",
+    "ggtt": {
+      "title": "GGTT Search",
+      "icon": "Wubi",
+      "desc": "Look up Wubi input codes"
+    },
+    "xiandaihanyu": {
+      "title": "Modern Chinese Dictionary",
+      "icon": "Dict",
+      "desc": "Look up Chinese words and definitions"
+    },
+    "collins": {
+      "title": "Collins Dictionary",
+      "icon": "Collins",
+      "desc": "Look up English words"
+    },
+    "ldoce": {
+      "title": "Longman Dictionary",
+      "icon": "LDOCE",
+      "desc": "Look up English words"
+    },
+    "songs": {
+      "title": "Music",
+      "desc": "Manage and play songs (fetch mode)"
+    },
+    "songsWasm": {
+      "title": "Music (WASM Zero-Copy)",
+      "desc": "Play songs using WASM zero-copy technology"
+    },
+    "songsLyrics": {
+      "title": "Music (Apple Music Lyrics)",
+      "desc": "Play songs with Apple Music style lyrics"
+    },
+    "files": {
+      "title": "File Manager",
+      "desc": "Browse and manage files"
+    },
+    "shortNotes": {
+      "title": "Quick Notes",
+      "desc": "Quickly create and manage notes"
+    },
+    "chat": {
+      "title": "AI Chat",
+      "desc": "Chat with DeepSeek AI"
+    },
+    "notes": {
+      "title": "Notes",
+      "desc": "Manage and search notes"
+    },
+    "searchHistory": {
+      "title": "Search History",
+      "desc": "View search history and word frequency"
+    },
+    "zici": {
+      "title": "Character Learning",
+      "desc": "Chinese character learning and dictation",
+      "chars": {
+        "title": "Characters",
+        "desc": "Browse characters by grade level"
+      },
+      "words": {
+        "title": "Words",
+        "desc": "Browse vocabulary cards"
+      },
+      "dictation": {
+        "title": "Dictation",
+        "desc": "Handwriting practice"
+      },
+      "keyboard": {
+        "title": "Keyboard",
+        "desc": "Pinyin keyboard layout"
+      },
+      "pinyin": {
+        "title": "Pinyin Combo",
+        "desc": "Initial and final sound combinations"
+      },
+      "frequency": {
+        "title": "Word Frequency",
+        "desc": "Word frequency ranking list"
+      }
+    },
+    "tools": {
+      "title": "Tools",
+      "desc": "Utility tools collection",
+      "base64": {
+        "title": "Base64 Tool",
+        "desc": "Base64 encoding and decoding"
+      },
+      "timestamp": {
+        "title": "Timestamp Tool",
+        "desc": "Timestamp conversion"
+      },
+      "uuid": {
+        "title": "UUID Tool",
+        "desc": "Generate different versions of UUID"
+      },
+      "password": {
+        "title": "Password Generator",
+        "desc": "Generate random passwords"
+      },
+      "chineseRemover": {
+        "title": "Chinese Remover",
+        "desc": "Remove Chinese characters and punctuation from text"
+      }
+    },
+    "images": {
+      "title": "Image Gallery",
+      "desc": "Browse and manage photo albums"
+    },
+    "videos": {
+      "title": "Video Library",
+      "desc": "Browse and play videos"
+    },
+    "admin": {
+      "title": "User Directory Admin",
+      "desc": "Manage user accessible directories"
+    },
+    "settings": {
+      "title": "Settings",
+      "desc": "Switch environment and configuration"
+    }
+  },
+  "home": {
+    "quickNote": {
+      "title": "Quick Note",
+      "placeholder": "Type content, Ctrl+Enter to save..."
+    },
+    "clipboard": {
+      "title": "Clipboard",
+      "placeholder": "Clipboard content...",
+      "readFailed": "Unable to read clipboard"
+    },
+    "notes": "Notes",
+    "todo": "Todo",
+    "settings": "Settings",
+    "viewAllNotes": "View All Notes",
+    "viewAllNotesDesc": "Click to browse, edit and manage your notes",
+    "toolbox": "Toolbox",
+    "month": "Month",
+    "weekDays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
+  },
+  "login": {
+    "title": "Welcome",
+    "subtitle": "Please enter your credentials",
+    "username": "Username",
+    "usernamePlaceholder": "Enter username",
+    "password": "Password",
+    "passwordPlaceholder": "Enter password",
+    "submit": "Login",
+    "submitting": "Logging in...",
+    "forgotPassword": "Forgot password? Contact admin",
+    "error": {
+      "emptyFields": "Please enter username and password",
+      "loginFailed": "Login failed, please try again"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "serverAddress": "Server Address",
+    "manualOverride": "Manually overridden",
+    "restoreAuto": "Restore auto",
+    "autoDetected": "Auto-detected",
+    "customAddress": "Custom server address",
+    "collapse": "Collapse",
+    "apply": "Apply",
+    "logout": "Logout",
+    "language": "Language"
+  },
+  "openAiChat": {
+    "sessionList": "Sessions",
+    "newSession": "New",
+    "loading": "Loading...",
+    "noSessions": "No sessions",
+    "selectOrCreate": "Select or create a session",
+    "model": "Model:",
+    "backToMenu": "Back to Menu",
+    "startConversation": "Start a new conversation",
+    "thinkingProcess": "Thinking process:",
+    "referenceSources": "References:",
+    "aiThinking": "AI is thinking...",
+    "inputPlaceholder": "Type a message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "newChatTitle": "New Chat {time}"
+  },
+  "shortNote": {
+    "title": "Quick Notes",
+    "createNote": "New Note",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "noNotes": "No notes",
+    "createFirst": "Create your first note",
+    "untitled": "Untitled",
+    "noContent": "No content",
+    "editNote": "Edit Note",
+    "newNote": "New Note",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Enter title",
+    "contentLabel": "Content",
+    "contentPlaceholder": "Enter content",
+    "confirmDelete": "Are you sure you want to delete this note?"
+  },
+  "fileManager": {
+    "title": "File Manager",
+    "listView": "List view",
+    "gridView": "Grid view",
+    "loadContentFailed": "Failed to load file content"
+  },
+  "noteSearch": {
+    "title": "Note Search",
+    "placeholder": "Enter search keywords...",
+    "search": "Search",
+    "searching": "Searching...",
+    "noResults": "No matching notes found",
+    "enterKeyword": "Please enter search keywords",
+    "viewDetail": "View details",
+    "initializing": "Initializing...",
+    "initFailed": "Initialization failed, please refresh and retry",
+    "searchFailed": "Search failed",
+    "noteIndex": "Note {index}"
+  },
+  "noteList": {
+    "title": "Notes",
+    "createNote": "New Note",
+    "searchPlaceholder": "Search notes...",
+    "noNotes": "No notes",
+    "createFirst": "Create your first note",
+    "loadFailed": "Failed to load notes",
+    "noteIndex": "Note {index}",
+    "viewDetail": "View details",
+    "retry": "Retry"
+  },
+  "noteCreate": {
+    "title": "New Note",
+    "filenamePlaceholder": "Filename (optional)",
+    "save": "Save",
+    "saving": "Saving...",
+    "savingProgress": "Saving...",
+    "back": "Back"
+  },
+  "noteDetail": {
+    "title": "Note Details",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "loadFailed": "Failed to load",
+    "backToList": "Back to list",
+    "filenamePlaceholder": "Filename (optional)"
+  },
+  "searchHistory": {
+    "title": "Search History",
+    "pageTitle": "Search History & Word Frequency",
+    "historyTab": "History",
+    "frequencyTab": "Word Frequency",
+    "loading": "Loading...",
+    "noHistory": "No search history",
+    "noFrequency": "No frequency data",
+    "times": "{count} times"
+  },
+  "imageGallery": {
+    "title": "Image Gallery",
+    "scanning": "Scanning...",
+    "scan": "Scan",
+    "noImages": "No images",
+    "back": "Back",
+    "noImageFolders": "No image folders found. Please add media paths and scan first.",
+    "noImagesInFolder": "No images in this folder",
+    "loadMore": "Load more"
+  },
+  "videoList": {
+    "title": "Video Library",
+    "scanning": "Scanning...",
+    "scan": "Scan",
+    "noVideos": "No videos",
+    "addVideoDirectory": "Add video directory",
+    "noVideoPrompt": "No videos. Click + to add a video directory.",
+    "selectVideoDirectory": "Select video directory",
+    "root": "Root",
+    "noSubdirectories": "No subdirectories in this directory",
+    "adding": "Adding...",
+    "selectThisDirectory": "Select this directory",
+    "loadMore": "Load more",
+    "notLoggedIn": "Not logged in",
+    "noMatchingUserDir": "No matching user directory found. Please add one in Directory Admin first.",
+    "confirmDeleteDir": "Delete video directory \"{path}\"?\nAssociated video records will also be deleted."
+  },
+  "videoPlayer": {
+    "back": "Back"
+  },
+  "epubReader": {
+    "toc": "Table of Contents",
+    "noToc": "No table of contents",
+    "prevChapter": "Previous",
+    "nextChapter": "Next",
+    "missingPath": "Missing file path",
+    "openFailed": "Cannot open EPUB file"
+  },
+  "pdfViewer": {
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "fitWidth": "Fit Width",
+    "fitWidthLabel": "Fit",
+    "missingPath": "No file path specified",
+    "loadFailed": "Cannot load PDF"
+  },
+  "userDirectoryAdmin": {
+    "title": "User Directory Admin",
+    "addDirectory": "Add Directory",
+    "pathPlaceholder": "Directory path",
+    "labelPlaceholder": "Label (optional)",
+    "noDirectories": "No directories",
+    "directoryAdmin": "Directory Management",
+    "adding": "Adding...",
+    "add": "Add",
+    "allowListPlaceholder": "Authorized users (comma-separated, e.g. abc,def)",
+    "noAllowUsers": "No authorized users",
+    "confirmDelete": "Delete directory \"{path}\"?\nAssociated media paths will also be deleted.",
+    "editAllowListPrompt": "Edit authorized users (comma-separated):"
+  },
+  "musicPlayer": {
+    "title": "Music Player",
+    "noSongs": "No songs",
+    "scanning": "Scanning...",
+    "backToList": "Back to list",
+    "unknownSong": "Unknown Song",
+    "unknownArtist": "Unknown Artist",
+    "unknownAlbum": "Unknown Album",
+    "noLyrics": "No lyrics"
+  },
+  "musicPlayerLyrics": {
+    "title": "Music Player",
+    "noSongs": "No songs",
+    "backToList": "Back to list",
+    "fullscreen": "Fullscreen",
+    "appleMusicLyrics": "Apple Music Lyrics",
+    "unknownSong": "Unknown Song",
+    "unknownArtist": "Unknown Artist",
+    "unknownAlbum": "Unknown Album"
+  },
+  "musicPlayerWasm": {
+    "title": "Music Player (WASM)",
+    "noSongs": "No songs",
+    "backToList": "Back to list",
+    "wasmZeroCopy": "WASM Zero-Copy",
+    "unknownSong": "Unknown Song",
+    "unknownArtist": "Unknown Artist",
+    "unknownAlbum": "Unknown Album",
+    "noLyrics": "No lyrics"
+  },
+  "songView": {
+    "loading": "Loading...",
+    "noSongs": "No songs",
+    "wasmTitle": "WASM Zero-Copy",
+    "lyricsTitle": "Apple Music Lyrics",
+    "musicTitle": "Music",
+    "songsUnit": "songs",
+    "logout": "Logout",
+    "unknownArtist": "Unknown Artist",
+    "allSongsLoaded": "All {total} songs loaded",
+    "fetchFailed": "Failed to fetch songs: {error}"
+  },
+  "collinsSearch": {
+    "title": "Collins Dictionary",
+    "placeholder": "Enter English word...",
+    "search": "Search"
+  },
+  "ldoceSearch": {
+    "title": "Longman Dictionary",
+    "placeholder": "Enter English word...",
+    "search": "Search"
+  },
+  "xiandaihanyuSearch": {
+    "title": "Modern Chinese Dictionary",
+    "placeholder": "Enter Chinese character or word...",
+    "search": "Search"
+  },
+  "ggttSearch": {
+    "title": "GGTT Search",
+    "placeholder": "Enter Chinese character...",
+    "search": "Search"
+  },
+  "base64Tool": {
+    "title": "Base64 Tool",
+    "encode": "Encode",
+    "decode": "Decode",
+    "input": "Input",
+    "output": "Output",
+    "inputPlaceholder": "Enter text to encode/decode..."
+  },
+  "timestampTool": {
+    "title": "Timestamp Tool",
+    "currentTime": "Current Time",
+    "convert": "Convert",
+    "timestamp": "Timestamp",
+    "datetime": "Date Time"
+  },
+  "uuidTool": {
+    "title": "UUID Tool",
+    "generate": "Generate UUID",
+    "v4Random": "UUID v4 (Random)",
+    "v6TimeSorted": "UUID v6 (Time-sorted)",
+    "v7Unix": "UUID v7 (Unix timestamp)",
+    "generateV5": "Generate UUID v5 (namespace + name)",
+    "namespaceUuid": "Namespace UUID",
+    "name": "Name",
+    "namePlaceholder": "Enter name",
+    "v5": "UUID v5",
+    "validate": "Validate UUID",
+    "uuidString": "UUID String",
+    "uuidPlaceholder": "Enter UUID string",
+    "validationResult": "Validation Result",
+    "valid": "Valid",
+    "invalid": "Invalid",
+    "generateBtn": "Generate",
+    "validateBtn": "Validate"
+  },
+  "passwordTool": {
+    "title": "Password Generator",
+    "generate": "Generate Password",
+    "length": "Length",
+    "includeUppercase": "Include uppercase",
+    "includeLowercase": "Include lowercase",
+    "includeNumbers": "Include numbers",
+    "includeSymbols": "Include symbols",
+    "generatedPassword": "Generated Password"
+  },
+  "chineseRemover": {
+    "title": "Chinese Remover",
+    "input": "Input Text",
+    "inputPlaceholder": "Enter text containing Chinese characters...",
+    "output": "Result",
+    "removeChinese": "Remove Chinese"
+  },
+  "dictation": {
+    "prev": "Previous",
+    "next": "Next",
+    "listenPronunciation": "Listen",
+    "viewAnswer": "Show Answer",
+    "viewKeys": "Show Keys",
+    "mistakeNotification": "Stroke {stroke} is wrong!",
+    "completeNotification": "Congratulations! You completed \"{char}\"!",
+    "summary": "Dictation Summary",
+    "correct": "Correct",
+    "wrong": "Wrong",
+    "accuracy": "Accuracy"
+  },
+  "ziciHome": {
+    "title": "Grade {grade} Term {term} Characters",
+    "gradeTerm": "Grade {grade} Term {term}",
+    "termUp": "1st",
+    "termDown": "2nd",
+    "allChars": "All Characters",
+    "strokeDemo": "Stroke Demo",
+    "pinyinKeyboard": "Pinyin Keyboard",
+    "wordFormation": "Word Formation",
+    "noWords": "No related words found",
+    "prev": "Previous",
+    "next": "Next",
+    "loadFailed": "Failed to load"
+  },
+  "pinyinPicker": {
+    "initials": "Initials",
+    "finals": "Finals",
+    "clickToJump": "Click to jump",
+    "pinyinTable": "Pinyin Table"
+  },
+  "wordPage": {
+    "title": "Vocabulary",
+    "allWords": "All Words",
+    "prev": "Previous",
+    "next": "Next",
+    "loading": "Loading...",
+    "loadFailed": "Failed to load",
+    "noWords": "No words"
+  },
+  "wordDetailPage": {
+    "title": "Word Details",
+    "loading": "Loading...",
+    "loadFailed": "Failed to load",
+    "notFound": "Word not found",
+    "charCount": "Characters",
+    "firstChar": "First Char",
+    "frequency": "Frequency",
+    "explanation": "Explanation",
+    "readExplanation": "Read Explanation"
+  },
+  "wordFrequencyPage": {
+    "title": "Word Frequency",
+    "listTitle": "Word Frequency List ({count} words) - Sorted by frequency",
+    "loading": "Loading...",
+    "loadingData": "Loading frequency data...",
+    "noData": "No data"
+  },
+  "pinyinWordsPage": {
+    "title": "Pinyin Words",
+    "listTitle": "{pinyin} - Word List ({count})",
+    "loading": "Loading...",
+    "loadingData": "Loading words...",
+    "noWords": "No words",
+    "noRelatedWords": "No related words"
+  },
+  "keyboardLayoutPage": {
+    "title": "Keyboard Layout",
+    "pageTitle": "Pinyin Keyboard Layout",
+    "initials": "Initials",
+    "initialKeys": "Initial Keys",
+    "finals": "Finals",
+    "finalKeys": "Final Keys"
+  },
+  "shortcuts": {
+    "title": "Shortcuts",
+    "search": "Search notes...",
+    "searchNotes": "Search Notes",
+    "createNote": "New Note",
+    "shortNotes": "Quick Notes",
+    "aiChat": "AI Chat"
+  },
+  "errorCode": {
+    "EMPTY_CREDENTIALS": "Username and password cannot be empty",
+    "EMPTY_PATH": "Path cannot be empty",
+    "INVALID_MEDIA_TYPE": "Invalid media type",
+    "NO_AUTHORIZED_DIR": "No authorized directory configured",
+    "PATH_NOT_IN_DIR": "Path is not within any authorized directory",
+    "NOT_A_DIRECTORY": "Path is not a directory",
+    "OPENAI_KEY_MISSING": "OpenAI API Key is not configured",
+    "USER_NOT_FOUND": "User not found",
+    "SONG_NOT_FOUND": "Song not found",
+    "SONG_COVER_NOT_FOUND": "Cover image not found",
+    "LYRICS_NOT_FOUND": "Lyrics file not found",
+    "NO_TTML_LYRICS": "This song has no TTML lyrics",
+    "DIR_NOT_FOUND": "Directory not found",
+    "CHARACTER_NOT_FOUND": "Character not found",
+    "PATH_NOT_FOUND": "Path not found",
+    "SESSION_NOT_FOUND": "Session not found",
+    "MEDIA_PATH_NOT_FOUND": "Media path not found",
+    "SHORT_NOTE_NOT_FOUND": "Short note not found",
+    "NOTE_NOT_FOUND": "Note not found",
+    "NOTE_CONTENT_NOT_FOUND": "Note content not found",
+    "RESOURCE_NOT_FOUND": "Resource not found",
+    "WRONG_PASSWORD": "Incorrect username or password",
+    "INVALID_TOKEN": "Invalid authentication token",
+    "TOKEN_EXPIRED": "Authentication token expired",
+    "ADMIN_REQUIRED": "Admin privileges required",
+    "DIR_ACCESS_DENIED": "Directory not found or access denied",
+    "INTERNAL_ERROR": "Internal server error"
+  },
+  "currentUser": "Current User",
+  "notLoggedIn": "Not Logged In"
+}

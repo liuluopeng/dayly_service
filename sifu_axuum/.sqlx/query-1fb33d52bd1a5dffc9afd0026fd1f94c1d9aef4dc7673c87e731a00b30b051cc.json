@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT directorie FROM webdav_users",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "directorie",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "1fb33d52bd1a5dffc9afd0026fd1f94c1d9aef4dc7673c87e731a00b30b051cc"
+}

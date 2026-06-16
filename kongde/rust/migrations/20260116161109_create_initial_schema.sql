@@ -1,0 +1,89 @@
+-- Add migration script here
+
+CREATE TABLE IF NOT EXISTS songs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    artist TEXT NOT NULL,
+    album TEXT NOT NULL,
+    audio_path TEXT NOT NULL,
+    image_path TEXT,
+    background_color INTEGER NOT NULL DEFAULT 4278255360,
+    secondary_color INTEGER NOT NULL DEFAULT 4294901760
+);
+
+CREATE TABLE IF NOT EXISTS liked_songs (
+    id INTEGER PRIMARY KEY NOT NULL,
+    music_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY NOT NULL,
+    music_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS albums (
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS singers (
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS playlists (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS playlist_songs (
+    id INTEGER PRIMARY KEY NOT NULL,
+    playlist_id TEXT NOT NULL,
+    music_id INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS movies (
+    id INTEGER PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    path TEXT NOT NULL UNIQUE,
+    size INTEGER NOT NULL,
+    last_modified TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS todos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    steps TEXT NOT NULL,
+    status TEXT NOT NULL,
+    deadline INTEGER NOT NULL,
+    is_repeat INTEGER NOT NULL DEFAULT 0,
+    priority INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    color INTEGER NOT NULL DEFAULT 4278255360
+);
+
+CREATE TABLE IF NOT EXISTS todo_tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    todo_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    UNIQUE(todo_id, tag_id)
+);
+
+CREATE TABLE IF NOT EXISTS nfo_movies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    cover_path TEXT NOT NULL,
+    video_path TEXT NOT NULL UNIQUE,
+    nfo_json TEXT NOT NULL,
+    created_at INTEGER NOT NULL DEFAULT 0
+);

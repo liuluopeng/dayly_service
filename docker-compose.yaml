@@ -1,0 +1,70 @@
+services:
+  db:
+    container_name: lx_dayly_service_postgres
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dayly_db
+      POSTGRES_USER: dayly_db
+      POSTGRES_PASSWORD: dayly_db
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - mynetwork
+
+  redis:
+    container_name: lx_dayly_service_redis
+    image: redis:latest
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - mynetwork
+
+  app:
+    container_name: lx_dayly_service_axum
+    build:
+      context: .
+      dockerfile: Dockerfile
+    dns:
+      - 8.8.8.8
+      - 114.114.114.114
+    extra_hosts:
+      - "deb.debian.org:199.232.66.132"
+    restart: unless-stopped
+    ports:
+      - "23000:23000"
+    environment:
+      PG_DATABASE: dayly_db
+      PG_HOST: db
+      PG_PORT: 5432
+      PG_USER: dayly_db
+      PG_PASSWORD: dayly_db
+      JWT_SECRET: c_4yam-btJDKDMUkMCOmXs_68aXudzBUlTdgzFIYgjFgzGP6QYA_PK3CniF8X9oe
+      ENV: production
+      HOST: 0.0.0.0
+      DOMAIN: 192.168.31.58
+      PORT: 23000
+      REDIS_URL: "redis://redis:6379"
+    volumes:
+      - /Users/llp/Movies/LLP的webdav库:/Users/llp/Movies/LLP的webdav库
+      - /Volumes/six/vedio:/Volumes/six/vedio
+      - ./cold_data:/app/cold_data
+    depends_on:
+      - db
+      - redis
+    networks:
+      - mynetwork
+
+volumes:
+  db-data:
+  redis-data:
+
+networks:
+  mynetwork:
+    driver: bridge

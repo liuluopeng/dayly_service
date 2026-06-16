@@ -1,0 +1,69 @@
+[package]
+name = "lx_dayly_service"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+futures = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+sqlx = { version = "0.8.6", features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "sqlite",
+    "macros",
+    "chrono",
+    "uuid",
+] }
+clap = { workspace = true }
+lazy_static = { workspace = true }
+dotenv = { workspace = true }
+tonic = { workspace = true }
+prost = { workspace = true }
+tower-http = { workspace = true }
+axum-extra = { workspace = true }
+jsonwebtoken = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+quick-xml = { workspace = true }
+chrono = { workspace = true }
+url = { workspace = true }
+urlencoding = { workspace = true }
+percent-encoding = { workspace = true }
+tower = { workspace = true }
+base64 = { workspace = true }
+rusqlite = { workspace = true }
+regex = { workspace = true }
+fancy-regex = { workspace = true }
+http = { workspace = true }
+common = { path = "../common" }
+my_type = { path = "../my_type" }
+
+thiserror = {workspace = true}
+redis = { workspace = true }
+tokio-util = { workspace = true }
+
+anyhow.workspace = true
+walkdir = "2.5"
+image = { workspace = true }
+rayon = { workspace = true }
+fast_image_resize = { workspace = true }
+async-graphql = "7.2.1"
+async-graphql-axum = "7.2.1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+bcrypt = "0.17"
+hyper = "1.8.1"
+quoted_printable = "0.5.1"
+tempfile = "3"
+webrtc = { workspace = true }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+hyper = { version = "1.8", features = ["client"] }
+
+[build-dependencies]
+tonic-build = "0.13.1"

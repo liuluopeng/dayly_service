@@ -1,0 +1,38 @@
+[package]
+name = "my_type"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+base64 = { workspace = true }
+thiserror = {workspace = true}
+anyhow.workspace = true
+html2text = "0.14"
+ansi_colours = "1.2.2"
+infer = "0.15.0"
+strip-ansi-escapes = "0.2.0"
+urlencoding = { workspace = true }
+
+# 为不同环境配置依赖
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+uuid = { workspace = true }
+sqlx = { workspace = true }
+reqwest = { workspace = true }
+resvg = "0.43.0"
+image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+viuer = "0.8.0"
+tokio = { workspace = true }
+lofty = { workspace = true }
+axum.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+uuid = { workspace = true, features = ["js"] }
+wasm-bindgen = "0.2.92"
+resvg = "0.43.0"
+image = { version = "0.25", default-features = false, features = ["png"] }
+

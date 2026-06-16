@@ -1,0 +1,11 @@
+### 获取用户列表
+GET http://localhost:23000/hi
+Accept: text/plain
+
+
+
+### 单词历史
+GET http://localhost:23001/api/dict/recent-history?limit=2
+Accept: application/json
+
+

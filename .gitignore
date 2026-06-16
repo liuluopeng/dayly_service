@@ -1,0 +1,100 @@
+# === Rust ===
+target/
+Cargo.lock
+
+# === SQLx offline queries (COMMIT THIS for Docker build) ===
+# .sqlx/  -- intentionally tracked
+
+# === Node / Frontend ===
+node_modules/
+dist/
+dist-ssr/
+*.local
+.pnpm-store/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+vocal_separation/
+*.pt
+*.th
+
+# === Flutter / Dart ===
+.dart_tool/
+.flutter-plugins*
+.metadata
+build/
+*.iml
+.fvm/
+
+# === Claude Code ===
+.claude/
+
+# === IDE / Editor ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Environment (keep .env.example) ===
+.env
+.env.*
+!.env.example
+
+# === 本地测试数据 ===
+cold_data/
+
+# === Data directories (large, not source) ===
+mhtml/
+pdf/
+backup/
+data/
+cache/
+static/
+models/
+
+# === Old WASM output (now in src/src-wasm/pkg/) ===
+wasm_bg.js
+wasm_bg.wasm
+
+# === Large generated data files ===
+*.zip
+pinyin_api_results.json
+word_pairs.txt
+abba_words.txt
+large_files.txt
+same_meaning_pairs.txt
+same_meaning_pairs_only.txt
+same_meaning_pairs.md
+doc.kml
+all_t.json
+index-CKrcFYaM.js
+
+# === Temp ===
+tmp/
+temp/
+
+# === 临时笔记 / 测试文件 ===
+note.md
+api.http
+
+# === pnpm ===
+.pnpm-store/
+pnpm-lock.yaml
+package.json
+
+
+
+mdx2sql/
+search-wubi/

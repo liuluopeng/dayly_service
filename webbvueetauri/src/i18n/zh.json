@@ -1,0 +1,604 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "saving": "保存中...",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "confirm": "确定",
+    "back": "返回",
+    "refresh": "刷新",
+    "copy": "复制",
+    "copied": "已复制！",
+    "error": {
+      "loadFailed": "加载失败",
+      "saveFailed": "保存失败",
+      "deleteFailed": "删除失败"
+    },
+    "noData": "暂无数据",
+    "unnamed": "无标题",
+    "noContent": "无内容",
+    "loadingMore": "加载更多...",
+    "emptyDirectory": "空目录",
+    "newWindowOpen": "新窗口打开",
+    "unsupportedPreview": "不支持预览此文件类型",
+    "generateTree": "生成目录树",
+    "treeGenerated": "目录树已生成: {filename}",
+    "treeFailed": "生成失败: {error}",
+    "retry": "重试",
+    "loadMore": "加载更多",
+    "timeAgo": {
+      "justNow": "刚刚",
+      "minutesAgo": "{n}分钟前",
+      "hoursAgo": "{n}小时前",
+      "daysAgo": "{n}天前"
+    }
+  },
+  "app": {
+    "sidebar": {
+      "pin": "固定侧边栏",
+      "unpin": "取消固定"
+    }
+  },
+  "menu": {
+    "title": "功能菜单",
+    "ggtt": {
+      "title": "GGTT搜索",
+      "icon": "五笔",
+      "desc": "查询五笔编码"
+    },
+    "xiandaihanyu": {
+      "title": "现代汉语词典",
+      "icon": "词典",
+      "desc": "查询词语解释"
+    },
+    "collins": {
+      "title": "柯林斯词典",
+      "icon": "Collins",
+      "desc": "查询英语单词"
+    },
+    "ldoce": {
+      "title": "朗文词典",
+      "icon": "LDOCE",
+      "desc": "查询英语单词"
+    },
+    "songs": {
+      "title": "听歌",
+      "desc": "管理和播放歌曲 (fetch 模式)"
+    },
+    "songsWasm": {
+      "title": "听歌 (WASM 零拷贝)",
+      "desc": "使用 WASM 零拷贝技术播放歌曲"
+    },
+    "songsLyrics": {
+      "title": "听歌 (Apple Music 歌词)",
+      "desc": "使用 Apple Music 风格歌词播放歌曲"
+    },
+    "files": {
+      "title": "文件管理",
+      "desc": "浏览和管理文件"
+    },
+    "shortNotes": {
+      "title": "短笔记",
+      "desc": "快速记录和管理笔记"
+    },
+    "chat": {
+      "title": "AI 对话",
+      "desc": "与 DeepSeek AI 对话"
+    },
+    "notes": {
+      "title": "笔记管理",
+      "desc": "管理和搜索笔记"
+    },
+    "searchHistory": {
+      "title": "查询历史",
+      "desc": "查看查询历史和词频统计"
+    },
+    "zici": {
+      "title": "字词学习",
+      "desc": "汉字学习与听写练习",
+      "chars": {
+        "title": "生字",
+        "desc": "按年级浏览汉字笔画"
+      },
+      "words": {
+        "title": "生词",
+        "desc": "浏览词汇卡片"
+      },
+      "dictation": {
+        "title": "听写",
+        "desc": "手写练习"
+      },
+      "keyboard": {
+        "title": "键位",
+        "desc": "拼音键位布局"
+      },
+      "pinyin": {
+        "title": "组合",
+        "desc": "声母韵母组合"
+      },
+      "frequency": {
+        "title": "词频",
+        "desc": "词频排序列表"
+      }
+    },
+    "tools": {
+      "title": "小工具",
+      "desc": "实用工具集合",
+      "base64": {
+        "title": "Base64 工具",
+        "desc": "Base64 编码解码"
+      },
+      "timestamp": {
+        "title": "时间戳工具",
+        "desc": "时间戳转换"
+      },
+      "uuid": {
+        "title": "UUID 工具",
+        "desc": "生成不同版本的 UUID"
+      },
+      "password": {
+        "title": "密码生成器",
+        "desc": "生成随机密码"
+      },
+      "chineseRemover": {
+        "title": "汉字去除",
+        "desc": "自动去除文本中的汉字和中文标点符号"
+      }
+    },
+    "images": {
+      "title": "图片库",
+      "desc": "浏览和管理图片相册"
+    },
+    "videos": {
+      "title": "视频库",
+      "desc": "浏览和播放视频"
+    },
+    "admin": {
+      "title": "用户目录管理",
+      "desc": "管理用户的可访问目录"
+    },
+    "settings": {
+      "title": "设置",
+      "desc": "切换环境和配置"
+    }
+  },
+  "home": {
+    "quickNote": {
+      "title": "快速笔记",
+      "placeholder": "输入内容，Ctrl+Enter 保存..."
+    },
+    "clipboard": {
+      "title": "剪贴板",
+      "placeholder": "剪贴板内容...",
+      "readFailed": "无法读取剪贴板内容"
+    },
+    "notes": "笔记",
+    "todo": "待办",
+    "settings": "设置",
+    "viewAllNotes": "查看所有笔记",
+    "viewAllNotesDesc": "点击浏览、编辑和管理您的笔记",
+    "toolbox": "工具箱",
+    "month": "月",
+    "weekDays": [
+      "日",
+      "一",
+      "二",
+      "三",
+      "四",
+      "五",
+      "六"
+    ]
+  },
+  "login": {
+    "title": "欢迎登录",
+    "subtitle": "请输入您的账号信息",
+    "username": "用户名",
+    "usernamePlaceholder": "请输入用户名",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "submit": "登录",
+    "submitting": "登录中...",
+    "forgotPassword": "忘记密码？请联系管理员",
+    "error": {
+      "emptyFields": "请输入用户名和密码",
+      "loginFailed": "登录失败，请重试"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "serverAddress": "服务器地址",
+    "manualOverride": "已手动覆盖",
+    "restoreAuto": "恢复自动",
+    "autoDetected": "自动检测",
+    "customAddress": "自定义服务器地址",
+    "collapse": "收起",
+    "apply": "应用",
+    "logout": "退出登录",
+    "language": "语言"
+  },
+  "openAiChat": {
+    "sessionList": "会话列表",
+    "newSession": "新建",
+    "loading": "加载中...",
+    "noSessions": "暂无会话",
+    "selectOrCreate": "请选择或创建会话",
+    "model": "模型:",
+    "backToMenu": "返回菜单",
+    "startConversation": "开始一个新的对话吧",
+    "thinkingProcess": "思考过程：",
+    "referenceSources": "参考来源：",
+    "aiThinking": "AI正在思考...",
+    "inputPlaceholder": "输入消息...",
+    "send": "发送",
+    "sending": "发送中...",
+    "newChatTitle": "新对话 {time}"
+  },
+  "shortNote": {
+    "title": "短笔记管理",
+    "createNote": "新建笔记",
+    "refresh": "刷新",
+    "loading": "加载中...",
+    "noNotes": "暂无笔记",
+    "createFirst": "创建第一条笔记",
+    "untitled": "无标题",
+    "noContent": "无内容",
+    "editNote": "编辑笔记",
+    "newNote": "新建笔记",
+    "titleLabel": "标题",
+    "titlePlaceholder": "请输入标题",
+    "contentLabel": "内容",
+    "contentPlaceholder": "请输入内容",
+    "confirmDelete": "确定要删除这条笔记吗？"
+  },
+  "fileManager": {
+    "title": "文件管理",
+    "listView": "列表视图",
+    "gridView": "网格视图",
+    "loadContentFailed": "无法加载文件内容"
+  },
+  "noteSearch": {
+    "title": "笔记搜索",
+    "placeholder": "输入搜索关键词...",
+    "search": "搜索",
+    "searching": "搜索中...",
+    "noResults": "未找到匹配的笔记",
+    "enterKeyword": "请输入搜索关键词",
+    "viewDetail": "查看详情",
+    "initializing": "初始化中...",
+    "initFailed": "初始化失败，请刷新页面重试",
+    "searchFailed": "搜索失败",
+    "noteIndex": "笔记 {index}"
+  },
+  "noteList": {
+    "title": "笔记管理",
+    "createNote": "新建笔记",
+    "searchPlaceholder": "搜索笔记...",
+    "noNotes": "暂无笔记",
+    "createFirst": "创建第一条笔记",
+    "loadFailed": "加载笔记列表失败",
+    "noteIndex": "笔记 {index}",
+    "viewDetail": "查看详情",
+    "retry": "重试"
+  },
+  "noteCreate": {
+    "title": "新建笔记",
+    "filenamePlaceholder": "文件名（可选）",
+    "save": "保存",
+    "saving": "保存中...",
+    "savingProgress": "正在保存...",
+    "back": "返回"
+  },
+  "noteDetail": {
+    "title": "笔记详情",
+    "save": "保存",
+    "saving": "保存中...",
+    "saved": "已保存",
+    "loadFailed": "加载失败",
+    "backToList": "返回列表",
+    "filenamePlaceholder": "文件名（可选）"
+  },
+  "searchHistory": {
+    "title": "查询历史",
+    "pageTitle": "查询历史与词频",
+    "historyTab": "历史记录",
+    "frequencyTab": "词频统计",
+    "loading": "加载中...",
+    "noHistory": "暂无查询历史",
+    "noFrequency": "暂无词频数据",
+    "times": "{count} 次"
+  },
+  "imageGallery": {
+    "title": "图片库",
+    "scanning": "扫描中...",
+    "scan": "扫描",
+    "noImages": "暂无图片",
+    "back": "返回",
+    "noImageFolders": "暂无图片文件夹，请先添加媒体路径并扫描",
+    "noImagesInFolder": "该文件夹暂无图片",
+    "loadMore": "加载更多"
+  },
+  "videoList": {
+    "title": "视频库",
+    "scanning": "扫描中...",
+    "scan": "扫描",
+    "noVideos": "暂无视频",
+    "addVideoDirectory": "添加视频目录",
+    "noVideoPrompt": "暂无视频，请点击 + 添加视频目录",
+    "selectVideoDirectory": "选择视频目录",
+    "root": "根",
+    "noSubdirectories": "该目录下没有子目录",
+    "adding": "添加中...",
+    "selectThisDirectory": "选择此目录",
+    "loadMore": "加载更多",
+    "notLoggedIn": "未登录",
+    "noMatchingUserDir": "未找到匹配的用户目录，请先在\"目录管理\"中添加",
+    "confirmDeleteDir": "确定删除视频目录 \"{path}\"？关联的视频记录也会被删除。"
+  },
+  "videoPlayer": {
+    "back": "返回"
+  },
+  "epubReader": {
+    "toc": "目录",
+    "noToc": "暂无目录",
+    "prevChapter": "上一页",
+    "nextChapter": "下一页",
+    "missingPath": "缺少文件路径",
+    "openFailed": "无法打开 EPUB 文件"
+  },
+  "pdfViewer": {
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "fitWidth": "适合宽度",
+    "fitWidthLabel": "适应",
+    "missingPath": "未指定文件路径",
+    "loadFailed": "无法加载 PDF"
+  },
+  "userDirectoryAdmin": {
+    "title": "用户目录管理",
+    "addDirectory": "添加目录",
+    "pathPlaceholder": "目录路径",
+    "labelPlaceholder": "标签（可选）",
+    "noDirectories": "暂无目录",
+    "directoryAdmin": "目录管理",
+    "adding": "添加中...",
+    "add": "添加",
+    "allowListPlaceholder": "授权用户（逗号分隔，如 abc,def）",
+    "noAllowUsers": "无授权用户",
+    "confirmDelete": "确定删除目录 \"{path}\"？\n关联的媒体路径也会被删除。",
+    "editAllowListPrompt": "编辑授权用户（逗号分隔）："
+  },
+  "musicPlayer": {
+    "title": "音乐播放器",
+    "noSongs": "暂无歌曲",
+    "scanning": "扫描中...",
+    "backToList": "返回列表",
+    "unknownSong": "未知歌曲",
+    "unknownArtist": "未知艺术家",
+    "unknownAlbum": "未知专辑",
+    "noLyrics": "暂无歌词"
+  },
+  "musicPlayerLyrics": {
+    "title": "音乐播放器",
+    "noSongs": "暂无歌曲",
+    "backToList": "返回列表",
+    "fullscreen": "全屏",
+    "appleMusicLyrics": "Apple Music 歌词",
+    "unknownSong": "未知歌曲",
+    "unknownArtist": "未知艺术家",
+    "unknownAlbum": "未知专辑"
+  },
+  "musicPlayerWasm": {
+    "title": "音乐播放器 (WASM)",
+    "noSongs": "暂无歌曲",
+    "backToList": "返回列表",
+    "wasmZeroCopy": "WASM 零拷贝",
+    "unknownSong": "未知歌曲",
+    "unknownArtist": "未知艺术家",
+    "unknownAlbum": "未知专辑",
+    "noLyrics": "暂无歌词"
+  },
+  "songView": {
+    "loading": "加载中...",
+    "noSongs": "暂无歌曲",
+    "wasmTitle": "WASM 零拷贝",
+    "lyricsTitle": "Apple Music 歌词",
+    "musicTitle": "音乐",
+    "songsUnit": "首",
+    "logout": "退出",
+    "unknownArtist": "未知艺术家",
+    "allSongsLoaded": "已加载全部 {total} 首歌曲",
+    "fetchFailed": "获取歌曲失败: {error}"
+  },
+  "collinsSearch": {
+    "title": "柯林斯词典",
+    "placeholder": "输入英语单词...",
+    "search": "搜索"
+  },
+  "ldoceSearch": {
+    "title": "朗文词典",
+    "placeholder": "输入英语单词...",
+    "search": "搜索"
+  },
+  "xiandaihanyuSearch": {
+    "title": "现代汉语词典",
+    "placeholder": "输入汉字或词语...",
+    "search": "搜索"
+  },
+  "ggttSearch": {
+    "title": "GGTT搜索",
+    "placeholder": "输入汉字...",
+    "search": "搜索"
+  },
+  "base64Tool": {
+    "title": "Base64 工具",
+    "encode": "编码",
+    "decode": "解码",
+    "input": "输入",
+    "output": "输出",
+    "inputPlaceholder": "请输入要编码/解码的文本..."
+  },
+  "timestampTool": {
+    "title": "时间戳工具",
+    "currentTime": "当前时间",
+    "convert": "转换",
+    "timestamp": "时间戳",
+    "datetime": "日期时间"
+  },
+  "uuidTool": {
+    "title": "UUID 工具",
+    "generate": "生成 UUID",
+    "v4Random": "UUID v4 (随机)",
+    "v6TimeSorted": "UUID v6 (时间排序)",
+    "v7Unix": "UUID v7 (Unix 时间戳)",
+    "generateV5": "生成 UUID v5 (基于命名空间和名称)",
+    "namespaceUuid": "命名空间 UUID",
+    "name": "名称",
+    "namePlaceholder": "请输入名称",
+    "v5": "UUID v5",
+    "validate": "验证 UUID",
+    "uuidString": "UUID 字符串",
+    "uuidPlaceholder": "请输入 UUID 字符串",
+    "validationResult": "验证结果",
+    "valid": "有效",
+    "invalid": "无效",
+    "generateBtn": "生成",
+    "validateBtn": "验证"
+  },
+  "passwordTool": {
+    "title": "密码生成器",
+    "generate": "生成密码",
+    "length": "长度",
+    "includeUppercase": "包含大写字母",
+    "includeLowercase": "包含小写字母",
+    "includeNumbers": "包含数字",
+    "includeSymbols": "包含符号",
+    "generatedPassword": "生成的密码"
+  },
+  "chineseRemover": {
+    "title": "汉字去除",
+    "input": "输入文本",
+    "inputPlaceholder": "请输入包含汉字的文本...",
+    "output": "处理结果",
+    "removeChinese": "去除汉字"
+  },
+  "dictation": {
+    "prev": "上一个",
+    "next": "下一个",
+    "listenPronunciation": "听发音",
+    "viewAnswer": "看答案",
+    "viewKeys": "看键位",
+    "mistakeNotification": "笔画{stroke}写错了！",
+    "completeNotification": "恭喜你，完成了\"{char}\"的书写！",
+    "summary": "听写总结",
+    "correct": "正确",
+    "wrong": "错误",
+    "accuracy": "正确率"
+  },
+  "ziciHome": {
+    "title": "{grade}年级{term}学期 生字",
+    "gradeTerm": "{grade}年级{term}学期",
+    "termUp": "上",
+    "termDown": "下",
+    "allChars": "所有汉字",
+    "strokeDemo": "笔画演示",
+    "pinyinKeyboard": "拼音键盘",
+    "wordFormation": "组词",
+    "noWords": "未找到相关词语",
+    "prev": "上一个",
+    "next": "下一个",
+    "loadFailed": "加载失败"
+  },
+  "pinyinPicker": {
+    "initials": "声母",
+    "finals": "韵母",
+    "clickToJump": "点击跳转",
+    "pinyinTable": "拼音表"
+  },
+  "wordPage": {
+    "title": "生词",
+    "allWords": "所有词语",
+    "prev": "上一个",
+    "next": "下一个",
+    "loading": "加载中...",
+    "loadFailed": "加载失败",
+    "noWords": "暂无生词"
+  },
+  "wordDetailPage": {
+    "title": "词语详情",
+    "loading": "加载中...",
+    "loadFailed": "加载失败",
+    "notFound": "未找到词语信息",
+    "charCount": "字数",
+    "firstChar": "首字",
+    "frequency": "词频",
+    "explanation": "词语解释",
+    "readExplanation": "读解释"
+  },
+  "wordFrequencyPage": {
+    "title": "词频统计",
+    "listTitle": "词频列表 (共 {count} 词) - 按词频从小到大排序",
+    "loading": "加载中...",
+    "loadingData": "正在加载词频数据...",
+    "noData": "暂无数据"
+  },
+  "pinyinWordsPage": {
+    "title": "拼音组词",
+    "listTitle": "{pinyin} - 词语列表 ({count})",
+    "loading": "加载中...",
+    "loadingData": "正在加载词语...",
+    "noWords": "暂无词语",
+    "noRelatedWords": "暂无相关词语"
+  },
+  "keyboardLayoutPage": {
+    "title": "键位布局",
+    "pageTitle": "拼音键位展示",
+    "initials": "声母",
+    "initialKeys": "声母键位",
+    "finals": "韵母",
+    "finalKeys": "韵母键位"
+  },
+  "shortcuts": {
+    "title": "快捷键",
+    "search": "搜索笔记...",
+    "searchNotes": "搜索笔记",
+    "createNote": "新建笔记",
+    "shortNotes": "短笔记",
+    "aiChat": "AI 对话"
+  },
+  "errorCode": {
+    "EMPTY_CREDENTIALS": "用户名和密码不能为空",
+    "EMPTY_PATH": "路径不能为空",
+    "INVALID_MEDIA_TYPE": "无效的媒体类型",
+    "NO_AUTHORIZED_DIR": "用户未配置授权目录",
+    "PATH_NOT_IN_DIR": "路径不在任何授权目录内",
+    "NOT_A_DIRECTORY": "路径不是目录",
+    "OPENAI_KEY_MISSING": "OpenAI API Key 未配置",
+    "USER_NOT_FOUND": "用户不存在",
+    "SONG_NOT_FOUND": "歌曲不存在",
+    "SONG_COVER_NOT_FOUND": "封面图片不存在",
+    "LYRICS_NOT_FOUND": "歌词文件不存在",
+    "NO_TTML_LYRICS": "该歌曲没有 TTML 歌词",
+    "DIR_NOT_FOUND": "目录不存在",
+    "CHARACTER_NOT_FOUND": "未找到该汉字",
+    "PATH_NOT_FOUND": "路径不存在",
+    "SESSION_NOT_FOUND": "会话不存在",
+    "MEDIA_PATH_NOT_FOUND": "媒体路径不存在",
+    "SHORT_NOTE_NOT_FOUND": "短笔记不存在",
+    "NOTE_NOT_FOUND": "笔记不存在",
+    "NOTE_CONTENT_NOT_FOUND": "笔记内容不存在",
+    "RESOURCE_NOT_FOUND": "资源不存在",
+    "WRONG_PASSWORD": "用户名或密码错误",
+    "INVALID_TOKEN": "无效的认证令牌",
+    "TOKEN_EXPIRED": "认证令牌已过期",
+    "ADMIN_REQUIRED": "需要管理员权限",
+    "DIR_ACCESS_DENIED": "目录不存在或无权访问",
+    "INTERNAL_ERROR": "服务器内部错误"
+  },
+  "currentUser": "当前用户",
+  "notLoggedIn": "未登录"
+}
