@@ -23,8 +23,12 @@ const state = reactive({
   keysPressed: {} as any
 });
 const handleKeyDown = (e: KeyboardEvent) => {
-  e.preventDefault();
   const code = e.code;
+  // 只拦截虚拟键盘实际处理的按键，不阻塞系统快捷键（CMD+/F12/缩放等）
+  const isVirtualKey = code.startsWith('Key') || code.startsWith('Digit') || code === 'Enter' || code === 'Backspace' || code === 'Space';
+  if (isVirtualKey) {
+    e.preventDefault();
+  }
   const capsLockOn = e.getModifierState('CapsLock');
   if (capsLockOn && CAN_PRINT_KEY[code]) {
     configStore.setPrintContent(CAN_PRINT_KEY[code].toUpperCase() || '');
