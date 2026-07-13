@@ -3,8 +3,6 @@
 # 用法: ./translate-md.sh [目录]
 # 默认目录: /Volumes/six/MD
 
-set -e
-
 DIR="${1:-/Volumes/six/MD}"
 OUT_DIR="${DIR}/zh"
 
@@ -18,8 +16,8 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 1
 fi
 
-echo "找到 ${#files[@]} 个文件，开始翻译..."
-echo "输出目录: $OUT_DIR"
+echo "找到 ${#files[@]} 个文件"
+echo "输出: $OUT_DIR"
 echo ""
 
 total=${#files[@]}
@@ -38,29 +36,35 @@ for ((i=0; i<total; i++)); do
         continue
     fi
 
-    content=$(cat "$f")
-    # 空文件跳过
-    if [ -z "$content" ]; then
-        echo "[$((i+1))/$total] ⏭️  $name (空文件)"
+    # 用 python3 检测中文字符占比（兼容 macOS，支持 Unicode）
+    chinese_pct=$(python3 -c "
+import sys
+with open('$f', 'r', errors='replace') as f:
+    text = f.read()
+total = len(text)
+if total < 20:
+    print('0')
+    sys.exit(0)
+chinese = sum(1 for c in text if '一' <= c <= '鿿' or '　' <= c <= '〿' or '＀' <= c <= '￯')
+print(str(int(chinese / total * 100)))
+" 2>/dev/null)
+
+    if [ -z "$chinese_pct" ]; then
+        chinese_pct=0
+    fi
+
+    if [ "$chinese_pct" -ge 5 ]; then
+        echo "[$((i+1))/$total] ⏭️  $name (中文 ${chinese_pct}%)"
         skipped=$((skipped+1))
         continue
     fi
 
-    # 检测是否已含中文字符，跳过中文原文
-    chinese_count=$(echo "$content" | grep -oP '[\x{4e00}-\x{9fff}]' | wc -l | tr -d ' ')
-    total_chars=$(echo -n "$content" | wc -m | tr -d ' ')
-    if [ "$total_chars" -gt 0 ] && [ "$((chinese_count * 100 / total_chars))" -ge 5 ]; then
-        echo "[$((i+1))/$total] ⏭️  $name (已含中文，跳过)"
-        skipped=$((skipped+1))
-        continue
-    fi
-
-    echo "[$((i+1))/$total] 🔄 $name ..."
+    echo "[$((i+1))/$total] 🔄 $name (中文 ${chinese_pct}%) ..."
 
     # 用 claude 翻译
-    if echo "$content" | claude -p 'Translate this English markdown to Chinese. Respond with ONLY the translated markdown, no explanations, no greetings, no notes. Keep all image references ![alt](path), links [text](url), code blocks, and markdown formatting exactly as-is. Preserve the attachment/ paths unchanged.' > "$out.tmp" 2>/dev/null; then
+    if cat "$f" | claude -p 'Translate this English markdown to Chinese. Respond with ONLY the translated markdown, no explanations, no greetings, no notes. Keep all image references ![alt](path), links [text](url), code blocks, and markdown formatting exactly as-is. Preserve the attachment/ paths unchanged.' > "$out.tmp" 2>/dev/null; then
         # 去掉可能的 markdown 代码块包装
-        sed -i '' -e '/^```/d' -e 's/^```markdown//' "$out.tmp" 2>/dev/null || true
+        sed -i '' -e '/^```/d' "$out.tmp" 2>/dev/null || true
         mv "$out.tmp" "$out"
         echo "      ✅ $name"
         ok=$((ok+1))
