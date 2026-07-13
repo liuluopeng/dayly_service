@@ -1,5 +1,5 @@
 [package]
-name = "clipboard-monitor"
+name = "local-agent"
 version = "0.1.0"
 edition = "2021"
 

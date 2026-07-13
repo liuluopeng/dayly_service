@@ -1,8 +1,6 @@
-//! clipboard-monitor — macOS 剪贴板图片监控守护进程
+//! local-agent — macOS 本地守护进程
 //!
-//! 后台监听系统剪贴板，检测到新图片时：
-//!   1. 保存到 ~/Pictures/clipboard/ （本地备份）
-//!   2. POST 到 dayly_service OCR 端点识别
+//! - 剪贴板监听：检测到新图片时，保存到 ~/Pictures/clipboard/
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -99,11 +97,11 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive("clipboard_monitor=info".parse().unwrap()),
+                .add_directive("local_agent=info".parse().unwrap()),
         )
         .init();
 
-    info!("clipboard-monitor 启动");
+    info!("local-agent 启动");
 
     let mut state = State::default();
     let mut clipboard = match Clipboard::new() {

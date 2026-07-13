@@ -6,7 +6,7 @@ members = [
     "webbvueetauri/src-tauri",
     "webbvueetauri/src/src-wasm",
     "my_type",
-    "clipboard-monitor",
+    "local-agent",
 ]
 
 
