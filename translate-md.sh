@@ -1,9 +1,21 @@
 #!/bin/bash
 # translate-md.sh — 批量翻译英文 Markdown 为中文
-# 用法: ./translate-md.sh [目录]
-# 默认目录: /Volumes/six/MD
+# 用法: ./translate-md.sh [-m 模型] [目录]
+# 默认: haiku 模型, /Volumes/six/MD 目录
 
-DIR="${1:-/Volumes/six/MD}"
+set -euo pipefail
+
+MODEL="haiku"
+DIR="/Volumes/six/MD"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -m|--model) MODEL="$2"; shift 2 ;;
+        -*) echo "未知选项: $1"; exit 1 ;;
+        *) DIR="$1"; shift ;;
+    esac
+done
+
 OUT_DIR="${DIR}/zh"
 
 mkdir -p "$OUT_DIR"
@@ -16,6 +28,7 @@ if [ ${#files[@]} -eq 0 ]; then
     exit 1
 fi
 
+echo "模型: $MODEL"
 echo "找到 ${#files[@]} 个文件"
 echo "输出: $OUT_DIR"
 echo ""
@@ -36,11 +49,10 @@ for ((i=0; i<total; i++)); do
         continue
     fi
 
-    # 用 python3 检测中文字符占比（兼容 macOS，支持 Unicode）
+    # 用 python3 检测中文字符占比（兼容 macOS）
     chinese_pct=$(python3 -c "
 import sys
-with open('$f', 'r', errors='replace') as f:
-    text = f.read()
+text = open('$f', 'r', errors='replace').read()
 total = len(text)
 if total < 20:
     print('0')
@@ -62,7 +74,7 @@ print(str(int(chinese / total * 100)))
     echo "[$((i+1))/$total] 🔄 $name (中文 ${chinese_pct}%) ..."
 
     # 用 claude 翻译
-    if cat "$f" | claude -p 'Translate this English markdown to Chinese. Respond with ONLY the translated markdown, no explanations, no greetings, no notes. Keep all image references ![alt](path), links [text](url), code blocks, and markdown formatting exactly as-is. Preserve the attachment/ paths unchanged.' > "$out.tmp" 2>/dev/null; then
+    if cat "$f" | claude --model "$MODEL" -p 'Translate this English markdown to Chinese. Respond with ONLY the translated markdown, no explanations, no greetings, no notes. Keep all image references ![alt](path), links [text](url), code blocks, and markdown formatting exactly as-is. Preserve the attachment/ paths unchanged.' > "$out.tmp" 2>/dev/null; then
         # 去掉可能的 markdown 代码块包装
         sed -i '' -e '/^```/d' "$out.tmp" 2>/dev/null || true
         mv "$out.tmp" "$out"
@@ -73,7 +85,6 @@ print(str(int(chinese / total * 100)))
         rm -f "$out.tmp"
     fi
 
-    # 间隔，避免 claude 速率限制
     sleep 2
 done
 
