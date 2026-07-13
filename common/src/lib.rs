@@ -23,6 +23,10 @@ pub mod api {
 pub mod read_metadata;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod color_extract;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod mhtml;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod ocr;
 
 pub mod front_can_do {
     pub mod base64;
