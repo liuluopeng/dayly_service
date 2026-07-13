@@ -39,7 +39,7 @@ fn main() {
                 eprintln!("文件不存在: {}", input.display());
                 std::process::exit(1);
             }
-            if let Err(e) = convert::convert_mhtml(&input) {
+            if let Err(e) = convert::convert_mhtml(&input, &convert::output_dir()) {
                 eprintln!("转换失败: {}", e);
                 std::process::exit(1);
             }
