@@ -22,10 +22,13 @@ struct Cli {
 enum Commands {
     /// 监听剪贴板，自动保存图片
     Monitor,
-    /// 将 MHTML 文件转换为 Markdown
+    /// 将 MHTML 文件/目录转换为 Markdown
     Convert {
-        /// MHTML 文件路径
+        /// MHTML 文件或包含 .mhtml 的目录
         input: PathBuf,
+        /// 输出目录（默认 /Volumes/six/MD）
+        #[arg(short, long, default_value = "/Volumes/six/MD")]
+        output: PathBuf,
     },
 }
 
@@ -34,15 +37,53 @@ fn main() {
 
     match cli.command.unwrap_or(Commands::Monitor) {
         Commands::Monitor => run_monitor(),
-        Commands::Convert { input } => {
+        Commands::Convert { input, output } => {
             if !input.exists() {
                 eprintln!("文件不存在: {}", input.display());
                 std::process::exit(1);
             }
-            if let Err(e) = convert::convert_mhtml(&input, &convert::output_dir()) {
-                eprintln!("转换失败: {}", e);
+
+            let files: Vec<PathBuf> = if input.is_dir() {
+                let readdir = match std::fs::read_dir(&input) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        eprintln!("读取目录失败: {}", e);
+                        std::process::exit(1);
+                    }
+                };
+                let mut list = Vec::new();
+                for entry in readdir {
+                    let entry = match entry {
+                        Ok(e) => e,
+                        Err(e) => {
+                            eprintln!("读取目录项失败: {}", e);
+                            continue;
+                        }
+                    };
+                    let path = entry.path();
+                    if path.extension().map(|e| e == "mhtml").unwrap_or(false) {
+                        list.push(path);
+                    }
+                }
+                list.sort();
+                list
+            } else {
+                vec![input.clone()]
+            };
+
+            if files.is_empty() {
+                eprintln!("未找到 .mhtml 文件");
                 std::process::exit(1);
             }
+
+            let total = files.len();
+            for (i, f) in files.iter().enumerate() {
+                eprintln!("\n[{}/{}] {}", i + 1, total, f.display());
+                if let Err(e) = convert::convert_mhtml(f, &output) {
+                    eprintln!("  ❌ {}", e);
+                }
+            }
+            eprintln!("\n完成：{}/{} 个文件已处理", total, total);
         }
     }
 }

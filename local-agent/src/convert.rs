@@ -1,16 +1,10 @@
 //! MHTML → Markdown 转换命令
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use common::mhtml::html::{apply_image_replacements, build_image_map, clean_body_html, extract_article_body};
 use common::mhtml::markdown::html_to_markdown;
 use common::mhtml::mhtml::parse_mhtml;
-
-const OUTPUT_DIR: &str = "/Volumes/six/MD";
-
-pub fn output_dir() -> PathBuf {
-    PathBuf::from(OUTPUT_DIR)
-}
 
 /// 将 MHTML 文件转换为 MD + 图片，保存到固定目录
 pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
