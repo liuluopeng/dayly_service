@@ -77,13 +77,25 @@ fn main() {
             }
 
             let total = files.len();
-            for (i, f) in files.iter().enumerate() {
-                eprintln!("\n[{}/{}] {}", i + 1, total, f.display());
-                if let Err(e) = convert::convert_mhtml(f, &output) {
-                    eprintln!("  ❌ {}", e);
+            eprintln!("开始处理 {} 个文件...\n", total);
+
+            use rayon::prelude::*;
+            let results: Vec<(&PathBuf, Result<(), String>)> = files
+                .par_iter()
+                .map(|f| {
+                    let result = convert::convert_mhtml(f, &output);
+                    (f, result)
+                })
+                .collect();
+
+            let ok = results.iter().filter(|(_, r)| r.is_ok()).count();
+            let fail = results.iter().filter(|(_, r)| r.is_err()).count();
+            for (f, result) in &results {
+                if let Err(e) = result {
+                    eprintln!("  ❌ {}: {}", f.display(), e);
                 }
             }
-            eprintln!("\n完成：{}/{} 个文件已处理", total, total);
+            eprintln!("\n完成：{} 成功，{} 失败，共 {}", ok, fail, total);
         }
     }
 }
