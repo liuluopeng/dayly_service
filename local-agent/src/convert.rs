@@ -26,7 +26,7 @@ pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
     let raw_mappings = build_image_map(&body, &doc.resources);
     eprintln!("  [信息] 找到 {} 张图片", raw_mappings.len());
 
-    // 4. 生成时间戳文件名，构建最终映射
+    // 4. 生成时间戳文件名，构建最终映射（统一放到 attachment/ 下）
     let mut img_idx = 0usize;
     let now = chrono::Local::now();
     let ts = now.format("%Y%m%d_%H%M%S");
@@ -34,7 +34,7 @@ pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
     let mut mappings: Vec<(String, String, Vec<u8>, String)> = Vec::new();
     for (orig_url, _old_name, data, mime) in &raw_mappings {
         let ext = mime_to_ext(mime);
-        let local_name = format!("{}_{}.{}", ts, img_idx, ext);
+        let local_name = format!("attachment/{}_{}.{}", ts, img_idx, ext);
         mappings.push((orig_url.clone(), local_name, data.clone(), mime.clone()));
         img_idx += 1;
     }
@@ -48,11 +48,13 @@ pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
     // 7. 转 Markdown
     let markdown = html_to_markdown(&cleaned);
 
-    // 8. 确保输出目录存在
+    // 8. 确保输出目录和附件目录存在
     std::fs::create_dir_all(out_dir)
         .map_err(|e| format!("创建输出目录失败: {}", e))?;
+    std::fs::create_dir_all(out_dir.join("attachment"))
+        .map_err(|e| format!("创建附件目录失败: {}", e))?;
 
-    // 10. 保存图片到输出目录
+    // 9. 保存图片到 attachment/
     for (_orig_url, local_name, data, _mime) in &mappings {
         let img_path = out_dir.join(local_name);
         std::fs::write(&img_path, data)
