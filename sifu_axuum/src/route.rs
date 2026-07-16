@@ -146,17 +146,10 @@ pub fn create_app(
                 ),
         );
 
-    // 使用fallback机制处理所有未匹配的路由，指向static/hello目录
-    // 这样既能保持API路由正常工作，又能方便地访问所有子目录
     router = router
         .nest("/api/mhtml", crate::controller::mhtml_convert::mhtml_routes())
         .nest("/api", crate::controller::ocr::ocr_routes())
         .nest("/api/clipboard", crate::controller::clipboard::clipboard_routes());
-    router = router.fallback_service(
-        ServeDir::new("static/hello/")
-            .append_index_html_on_directories(true)
-            .precompressed_gzip(),
-    );
 
     router
 }

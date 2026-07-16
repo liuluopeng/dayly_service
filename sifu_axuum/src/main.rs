@@ -81,6 +81,25 @@ async fn main() {
         signaling_state,
     );
 
+    // 将 gRPC 服务嵌入到同一个 axum 服务器
+    let hello_svc = lx_dayly_service::grpc::hello_grpc_service();
+    let clipboard_svc = lx_dayly_service::grpc::clipboard_grpc_service();
+    let reflection_svc = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(lx_dayly_service::grpc::HELLO_DESCRIPTOR)
+        .register_encoded_file_descriptor_set(lx_dayly_service::grpc::CLIPBOARD_DESCRIPTOR)
+        .build_v1()
+        .unwrap();
+    let app = tonic::service::Routes::new(hello_svc)
+        .add_service(clipboard_svc)
+        .add_service(reflection_svc)
+        .into_axum_router()
+        .merge(app)
+        .fallback_service(
+            tower_http::services::ServeDir::new("static/hello/")
+                .append_index_html_on_directories(true)
+                .precompressed_gzip(),
+        );
+
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, port))
         .await
         .unwrap();

@@ -22,6 +22,7 @@ clap = { workspace = true }
 lazy_static = { workspace = true }
 dotenv = { workspace = true }
 tonic = { workspace = true }
+tonic-reflection = "0.13"
 prost = { workspace = true }
 tower-http = { workspace = true }
 axum-extra = { workspace = true }

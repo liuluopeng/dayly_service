@@ -50,6 +50,7 @@ mod handlers;
 pub mod logger;
 pub mod middleware;
 pub mod route;
+pub mod grpc;
 pub mod utils;
 
 pub use logger::{ColoredFields, HttpFormatter};
