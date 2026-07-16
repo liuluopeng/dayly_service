@@ -21,6 +21,7 @@ pub mod controller {
     pub mod videos;
     pub mod mhtml_convert;
     pub mod ocr;
+    pub mod clipboard;
 
     pub use dict::{dict_resource_routes, dict_routes};
     pub use files::file_routes;
@@ -28,6 +29,7 @@ pub mod controller {
     pub use melatonin::melatonin_routes;
     pub use mhtml_convert::mhtml_routes;
     pub use ocr::ocr_routes;
+    pub use clipboard::clipboard_routes;
     pub use images::images_routes;
     pub use media_paths::media_paths_routes;
     pub use note::note_routes;

@@ -45,6 +45,7 @@ my_type = { path = "../my_type" }
 thiserror = {workspace = true}
 redis = { workspace = true }
 tokio-util = { workspace = true }
+dirs = "6.0"
 
 anyhow.workspace = true
 walkdir = "2.5"
