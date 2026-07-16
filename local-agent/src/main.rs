@@ -122,7 +122,10 @@ fn main() {
 // ─── history 子命令 ────────────────────────────────────────────
 
 fn cmd_history(count: usize, search: Option<&str>, filter_type: Option<&str>) {
-    let hist = match history::ClipboardHistory::open(1000) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let hist = rt.block_on(history::ClipboardHistory::open(1000));
+
+    let hist = match hist {
         Ok(h) => h,
         Err(e) => {
             eprintln!("❌ 打开历史数据库失败: {}", e);
@@ -130,11 +133,13 @@ fn cmd_history(count: usize, search: Option<&str>, filter_type: Option<&str>) {
         }
     };
 
-    let entries = if let Some(keyword) = search {
-        hist.search(keyword, count)
-    } else {
-        hist.recent(count, filter_type)
-    };
+    let entries = rt.block_on(async {
+        if let Some(keyword) = search {
+            hist.search(keyword, count).await
+        } else {
+            hist.recent(count, filter_type).await
+        }
+    });
 
     let entries = match entries {
         Ok(entries) => entries,
@@ -144,7 +149,7 @@ fn cmd_history(count: usize, search: Option<&str>, filter_type: Option<&str>) {
         }
     };
 
-    let total = hist.total_count().unwrap_or(0);
+    let total = rt.block_on(hist.total_count()).unwrap_or(0);
     println!("📋 剪贴板历史 (共 {} 条，显示 {} 条)\n", total, entries.len());
 
     if entries.is_empty() {
@@ -288,8 +293,10 @@ fn run_monitor() {
         )
         .init();
 
-    // 初始化历史数据库
-    let hist = match history::ClipboardHistory::open(MAX_HISTORY) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+
+    // 初始化历史数据库（异步）
+    let hist = match rt.block_on(history::ClipboardHistory::open(MAX_HISTORY)) {
         Ok(h) => h,
         Err(e) => {
             error!("初始化剪贴板历史失败: {}", e);
@@ -299,8 +306,6 @@ fn run_monitor() {
 
     info!("local-agent monitor 启动");
     info!("剪贴板历史已启用 (最多 {} 条)", MAX_HISTORY);
-
-    let rt = tokio::runtime::Runtime::new().unwrap();
 
     let mut state = State::default();
     let mut clipboard = match Clipboard::new() {
@@ -335,7 +340,8 @@ fn run_monitor() {
                 let trimmed = text.trim();
                 if !trimmed.is_empty() && trimmed.len() < 100_000 {
                     let hash_hex = format!("{:016x}", hash);
-                    match hist.insert_text(trimmed, &hash_hex) {
+                    let inserted = rt.block_on(hist.insert_text(trimmed, &hash_hex));
+                    match inserted {
                         Ok(true) => {
                             let preview = if trimmed.len() > 80 {
                                 format!("{}...", &trimmed[..80])
@@ -368,7 +374,7 @@ fn run_monitor() {
 
                 if let Some(path) = save_image(bytes, w as usize, h as usize) {
                     let hash_hex = format!("{:016x}", hash);
-                    if let Err(e) = hist.insert_image(path.to_string_lossy().as_ref(), &hash_hex) {
+                    if let Err(e) = rt.block_on(hist.insert_image(path.to_string_lossy().as_ref(), &hash_hex)) {
                         error!("记录图片历史失败: {}", e);
                     }
 
