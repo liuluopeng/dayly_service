@@ -5,15 +5,11 @@
 
 #[cfg(target_os = "macos")]
 mod imp {
-    use objc2::rc::Retained;
     use objc2_app_kit::NSPasteboard;
-    use objc2_foundation::NSInteger;
 
     pub fn change_count() -> i64 {
-        unsafe {
-            let pb = NSPasteboard::generalPasteboard();
-            pb.changeCount() as i64
-        }
+        let pb = NSPasteboard::generalPasteboard();
+        pb.changeCount() as i64
     }
 }
 
