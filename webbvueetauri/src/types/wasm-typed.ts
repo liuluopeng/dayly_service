@@ -24,6 +24,7 @@ import type {
   GgttResult,
   OpenAiSession,
   OpenAiMessage,
+  ClipboardEntry,
 } from './models';
 
 // === 歌曲 ===
@@ -139,3 +140,7 @@ export const get_entry_size = wasm.get_entry_size;
 export const get_explanation_for_word = wasm.get_explanation_for_word;
 export const get_direction = wasm.get_direction;
 export const my_console_log = wasm.my_console_log;
+
+// === 剪贴板 ===
+export const get_clipboard_history_wasm = (count?: number | null, type_filter?: string | null, search?: string | null): Promise<ClipboardEntry[]> =>
+  wasm.get_clipboard_history_wasm(count, type_filter, search) as any;

@@ -15,6 +15,7 @@ import 'package:kongde/pages/sharing_page.dart';
 import 'package:kongde/pages/tools_home_page.dart';
 import 'package:kongde/pages/piano_keyboard_page.dart';
 import 'package:kongde/views/note_view.dart';
+import 'package:kongde/pages/clipboard_history_page.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -76,7 +77,7 @@ class _ContactsPageState extends State<ContactsPage> {
                   crossAxisSpacing: crossAxisSpacing,
                   childAspectRatio: 0.85,
                 ),
-                itemCount: 15,
+                itemCount: 16,
                 itemBuilder: (context, index) {
                   final menuItems = [
                     {
@@ -156,6 +157,11 @@ class _ContactsPageState extends State<ContactsPage> {
                       'icon': Icons.share,
                       'title': '局域网共享',
                       'onTap': () => Get.to(() => const SharingPage()),
+                    },
+                    {
+                      'icon': Icons.content_paste,
+                      'title': 'menu.clipboardHistory'.tr,
+                      'onTap': () => Get.to(() => const ClipboardHistoryPage()),
                     },
                   ];
 

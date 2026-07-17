@@ -17,6 +17,8 @@
       "saveFailed": "保存失败",
       "deleteFailed": "删除失败"
     },
+    "all": "全部",
+    "search": "搜索",
     "noData": "暂无数据",
     "unnamed": "无标题",
     "noContent": "无内容",
@@ -83,6 +85,13 @@
     "shortNotes": {
       "title": "短笔记",
       "desc": "快速记录和管理笔记"
+    },
+    "clipboardHistory": {
+      "title": "剪贴板历史",
+      "desc": "查看剪贴板历史记录",
+      "text": "文本",
+      "image": "图片",
+      "noPreview": "无预览"
     },
     "chat": {
       "title": "AI 对话",

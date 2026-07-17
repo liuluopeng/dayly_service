@@ -1,6 +1,7 @@
 pub mod api {
     pub mod base;
     pub mod client;
+    pub mod clipboard;
     pub mod dict;
     pub mod files;
     pub mod ggtt;
@@ -25,7 +26,7 @@ pub mod read_metadata;
 pub mod color_extract;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod mhtml;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "ocr")]
 pub mod ocr;
 
 pub mod front_can_do {

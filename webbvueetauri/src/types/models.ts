@@ -213,3 +213,15 @@ export interface ContactItem {
   id: string;
   username: string;
 }
+
+// === 剪贴板 ===
+
+export interface ClipboardEntry {
+  id: number;
+  type: string;
+  text_content?: string | null;
+  content_hash: string;
+  created_at: string;
+  image_url?: string | null;
+  image_path?: string | null;
+}

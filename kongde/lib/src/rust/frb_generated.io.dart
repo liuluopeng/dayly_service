@@ -17,6 +17,7 @@ import 'api/utils/password.dart';
 import 'api/utils/timestamp.dart';
 import 'api/utils/uuid.dart';
 import 'api/wifi_api/chat.dart';
+import 'api/wifi_api/clipboard.dart';
 import 'api/wifi_api/dict.dart';
 import 'api/wifi_api/files.dart';
 import 'api/wifi_api/ggtt.dart';
@@ -192,6 +193,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_box_autoadd_u_32(dynamic raw);
 
   @protected
+  ClipboardEntry dco_decode_clipboard_entry(dynamic raw);
+
+  @protected
   ColorInfo dco_decode_color_info(dynamic raw);
 
   @protected
@@ -232,6 +236,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<ClipboardEntry> dco_decode_list_clipboard_entry(dynamic raw);
 
   @protected
   List<FileEntryForDart> dco_decode_list_file_entry_for_dart(dynamic raw);
@@ -498,6 +505,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
+  ClipboardEntry sse_decode_clipboard_entry(SseDeserializer deserializer);
+
+  @protected
   ColorInfo sse_decode_color_info(SseDeserializer deserializer);
 
   @protected
@@ -540,6 +550,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<ClipboardEntry> sse_decode_list_clipboard_entry(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<FileEntryForDart> sse_decode_list_file_entry_for_dart(
@@ -845,6 +860,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_clipboard_entry(
+    ClipboardEntry self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_color_info(ColorInfo self, SseSerializer serializer);
 
   @protected
@@ -898,6 +919,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_clipboard_entry(
+    List<ClipboardEntry> self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_file_entry_for_dart(

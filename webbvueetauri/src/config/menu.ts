@@ -86,6 +86,12 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
       description: '剪贴板同步和文件传输'
     },
     {
+      path: '/clipboard-history',
+      title: t('menu.clipboardHistory.title'),
+      icon: '📋',
+      description: t('menu.clipboardHistory.desc')
+    },
+    {
       path: '/notes',
       title: t('menu.notes.title'),
       icon: '📚',

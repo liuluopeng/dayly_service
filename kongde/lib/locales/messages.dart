@@ -68,6 +68,10 @@ class Messages extends Translations {
       'menu.pianoKeyboard': '钢琴键盘',
       'menu.tools': '工具函数',
       'menu.fileManager': '文件管理',
+      'menu.clipboardHistory': '剪贴板历史',
+      'menu.clipboardHistoryText': '文本',
+      'menu.clipboardHistoryImage': '图片',
+      'menu.clipboardHistoryNoPreview': '无预览',
 
       // Settings
       'settings.title': '设置',
@@ -436,6 +440,10 @@ class Messages extends Translations {
       'menu.pianoKeyboard': 'Piano',
       'menu.tools': 'Tools',
       'menu.fileManager': 'File Manager',
+      'menu.clipboardHistory': 'Clipboard History',
+      'menu.clipboardHistoryText': 'Text',
+      'menu.clipboardHistoryImage': 'Image',
+      'menu.clipboardHistoryNoPreview': 'No Preview',
 
       // Settings
       'settings.title': 'Settings',

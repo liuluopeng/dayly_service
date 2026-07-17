@@ -51,6 +51,7 @@ pub mod api {
         pub mod webrtc;
 
         // 仅用 reqwest（已支持 WASM），无需 stub
+        pub mod clipboard;
         pub mod dict;
         pub mod files;
         pub mod ggtt;

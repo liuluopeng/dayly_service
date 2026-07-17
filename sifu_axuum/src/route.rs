@@ -96,6 +96,7 @@ pub fn create_app(
         .merge(secured_routes)
         .merge(crate::controller::dict_resource_routes())
         .nest("/api/pinyin", crate::controller::pinyin::pinyin_routes())
+        .nest("/api/clipboard", crate::controller::clipboard::clipboard_routes())
         .merge(crate::controller::songs::songs_cover_route())
         .merge(crate::controller::songs::songs_file_route())
         .route("/hello", get(crate::handlers::hello_world))
@@ -148,8 +149,7 @@ pub fn create_app(
 
     router = router
         .nest("/api/mhtml", crate::controller::mhtml_convert::mhtml_routes())
-        .nest("/api", crate::controller::ocr::ocr_routes())
-        .nest("/api/clipboard", crate::controller::clipboard::clipboard_routes());
+        .nest("/api", crate::controller::ocr::ocr_routes());
 
     router
 }

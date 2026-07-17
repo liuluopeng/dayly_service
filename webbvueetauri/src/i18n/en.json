@@ -17,6 +17,8 @@
       "saveFailed": "Failed to save",
       "deleteFailed": "Failed to delete"
     },
+    "all": "All",
+    "search": "Search",
     "noData": "No data",
     "unnamed": "Untitled",
     "noContent": "No content",
@@ -83,6 +85,13 @@
     "shortNotes": {
       "title": "Quick Notes",
       "desc": "Quickly create and manage notes"
+    },
+    "clipboardHistory": {
+      "title": "Clipboard History",
+      "desc": "View clipboard history",
+      "text": "Text",
+      "image": "Image",
+      "noPreview": "No preview"
     },
     "chat": {
       "title": "AI Chat",

@@ -27,6 +27,7 @@ import VideoList from '../views/VideoList.vue';
 import UserDirectoryAdmin from '../views/UserDirectoryAdmin.vue';
 import Chat from '../views/Chat.vue';
 import Sharing from '../views/Sharing.vue';
+import ClipboardHistory from '../views/ClipboardHistory.vue';
 
 import Base64Tool from '../views/Base64Tool.vue';
 import TimestampTool from '../views/TimestampTool.vue';
@@ -240,6 +241,11 @@ const routes = [
     component: UserDirectoryAdmin
   },
   {
+    path: '/clipboard-history',
+    name: 'ClipboardHistory',
+    component: ClipboardHistory
+  },
+  {
     path: '/chat',
     name: 'Chat',
     component: Chat
@@ -264,7 +270,7 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const token = localStorage.getItem('token');
 
-  const requiresAuth = ['/menu', '/ggtt', '/xiandaihanyu', '/collins', '/ldoce', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/search-history', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing'];
+  const requiresAuth = ['/menu', '/ggtt', '/xiandaihanyu', '/collins', '/ldoce', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/search-history', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history'];
 
   if (to.path === '/login' && token) {
     return '/menu';

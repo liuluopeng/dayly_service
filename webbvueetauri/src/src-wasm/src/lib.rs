@@ -1,5 +1,6 @@
 mod api {
     pub mod admin;
+    pub mod clipboard;
     pub mod dict;
     pub mod files;
     pub mod ggtt;
@@ -66,6 +67,7 @@ pub use utils::uuid::{
     generate_uuid_v4, generate_uuid_v5, generate_uuid_v6, generate_uuid_v7, validate_uuid,
 };
 
+pub use api::clipboard::get_clipboard_history_wasm;
 pub use api::init::get_base_url_wasm;
 pub use api::init::init_api;
 pub use api::init::set_api_port;

@@ -40,7 +40,7 @@ rusqlite = { workspace = true }
 regex = { workspace = true }
 fancy-regex = { workspace = true }
 http = { workspace = true }
-common = { path = "../common" }
+common = { path = "../common", features = ["ocr"] }
 my_type = { path = "../my_type" }
 
 thiserror = {workspace = true}
