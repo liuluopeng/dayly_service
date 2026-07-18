@@ -36,6 +36,7 @@ import PasswordTool from '../views/PasswordTool.vue';
 import ChineseRemover from '../views/ChineseRemover.vue';
 import ImageConverter from '../views/ImageConverter.vue';
 import QrCodeGenerator from '../views/QrCodeGenerator.vue';
+import QrCodeScanner from '../views/QrCodeScanner.vue';
 import ZiciChars from '../views/zici/HomePage.vue';
 import ZiciWords from '../views/zici/WordPage.vue';
 import ZiciDictation from '../views/zici/DictationPage.vue';
@@ -196,6 +197,11 @@ const routes = [
     path: '/tools/qrcode',
     name: 'QrCodeGenerator',
     component: QrCodeGenerator
+  },
+  {
+    path: '/tools/qrscan',
+    name: 'QrCodeScanner',
+    component: QrCodeScanner
   },
   {
     path: '/zici/chars',

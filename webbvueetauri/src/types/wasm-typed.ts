@@ -142,6 +142,7 @@ export const resize_image_wasm = wasm.resize_image_wasm;
 export const generate_qr_png_wasm = wasm.generate_qr_png_wasm;
 export const generate_qr_unicode_wasm = wasm.generate_qr_unicode_wasm;
 export const qr_info_wasm = wasm.qr_info_wasm;
+export const scan_qr_from_image_wasm = wasm.scan_qr_from_image_wasm;
 
 // === zici ===
 export const get_new_chars = wasm.get_new_chars;

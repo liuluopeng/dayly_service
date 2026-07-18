@@ -173,6 +173,13 @@
           "margin": "Margin",
           "generate": "Generate",
           "version": "QR version"
+        },
+        "qrscan": {
+          "title": "QR Scan",
+          "desc": "Scan QR codes from images",
+          "select": "Select image",
+          "result": "Result",
+          "noQr": "No QR code found in image"
         }
       },
       "imageConverter": {

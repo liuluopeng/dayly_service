@@ -194,6 +194,12 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
           title: t('menu.tools.qrcode.title'),
           icon: '📱',
           description: t('menu.tools.qrcode.desc')
+        },
+        {
+          path: '/tools/qrscan',
+          title: t('menu.tools.qrscan.title'),
+          icon: '📷',
+          description: t('menu.tools.qrscan.desc')
         }
       ]
     },
