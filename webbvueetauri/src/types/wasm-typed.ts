@@ -154,6 +154,37 @@ export const get_explanation_for_word = wasm.get_explanation_for_word;
 export const get_direction = wasm.get_direction;
 export const my_console_log = wasm.my_console_log;
 
+// === 游戏 ===
+export const game2048_init = wasm.game2048_init;
+export const game2048_board = wasm.game2048_board;
+export const game2048_score = wasm.game2048_score;
+export const game2048_max_tile = wasm.game2048_max_tile;
+export const game2048_won = wasm.game2048_won;
+export const game2048_over = wasm.game2048_over;
+export const game2048_move = wasm.game2048_move;
+export const game2048_undo = wasm.game2048_undo;
+export const snake_init = wasm.snake_init;
+export const snake_tick = wasm.snake_tick;
+export const snake_set_dir = wasm.snake_set_dir;
+export const snake_board = wasm.snake_board;
+export const snake_score = wasm.snake_score;
+export const snake_over = wasm.snake_over;
+export const ms_init = wasm.ms_init;
+export const ms_click = wasm.ms_click;
+export const ms_toggle_flag = wasm.ms_toggle_flag;
+export const ms_cells = wasm.ms_cells;
+export const ms_revealed = wasm.ms_revealed;
+export const ms_flagged = wasm.ms_flagged;
+export const ms_over = wasm.ms_over;
+export const ms_won = wasm.ms_won;
+export const ms_flag_count = wasm.ms_flag_count;
+export const tetris_init = wasm.tetris_init;
+export const tetris_tick = wasm.tetris_tick;
+export const tetris_move = wasm.tetris_move;
+export const tetris_board = wasm.tetris_board;
+export const tetris_score = wasm.tetris_score;
+export const tetris_over = wasm.tetris_over;
+
 // === 剪贴板 ===
 export const get_clipboard_history_wasm = (count?: number | null, type_filter?: string | null, search?: string | null): Promise<ClipboardEntry[]> =>
   wasm.get_clipboard_history_wasm(count, type_filter, search) as any;
