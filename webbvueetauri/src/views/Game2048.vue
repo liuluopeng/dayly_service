@@ -54,6 +54,7 @@ onUnmounted(()=>{localStorage.setItem("best2048",best.value.toString());window.r
       <div class="bg-gray-600 rounded-lg p-2" style="width:min(85vw,400px);height:min(85vw,400px)">
         <div class="grid grid-cols-4 gap-2 w-full h-full">
           <div v-for="(v,i) in board" :key="i" class="rounded flex items-center justify-center font-bold transition-all duration-100"
+               style="aspect-ratio:1"
                :style="{backgroundColor:tileColors[v]||'#3c3a32',color:tc(v),fontSize:fs(v)}">{{v||''}}</div>
         </div>
       </div>
