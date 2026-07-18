@@ -34,6 +34,7 @@ import TimestampTool from '../views/TimestampTool.vue';
 import UUIDTool from '../views/UUIDTool.vue';
 import PasswordTool from '../views/PasswordTool.vue';
 import ChineseRemover from '../views/ChineseRemover.vue';
+import ImageConverter from '../views/ImageConverter.vue';
 import ZiciChars from '../views/zici/HomePage.vue';
 import ZiciWords from '../views/zici/WordPage.vue';
 import ZiciDictation from '../views/zici/DictationPage.vue';
@@ -184,6 +185,11 @@ const routes = [
     path: '/tools/chinese-remover',
     name: 'ChineseRemover',
     component: ChineseRemover
+  },
+  {
+    path: '/tools/image-converter',
+    name: 'ImageConverter',
+    component: ImageConverter
   },
   {
     path: '/zici/chars',

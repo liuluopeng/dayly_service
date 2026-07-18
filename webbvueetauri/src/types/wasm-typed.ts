@@ -131,6 +131,13 @@ export const timestamp_to_local = wasm.timestamp_to_local;
 export const timestamp_to_utc = wasm.timestamp_to_utc;
 export const local_to_timestamp = wasm.local_to_timestamp;
 
+// === 图片转换 ===
+export const detect_image_format = wasm.detect_image_format;
+export const convert_image_wasm = wasm.convert_image_wasm;
+export const convert_image_with_size_wasm = wasm.convert_image_with_size_wasm;
+export const crop_image_wasm = wasm.crop_image_wasm;
+export const resize_image_wasm = wasm.resize_image_wasm;
+
 // === zici ===
 export const get_new_chars = wasm.get_new_chars;
 export const get_new_words = wasm.get_new_words;

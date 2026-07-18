@@ -32,6 +32,7 @@ pub mod ocr;
 pub mod front_can_do {
     pub mod base64;
     pub mod get_url_from_mhtml;
+    pub mod image_convert;
     pub mod password;
     pub mod timestamp;
     pub mod uuid;

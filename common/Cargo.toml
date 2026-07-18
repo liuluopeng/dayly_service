@@ -26,6 +26,7 @@ html2text = "0.14"
 my_type = { path = "../my_type" }
 ort = { version = "2.0.0-rc.12", optional = true }
 ndarray = { version = "0.17", optional = true }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
 
 # 为不同目标配置不同的依赖
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -34,7 +35,6 @@ reqwest = { version = "0.12", features = ["blocking", "rustls-tls", "json"], def
 tokio = { workspace = true }
 lofty = { workspace = true }
 rayon = { workspace = true }
-image = { workspace = true }
 regex = { workspace = true }
 scraper = "0.23"
 ego-tree = "0.10"

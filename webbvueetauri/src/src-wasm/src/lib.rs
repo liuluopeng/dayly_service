@@ -24,6 +24,7 @@ mod utils {
     pub mod calculator;
     pub mod console_log;
     pub mod greeter;
+    pub mod image_convert;
     pub mod password;
     pub mod timestamp;
     pub mod uuid;
@@ -72,3 +73,7 @@ pub use api::init::get_base_url_wasm;
 pub use api::init::init_api;
 pub use api::init::set_api_port;
 pub use api::zici::{get_direction, get_entry_size, get_explanation_for_word, get_new_chars, get_new_words, get_word_count, get_words_data, my_console_log};
+pub use utils::image_convert::{
+    convert_image_wasm, convert_image_with_size_wasm, crop_image_wasm, detect_image_format,
+    resize_image_wasm,
+};

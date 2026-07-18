@@ -19,6 +19,10 @@
     },
     "all": "All",
     "search": "Search",
+    "download": "Download",
+    "reset": "Reset",
+    "select": "Select",
+    "unknown": "Unknown",
     "noData": "No data",
     "unnamed": "Untitled",
     "noContent": "No content",
@@ -152,10 +156,33 @@
         "title": "Password Generator",
         "desc": "Generate random passwords"
       },
-      "chineseRemover": {
-        "title": "Chinese Remover",
-        "desc": "Remove Chinese characters and punctuation from text"
-      }
+        "chineseRemover": {
+          "title": "Chinese Remover",
+          "desc": "Remove Chinese characters"
+        },
+        "imageConverter": {
+          "title": "Image Converter",
+          "desc": "Convert image formats in browser"
+        }
+      },
+      "imageConverter": {
+        "title": "Image Converter",
+        "original": "Original",
+        "result": "Result",
+        "format": "Target format",
+        "quality": "Quality",
+        "low": "Low",
+        "medium": "Med",
+        "high": "High",
+        "max": "Max",
+        "convert": "Convert",
+        "crop": "Crop",
+        "resetCrop": "Reset to full",
+        "resize": "Resize",
+        "width": "Width",
+        "height": "Height",
+        "keepRatio": "Keep aspect ratio",
+        "download": "Download"
     },
     "images": {
       "title": "Image Gallery",
