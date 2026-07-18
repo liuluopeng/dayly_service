@@ -92,6 +92,12 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
       description: t('menu.clipboardHistory.desc')
     },
     {
+      path: '/game2048',
+      title: t('menu.game2048.title'),
+      icon: '🎮',
+      description: t('menu.game2048.desc')
+    },
+    {
       path: '/notes',
       title: t('menu.notes.title'),
       icon: '📚',

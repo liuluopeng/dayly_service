@@ -90,6 +90,18 @@
       "title": "短笔记",
       "desc": "快速记录和管理笔记"
     },
+    "game2048": {
+      "title": "2048",
+      "desc": "经典的 2048 小游戏",
+      "score": "分数",
+      "best": "最高",
+      "undo": "回退",
+      "newGame": "新游戏",
+      "retry": "再来一局",
+      "over": "游戏结束!",
+      "won": "你赢了!",
+      "hint": "方向键/滑动移动 · Ctrl+Z 回退"
+    },
     "clipboardHistory": {
       "title": "剪贴板历史",
       "desc": "查看剪贴板历史记录",

@@ -144,6 +144,16 @@ export const generate_qr_unicode_wasm = wasm.generate_qr_unicode_wasm;
 export const qr_info_wasm = wasm.qr_info_wasm;
 export const scan_qr_from_image_wasm = wasm.scan_qr_from_image_wasm;
 
+// === 2048 ===
+export const game2048_init = wasm.game2048_init;
+export const game2048_board = wasm.game2048_board;
+export const game2048_score = wasm.game2048_score;
+export const game2048_max_tile = wasm.game2048_max_tile;
+export const game2048_won = wasm.game2048_won;
+export const game2048_over = wasm.game2048_over;
+export const game2048_move = wasm.game2048_move;
+export const game2048_undo = wasm.game2048_undo;
+
 // === zici ===
 export const get_new_chars = wasm.get_new_chars;
 export const get_new_words = wasm.get_new_words;

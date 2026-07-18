@@ -90,6 +90,18 @@
       "title": "Quick Notes",
       "desc": "Quickly create and manage notes"
     },
+    "game2048": {
+      "title": "2048",
+      "desc": "Classic 2048 game",
+      "score": "Score",
+      "best": "Best",
+      "undo": "Undo",
+      "newGame": "New Game",
+      "retry": "Play Again",
+      "over": "Game Over!",
+      "won": "You Win!",
+      "hint": "Arrow keys/swipe to move · Ctrl+Z undo"
+    },
     "clipboardHistory": {
       "title": "Clipboard History",
       "desc": "View clipboard history",

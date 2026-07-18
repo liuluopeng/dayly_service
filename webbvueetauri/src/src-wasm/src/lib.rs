@@ -23,6 +23,7 @@ mod utils {
     pub mod base64;
     pub mod calculator;
     pub mod console_log;
+    pub mod game2048;
     pub mod greeter;
     pub mod image_convert;
     pub mod password;
@@ -60,6 +61,7 @@ pub use api::media_path::{list_media_paths_wasm, add_media_path_wasm, delete_med
 pub use utils::base64::{base64_decode_wasm, base64_encode_wasm};
 pub use utils::calculator::{add, add22, multiply};
 pub use utils::console_log;
+pub use utils::game2048::*;
 pub use utils::greeter::greet;
 pub use utils::password::{generate_password, generate_strong_password};
 pub use utils::qrcode::{generate_qr_png_wasm, generate_qr_unicode_wasm, qr_info_wasm};

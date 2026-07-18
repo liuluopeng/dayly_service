@@ -34,6 +34,7 @@ import TimestampTool from '../views/TimestampTool.vue';
 import UUIDTool from '../views/UUIDTool.vue';
 import PasswordTool from '../views/PasswordTool.vue';
 import ChineseRemover from '../views/ChineseRemover.vue';
+import Game2048 from '../views/Game2048.vue';
 import ImageConverter from '../views/ImageConverter.vue';
 import QrCodeGenerator from '../views/QrCodeGenerator.vue';
 import QrCodeScanner from '../views/QrCodeScanner.vue';
@@ -189,6 +190,11 @@ const routes = [
     component: ChineseRemover
   },
   {
+    path: '/game2048',
+    name: 'Game2048',
+    component: Game2048
+  },
+  {
     path: '/tools/image-converter',
     name: 'ImageConverter',
     component: ImageConverter
@@ -288,7 +294,7 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const token = localStorage.getItem('token');
 
-  const requiresAuth = ['/menu', '/ggtt', '/xiandaihanyu', '/collins', '/ldoce', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/search-history', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history'];
+  const requiresAuth = ['/menu', '/ggtt', '/xiandaihanyu', '/collins', '/ldoce', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/search-history', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history', '/game2048'];
 
   if (to.path === '/login' && token) {
     return '/menu';
