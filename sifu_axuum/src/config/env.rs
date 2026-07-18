@@ -34,6 +34,8 @@ pub struct ServerConfig {
     pub host: IpAddr,
     #[clap(default_value = "23000", env)]
     pub port: u16,
+    #[clap(default_value = "50051", env)]
+    pub grpc_port: u16,
     #[clap(default_value = "production", env)]
     pub env: String,
     #[clap(default_value = "192.168.31.58", env)]
@@ -51,6 +53,10 @@ impl ServerConfig {
         } else {
             self.port
         }
+    }
+
+    pub fn get_grpc_port(&self) -> u16 {
+        self.grpc_port
     }
 
     pub fn get_base_url(&self) -> String {

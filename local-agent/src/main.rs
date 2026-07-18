@@ -8,6 +8,7 @@
 mod convert;
 mod history;
 mod pasteboard;
+mod sync;
 
 use std::path::PathBuf;
 
@@ -293,19 +294,10 @@ fn run_monitor() {
         )
         .init();
 
+    let grpc_addr = std::env::var("GRPC_ADDR")
+        .unwrap_or_else(|_| "http://localhost:50051".to_string());
+
     let rt = tokio::runtime::Runtime::new().unwrap();
-
-    // 初始化历史数据库（异步）
-    let hist = match rt.block_on(history::ClipboardHistory::open(MAX_HISTORY)) {
-        Ok(h) => h,
-        Err(e) => {
-            error!("初始化剪贴板历史失败: {}", e);
-            return;
-        }
-    };
-
-    info!("local-agent monitor 启动");
-    info!("剪贴板历史已启用 (最多 {} 条)", MAX_HISTORY);
 
     let mut state = State::default();
     let mut clipboard = match Clipboard::new() {
@@ -315,6 +307,17 @@ fn run_monitor() {
             return;
         }
     };
+
+    // 连接 gRPC 服务器
+    let mut sync_client = match rt.block_on(sync::SyncClient::connect(&grpc_addr)) {
+        Ok(c) => c,
+        Err(e) => {
+            error!("连接 gRPC 服务器失败 ({}): {}", grpc_addr, e);
+            return;
+        }
+    };
+
+    info!("local-agent monitor 启动 → gRPC: {}", grpc_addr);
 
     loop {
         let changed = match pasteboard::change_count() {
@@ -327,6 +330,8 @@ fn run_monitor() {
         };
 
         if changed {
+            let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
             // ── 先尝试文本 ──
             if let Ok(text) = clipboard.get_text() {
                 let hash = hash_text(&text);
@@ -336,22 +341,21 @@ fn run_monitor() {
                 }
                 state.last_text_hash = hash;
 
-                // 忽略空文本
                 let trimmed = text.trim();
                 if !trimmed.is_empty() && trimmed.len() < 100_000 {
                     let hash_hex = format!("{:016x}", hash);
-                    let inserted = rt.block_on(hist.insert_text(trimmed, &hash_hex));
-                    match inserted {
-                        Ok(true) => {
-                            let preview = if trimmed.len() > 80 {
-                                format!("{}...", &trimmed[..80])
-                            } else {
-                                trimmed.to_string()
-                            };
-                            info!("📝 文本: {}", preview);
+                    match rt.block_on(sync_client.push_text(trimmed, &hash_hex, &now)) {
+                        Ok(deduplicated) => {
+                            if !deduplicated {
+                                let preview = if trimmed.len() > 80 {
+                                    format!("{}...", &trimmed[..80])
+                                } else {
+                                    trimmed.to_string()
+                                };
+                                info!("📝 文本已同步: {}", preview);
+                            }
                         }
-                        Ok(false) => {} // 已去重
-                        Err(e) => error!("记录文本失败: {}", e),
+                        Err(e) => error!("gRPC 推送失败: {}", e),
                     }
                 }
                 std::thread::sleep(POLL_INTERVAL);
@@ -374,8 +378,10 @@ fn run_monitor() {
 
                 if let Some(path) = save_image(bytes, w as usize, h as usize) {
                     let hash_hex = format!("{:016x}", hash);
-                    if let Err(e) = rt.block_on(hist.insert_image(path.to_string_lossy().as_ref(), &hash_hex)) {
-                        error!("记录图片历史失败: {}", e);
+                    let path_str = path.to_string_lossy().to_string();
+                    match rt.block_on(sync_client.push_image(&path_str, bytes.to_vec(), &hash_hex, &now)) {
+                        Ok(_) => {}
+                        Err(e) => error!("gRPC 推送图片失败: {}", e),
                     }
 
                     let filename = path.file_name().unwrap().to_string_lossy().to_string();

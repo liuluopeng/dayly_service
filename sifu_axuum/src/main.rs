@@ -34,6 +34,7 @@ async fn main() {
 
     let server_config = ServerConfig::parse();
     let port = server_config.get_port();
+    let grpc_port = server_config.get_grpc_port();
     let app_env = server_config.app_env();
 
     // 根据环境配置日志
@@ -58,7 +59,8 @@ async fn main() {
 
     info!("========================================");
     info!("Environment: {:?}", app_env);
-    info!("Server listening on {}:{}", server_config.host, port);
+    info!("HTTP  server listening on {}:{}", server_config.host, port);
+    info!("gRPC  server listening on {}:{}", server_config.host, grpc_port);
     info!("========================================");
 
     // 词典 SQLite 数据库
@@ -81,27 +83,44 @@ async fn main() {
         signaling_state,
     );
 
-    // 将 gRPC 服务嵌入到同一个 axum 服务器
+    // HTTP 服务（axum）
+    let app = app.fallback_service(
+        tower_http::services::ServeDir::new("static/hello/")
+            .append_index_html_on_directories(true)
+            .precompressed_gzip(),
+    );
+
+    // gRPC 服务（tonic，独立端口）
     let hello_svc = lx_dayly_service::grpc::hello_grpc_service();
     let clipboard_svc = lx_dayly_service::grpc::clipboard_grpc_service();
+    let clipboard_sync_svc = lx_dayly_service::grpc::clipboard_sync_grpc_service();
     let reflection_svc = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(lx_dayly_service::grpc::HELLO_DESCRIPTOR)
         .register_encoded_file_descriptor_set(lx_dayly_service::grpc::CLIPBOARD_DESCRIPTOR)
+        .register_encoded_file_descriptor_set(lx_dayly_service::grpc::CLIPBOARD_SYNC_DESCRIPTOR)
         .build_v1()
         .unwrap();
-    let app = tonic::service::Routes::new(hello_svc)
+    let grpc_router = tonic::service::Routes::new(hello_svc)
         .add_service(clipboard_svc)
+        .add_service(clipboard_sync_svc)
         .add_service(reflection_svc)
-        .into_axum_router()
-        .merge(app)
-        .fallback_service(
-            tower_http::services::ServeDir::new("static/hello/")
-                .append_index_html_on_directories(true)
-                .precompressed_gzip(),
-        );
+        .into_axum_router();
 
-    let listener = tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, port))
-        .await
-        .unwrap();
-    axum::serve(listener, app).await.unwrap();
+    tokio::try_join!(
+        async {
+            let listener = tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, port))
+                .await
+                .unwrap();
+            axum::serve(listener, app).await.unwrap();
+            Ok::<_, std::convert::Infallible>(())
+        },
+        async {
+            let listener = tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, grpc_port))
+                .await
+                .unwrap();
+            axum::serve(listener, grpc_router).await.unwrap();
+            Ok::<_, std::convert::Infallible>(())
+        },
+    )
+    .unwrap();
 }

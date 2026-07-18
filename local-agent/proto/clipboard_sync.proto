@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package clipboard_sync;
+
+service ClipboardSync {
+    rpc PushClipboard(PushClipboardRequest) returns (PushClipboardResponse);
+}
+
+message PushClipboardRequest {
+    string content_type = 1;     // "text" | "image"
+    string text_content = 2;     // 文本内容（type=text 时）
+    string image_path = 3;       // 图片路径（type=image 时）
+    bytes image_data = 4;        // 图片原始字节（type=image 时）
+    string content_hash = 5;
+    string occurred_at = 6;
+}
+
+message PushClipboardResponse {
+    int32 code = 1;
+    string message = 2;
+    bool deduplicated = 3;       // 是否为重复内容
+}

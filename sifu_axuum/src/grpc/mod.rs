@@ -9,6 +9,9 @@ pub mod clipboard {
 pub static CLIPBOARD_DESCRIPTOR: &[u8] =
     tonic::include_file_descriptor_set!("clipboard_descriptor");
 
+pub static CLIPBOARD_SYNC_DESCRIPTOR: &[u8] =
+    tonic::include_file_descriptor_set!("clipboard_sync_descriptor");
+
 use clipboard::clipboard_history_server::{ClipboardHistory, ClipboardHistoryServer};
 use clipboard::{HistoryEntry, HistoryRequest, HistoryResponse};
 use sqlx::sqlite::SqlitePoolOptions;
@@ -30,6 +33,15 @@ fn db_path() -> PathBuf {
     dirs::home_dir()
         .map(|p| p.join(".local-agent/history.db"))
         .unwrap_or_else(|| PathBuf::from("/tmp/.local-agent/history.db"))
+}
+
+async fn connect() -> Result<sqlx::SqlitePool, String> {
+    let url = format!("sqlite://{}", db_path().display());
+    SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect(&url)
+        .await
+        .map_err(|e| format!("连接数据库失败: {}", e))
 }
 
 async fn query_entries(
@@ -181,4 +193,104 @@ impl Greeter for GreeterSvc {
 
 pub fn hello_grpc_service() -> GreeterServer<GreeterSvc> {
     GreeterServer::new(GreeterSvc)
+}
+
+// ─── ClipboardSync 服务 ────────────────────────────────────────
+// local-agent 通过此接口推送剪贴板事件
+
+pub mod clipboard_sync {
+    tonic::include_proto!("clipboard_sync");
+}
+
+use clipboard_sync::clipboard_sync_server::{ClipboardSync, ClipboardSyncServer};
+use clipboard_sync::{PushClipboardRequest, PushClipboardResponse};
+
+async fn is_duplicate(pool: &sqlx::SqlitePool, hash: &str, entry_type: &str) -> Result<bool, String> {
+    let result = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM clipboard_entries WHERE content_hash = ?1 AND entry_type = ?2",
+    )
+    .bind(hash)
+    .bind(entry_type)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| format!("去重查询失败: {}", e))?;
+
+    Ok(result > 0)
+}
+
+#[derive(Debug, Default)]
+pub struct ClipboardSyncSvc;
+
+#[tonic::async_trait]
+impl ClipboardSync for ClipboardSyncSvc {
+    async fn push_clipboard(
+        &self,
+        request: tonic::Request<PushClipboardRequest>,
+    ) -> Result<tonic::Response<PushClipboardResponse>, tonic::Status> {
+        let req = request.into_inner();
+
+        let pool = connect().await.map_err(|e| tonic::Status::internal(e))?;
+
+        // 去重检查
+        let dup = is_duplicate(&pool, &req.content_hash, &req.content_type)
+            .await
+            .map_err(|e| tonic::Status::internal(e))?;
+
+        if dup {
+            return Ok(tonic::Response::new(PushClipboardResponse {
+                code: 200,
+                message: "duplicate".into(),
+                deduplicated: true,
+            }));
+        }
+
+        match req.content_type.as_str() {
+            "text" => {
+                sqlx::query(
+                    "INSERT INTO clipboard_entries (entry_type, text_content, image_path, content_hash, created_at)
+                     VALUES (?1, ?2, NULL, ?3, ?4)",
+                )
+                .bind(&req.content_type)
+                .bind(&req.text_content)
+                .bind(&req.content_hash)
+                .bind(&req.occurred_at)
+                .execute(&pool)
+                .await
+                .map_err(|e| tonic::Status::internal(format!("写入失败: {}", e)))?;
+
+                tracing::info!("📝 gRPC 收到剪贴板文本");
+            }
+            "image" => {
+                sqlx::query(
+                    "INSERT INTO clipboard_entries (entry_type, text_content, image_path, content_hash, created_at)
+                     VALUES (?1, NULL, ?2, ?3, ?4)",
+                )
+                .bind(&req.content_type)
+                .bind(&req.image_path)
+                .bind(&req.content_hash)
+                .bind(&req.occurred_at)
+                .execute(&pool)
+                .await
+                .map_err(|e| tonic::Status::internal(format!("写入失败: {}", e)))?;
+
+                tracing::info!("🖼️ gRPC 收到剪贴板图片: {}", req.image_path);
+            }
+            _ => {
+                return Err(tonic::Status::invalid_argument(format!(
+                    "未知类型: {}",
+                    req.content_type
+                )));
+            }
+        }
+
+        Ok(tonic::Response::new(PushClipboardResponse {
+            code: 200,
+            message: "ok".into(),
+            deduplicated: false,
+        }))
+    }
+}
+
+pub fn clipboard_sync_grpc_service() -> ClipboardSyncServer<ClipboardSyncSvc> {
+    ClipboardSyncServer::new(ClipboardSyncSvc)
 }
