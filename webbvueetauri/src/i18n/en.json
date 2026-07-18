@@ -90,6 +90,32 @@
       "title": "Quick Notes",
       "desc": "Quickly create and manage notes"
     },
+    "game2048": {
+      "title": "2048",
+      "desc": "Classic 2048 game",
+      "score": "Score",
+      "best": "Best",
+      "undo": "Undo",
+      "newGame": "New Game",
+      "retry": "Play Again",
+      "over": "Game Over!",
+      "won": "You Win!",
+      "hint": "Arrow keys/swipe · Ctrl+Z undo"
+    },
+    "snake": {
+      "title": "Snake",
+      "desc": "Classic snake game"
+    },
+    "minesweeper": {
+      "title": "Minesweeper",
+      "desc": "Classic minesweeper",
+      "flag": "Flag"
+    },
+    "tetris": {
+      "title": "Tetris",
+      "desc": "Classic tetris game",
+      "drop": "Drop"
+    },
     "clipboardHistory": {
       "title": "Clipboard History",
       "desc": "View clipboard history",

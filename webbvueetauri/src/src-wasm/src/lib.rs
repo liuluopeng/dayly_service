@@ -23,11 +23,15 @@ mod utils {
     pub mod base64;
     pub mod calculator;
     pub mod console_log;
+    pub mod game2048;
     pub mod greeter;
     pub mod image_convert;
+    pub mod minesweeper;
     pub mod password;
     pub mod qrcode;
     pub mod qrscan;
+    pub mod snake;
+    pub mod tetris;
     pub mod timestamp;
     pub mod uuid;
 }
@@ -71,6 +75,11 @@ pub use utils::timestamp::{
 pub use utils::uuid::{
     generate_uuid_v4, generate_uuid_v5, generate_uuid_v6, generate_uuid_v7, validate_uuid,
 };
+
+pub use utils::game2048::*;
+pub use utils::minesweeper::*;
+pub use utils::snake::*;
+pub use utils::tetris::*;
 
 pub use api::clipboard::get_clipboard_history_wasm;
 pub use api::init::get_base_url_wasm;

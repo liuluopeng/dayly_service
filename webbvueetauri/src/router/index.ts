@@ -34,6 +34,10 @@ import TimestampTool from '../views/TimestampTool.vue';
 import UUIDTool from '../views/UUIDTool.vue';
 import PasswordTool from '../views/PasswordTool.vue';
 import ChineseRemover from '../views/ChineseRemover.vue';
+import Game2048 from '../views/Game2048.vue';
+import GameSnake from '../views/GameSnake.vue';
+import GameMinesweeper from '../views/GameMinesweeper.vue';
+import GameTetris from '../views/GameTetris.vue';
 import ImageConverter from '../views/ImageConverter.vue';
 import QrCodeGenerator from '../views/QrCodeGenerator.vue';
 import QrCodeScanner from '../views/QrCodeScanner.vue';
@@ -264,6 +268,26 @@ const routes = [
     component: ClipboardHistory
   },
   {
+    path: '/game2048',
+    name: 'Game2048',
+    component: Game2048
+  },
+  {
+    path: '/game-snake',
+    name: 'GameSnake',
+    component: GameSnake
+  },
+  {
+    path: '/game-minesweeper',
+    name: 'GameMinesweeper',
+    component: GameMinesweeper
+  },
+  {
+    path: '/game-tetris',
+    name: 'GameTetris',
+    component: GameTetris
+  },
+  {
     path: '/chat',
     name: 'Chat',
     component: Chat
@@ -288,7 +312,7 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const token = localStorage.getItem('token');
 
-  const requiresAuth = ['/menu', '/ggtt', '/xiandaihanyu', '/collins', '/ldoce', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/search-history', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history'];
+  const requiresAuth = ['/menu', '/ggtt', '/xiandaihanyu', '/collins', '/ldoce', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/search-history', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history', '/game2048', '/game-snake', '/game-minesweeper', '/game-tetris'];
 
   if (to.path === '/login' && token) {
     return '/menu';
