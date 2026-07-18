@@ -188,6 +188,12 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
           title: t('menu.tools.imageConverter.title'),
           icon: '🖼️',
           description: t('menu.tools.imageConverter.desc')
+        },
+        {
+          path: '/tools/qrcode',
+          title: t('menu.tools.qrcode.title'),
+          icon: '📱',
+          description: t('menu.tools.qrcode.desc')
         }
       ]
     },

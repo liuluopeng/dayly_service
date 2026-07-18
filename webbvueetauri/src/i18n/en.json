@@ -163,6 +163,16 @@
         "imageConverter": {
           "title": "Image Converter",
           "desc": "Convert image formats in browser"
+        },
+        "qrcode": {
+          "title": "QR Code",
+          "desc": "Generate QR code images",
+          "input": "Content",
+          "placeholder": "Enter text or paste URL...",
+          "size": "Size",
+          "margin": "Margin",
+          "generate": "Generate",
+          "version": "QR version"
         }
       },
       "imageConverter": {

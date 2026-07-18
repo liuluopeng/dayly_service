@@ -34,6 +34,7 @@ pub mod front_can_do {
     pub mod get_url_from_mhtml;
     pub mod image_convert;
     pub mod password;
+    pub mod qrcode;
     pub mod timestamp;
     pub mod uuid;
 }

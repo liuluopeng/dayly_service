@@ -26,6 +26,7 @@ mod utils {
     pub mod greeter;
     pub mod image_convert;
     pub mod password;
+    pub mod qrcode;
     pub mod timestamp;
     pub mod uuid;
 }
@@ -60,6 +61,7 @@ pub use utils::calculator::{add, add22, multiply};
 pub use utils::console_log;
 pub use utils::greeter::greet;
 pub use utils::password::{generate_password, generate_strong_password};
+pub use utils::qrcode::{generate_qr_png_wasm, generate_qr_unicode_wasm, qr_info_wasm};
 pub use utils::timestamp::{
     get_current_local_time, get_current_timestamp, get_current_utc_time, local_to_timestamp,
     timestamp_to_local, timestamp_to_utc,

@@ -163,6 +163,16 @@
         "imageConverter": {
           "title": "图片格式转换",
           "desc": "在浏览器中转换图片格式"
+        },
+        "qrcode": {
+          "title": "QR 码生成",
+          "desc": "生成二维码图片",
+          "input": "文本内容",
+          "placeholder": "输入文本或粘贴 URL...",
+          "size": "大小",
+          "margin": "边距",
+          "generate": "生成",
+          "version": "QR 版本"
         }
       },
       "imageConverter": {

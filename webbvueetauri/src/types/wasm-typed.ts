@@ -138,6 +138,11 @@ export const convert_image_with_size_wasm = wasm.convert_image_with_size_wasm;
 export const crop_image_wasm = wasm.crop_image_wasm;
 export const resize_image_wasm = wasm.resize_image_wasm;
 
+// === QR 码 ===
+export const generate_qr_png_wasm = wasm.generate_qr_png_wasm;
+export const generate_qr_unicode_wasm = wasm.generate_qr_unicode_wasm;
+export const qr_info_wasm = wasm.qr_info_wasm;
+
 // === zici ===
 export const get_new_chars = wasm.get_new_chars;
 export const get_new_words = wasm.get_new_words;
