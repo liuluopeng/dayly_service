@@ -265,11 +265,19 @@ pub fn import_local_songs(paths: Vec<String>, covers_dir: String) -> Result<Vec<
             } else { (None, None) }
         } else { (None, None) };
 
+        let title = meta.title.filter(|s| !s.is_empty()).unwrap_or_else(|| {
+            std::path::Path::new(&path)
+                .file_stem().map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default()
+        });
+        let artist = meta.artist.filter(|s| !s.is_empty()).unwrap_or_else(|| "未知艺术家".into());
+        let album = meta.album.filter(|s| !s.is_empty()).unwrap_or_else(|| "未知专辑".into());
+
         let rt = crate::api::runtime::shared_rt();
         let _ = rt.block_on(async {
             sqlx::query("INSERT OR REPLACE INTO local_songs (path, title, artist, album, duration, cover_path, album_id, primary_color, secondary_color) VALUES (?, ?, ?, ?, ?, ?, '', ?, ?)")
-                .bind(&path).bind(meta.title.unwrap_or_default()).bind(meta.artist.unwrap_or_default())
-                .bind(meta.album.unwrap_or_default()).bind(&duration).bind(&cover_path)
+                .bind(&path).bind(&title).bind(&artist)
+                .bind(&album).bind(&duration).bind(&cover_path)
                 .bind(primary_color.unwrap_or(0)).bind(secondary_color.unwrap_or(0))
                 .execute(p).await
         });
