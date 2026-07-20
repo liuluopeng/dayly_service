@@ -90,9 +90,6 @@ async fn main() {
             .precompressed_gzip(),
     );
 
-    // 初始化剪贴板历史表
-    lx_dayly_service::grpc::init_clipboard_table(&pg_pool).await;
-
     // gRPC 服务（tonic，独立端口）
     let hello_svc = lx_dayly_service::grpc::hello_grpc_service();
     let clipboard_svc = lx_dayly_service::grpc::clipboard_grpc_service(pg_pool.clone());

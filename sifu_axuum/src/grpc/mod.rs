@@ -28,23 +28,6 @@ pub mod clipboard_sync {
     tonic::include_proto!("clipboard_sync");
 }
 
-/// 创建剪贴板历史表
-pub async fn init_clipboard_table(pool: &PgPool) {
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS clipboard_entries (
-            id BIGSERIAL PRIMARY KEY,
-            entry_type TEXT NOT NULL,
-            text_content TEXT,
-            image_path TEXT,
-            content_hash TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )",
-    )
-    .execute(pool)
-    .await
-    .ok();
-}
-
 // ─── Hello 服务 ────────────────────────────────────────────────
 
 #[derive(Debug, Default)]
