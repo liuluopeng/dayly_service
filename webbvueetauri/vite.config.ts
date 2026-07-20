@@ -38,7 +38,6 @@ export default defineConfig(async () => ({
 
   build: {
     target: "esnext",
-    minify: false,
     rollupOptions: {
 
     },
