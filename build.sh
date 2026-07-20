@@ -15,7 +15,7 @@ echo ""
 echo "═══════════════════════════════════════════════════════"
 echo "  Android APK"
 echo "═══════════════════════════════════════════════════════"
-flutter build apk --release \
+fvm flutter build apk --release \
   --build-name="$BUILD_NAME" \
   --build-number="$BUILD_NUMBER"
 
@@ -30,7 +30,7 @@ echo ""
 echo "═══════════════════════════════════════════════════════"
 echo "  macOS DMG"
 echo "═══════════════════════════════════════════════════════"
-flutter build macos --release \
+fvm flutter build macos --release \
   --build-name="$BUILD_NAME" \
   --build-number="$BUILD_NUMBER"
 
@@ -39,8 +39,8 @@ DMG_DST="$ROOT/dist/kongde-$BUILD_NAME.dmg"
 mkdir -p "$ROOT/dist"
 
 # 如果 flutter build macos 直接支持 --dmg
-if flutter build macos --help 2>&1 | grep -q '\-\-dmg'; then
-  flutter build macos --release --dmg \
+if fvm flutter build macos --help 2>&1 | grep -q '\-\-dmg'; then
+  fvm flutter build macos --release --dmg \
     --build-name="$BUILD_NAME" \
     --build-number="$BUILD_NUMBER"
   cp "build/macos/Build/Products/Release/kongde.dmg" "$DMG_DST" 2>/dev/null || true
