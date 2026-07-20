@@ -75,26 +75,28 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
 
     try {
       // 并行查三本词典
-      final r1 = await searchXianzaihanyuForDart(word: word);
-      final r2 = await searchCollinsForDart(word: word);
-      final r3 = await searchLdoceForDart(word: word);
+      final results = [
+        ('现代汉语', await searchXianzaihanyuForDart(word: word)),
+        ('Collins', await searchCollinsForDart(word: word)),
+        ('LDOCE', await searchLdoceForDart(word: word)),
+      ];
 
-      // 选第一个有结果的
-      String? html;
-      String label = '';
-      for (final (l, h) in [('现代汉语', r1), ('Collins', r2), ('LDOCE', r3)]) {
-        if (h.isNotEmpty && !h.startsWith('error')) {
-          html = h; label = l; break;
+      // 收集所有有结果的，拼成单个 HTML
+      final sections = <String>[];
+      for (final (label, html) in results) {
+        if (html.isNotEmpty && !html.startsWith('error')) {
+          sections.add('<div style="margin-bottom:16px"><div style="padding:4px 8px;background:#e3f2fd;font-size:13px;font-weight:600;border-radius:4px;margin-bottom:8px">$label</div>$html</div>');
         }
       }
 
-      if (html != null && html.isNotEmpty) {
+      if (sections.isNotEmpty) {
         _webController.loadHtmlString('''
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body>$html</body></html>''');
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>body{padding:8px;font-size:14px}</style></head><body>${sections.join('')}</body></html>''');
         _webController.setNavigationDelegate(NavigationDelegate(
           onPageFinished: (_) => _updateWebViewZoom(_lastScale),
         ));
-        setState(() { _currentHtml = html!; _currentLabel = label; });
+        setState(() { _currentHtml = sections.join(''); _currentLabel = sections.length > 1 ? '${sections.length} 个结果' : '1 个结果'; });
       }
     } catch (e) {
       if (mounted) Get.snackbar('错误', '$e', snackPosition: SnackPosition.bottom);
