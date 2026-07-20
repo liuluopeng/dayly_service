@@ -88,8 +88,8 @@ COPY ./webbvueetauri/src/src-wasm/pkg /app/webbvueetauri/src/src-wasm/pkg
 # 构建前端
 WORKDIR /app/webbvueetauri
 RUN pnpm install
-# 跳过 vue-tsc 类型检查（Docker 构建不需要）
-RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && pnpm build
+# 跳过 vue-tsc 类型检查 + wasm-pack（pkg/ 已 COPY，不需要重编）
+RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && npx vite build
 
 # 复制前端dist到static
 RUN mkdir -p /app/sifu_axuum/static/dist && cp -r dist/* /app/sifu_axuum/static/dist/
