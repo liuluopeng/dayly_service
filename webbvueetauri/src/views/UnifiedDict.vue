@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, nextTick, watch } from "vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { search_xiandaihanyu, search_collins, search_ldoce, get_top_words } from "../types/wasm-typed";
-import type { Word } from "../types/models";
+import { search_xiandaihanyu, search_collins, search_ldoce } from "../types/wasm-typed";
 
 const { t } = useI18n();
 
@@ -13,8 +12,6 @@ const dicts = ref<{ key: string; label: string; html: string | null; error: stri
   { key: "collins", label: "Collins", html: null, error: null },
   { key: "ldoce", label: "LDOCE", html: null, error: null },
 ]);
-const topWords = ref<Word[]>([]);
-
 async function searchAll() {
   const q = query.value.trim();
   if (!q) return;
@@ -35,12 +32,6 @@ async function searchAll() {
   dicts.value[2].error = results[2].status === "rejected" ? String(results[2].reason) : null;
 
   loading.value = false;
-}
-
-function loadIframe(iframe: HTMLIFrameElement | null, html: string) {
-  if (!iframe || !html) return;
-  const blob = new Blob([html], { type: "text/html" });
-  iframe.src = URL.createObjectURL(blob);
 }
 
 function hasResults() {
@@ -67,8 +58,8 @@ function hasResults() {
       <div v-for="d in dicts" :key="d.key">
         <div v-if="d.html" class="border rounded-lg overflow-hidden">
           <div class="bg-gray-100 px-3 py-1.5 text-sm font-medium border-b">{{ d.label }}</div>
-          <iframe ref="(el) => loadIframe(el, d.html!)" class="w-full border-none"
-                  style="height: min(60vh, 500px)" sandbox="allow-scripts allow-same-origin"></iframe>
+          <iframe v-if="d.html" :srcdoc="d.html" class="w-full border-none"
+                  style="height: min(60vh, 500px)" sandbox="allow-scripts"></iframe>
         </div>
         <div v-else-if="d.error" class="text-xs text-gray-400 px-1">{{ d.label }}: {{ d.error }}</div>
       </div>
