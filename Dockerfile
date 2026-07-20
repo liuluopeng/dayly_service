@@ -89,7 +89,6 @@ RUN wasm-pack build
 # 构建前端
 WORKDIR /app/webbvueetauri
 RUN pnpm install
-ENV NODE_OPTIONS="--max-old-space-size=8192"
 # 跳过 vue-tsc 类型检查（Docker 构建不需要）
 RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && pnpm build
 
