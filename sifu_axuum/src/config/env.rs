@@ -56,7 +56,11 @@ impl ServerConfig {
     }
 
     pub fn get_grpc_port(&self) -> u16 {
-        self.grpc_port
+        if self.grpc_port == 50051 && self.app_env() == AppEnv::Development {
+            50053
+        } else {
+            self.grpc_port
+        }
     }
 
     pub fn get_base_url(&self) -> String {

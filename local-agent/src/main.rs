@@ -26,7 +26,7 @@ enum Commands {
     /// 监听剪贴板，自动保存图片并记录历史
     Monitor {
         /// gRPC 服务器地址
-        #[arg(short, long, default_value = "http://localhost:50051", env = "GRPC_ADDR")]
+        #[arg(short, long, default_value = "http://localhost:50053", env = "GRPC_ADDR")]
         grpc_addr: String,
     },
     /// 查看或搜索剪贴板历史
@@ -54,7 +54,7 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command.unwrap_or(Commands::Monitor { grpc_addr: "http://localhost:50051".into() }) {
+    match cli.command.unwrap_or(Commands::Monitor { grpc_addr: "http://localhost:50053".into() }) {
         Commands::Monitor { grpc_addr } => run_monitor(&grpc_addr),
         Commands::History {
             count,
