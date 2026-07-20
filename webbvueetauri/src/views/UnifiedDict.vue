@@ -1,12 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { search_xiandaihanyu, search_collins, search_ldoce } from "../types/wasm-typed";
+import { search_xiandaihanyu, search_collins, search_ldoce, get_top_words } from "../types/wasm-typed";
+import type { Word } from "../types/models";
 
 const { t } = useI18n();
 const inputRef = ref<HTMLInputElement | null>(null);
+const topWords = ref<Word[]>([]);
+const freqLoading = ref(true);
 
-onMounted(() => setTimeout(() => inputRef.value?.focus(), 100));
+const maxFrequency = computed(() => {
+  if (topWords.value.length === 0) return 1;
+  return Math.max(...topWords.value.map(w => w.hasSearchedTimes));
+});
+
+onMounted(async () => {
+  setTimeout(() => inputRef.value?.focus(), 100);
+  try {
+    const res = await get_top_words();
+    topWords.value = res.data || [];
+  } catch {}
+  freqLoading.value = false;
+});
 
 const query = ref("");
 const loading = ref(false);
@@ -53,6 +68,23 @@ function hasResults() {
               class="px-4 py-2 bg-blue-500 text-white rounded text-sm disabled:opacity-50">
         {{ loading ? t('common.loading') : t('unifiedDict.search') }}
       </button>
+    </div>
+
+    <!-- 词频（初始状态） -->
+    <div v-if="!query && !freqLoading && topWords.length" class="mb-6">
+      <h2 class="text-sm font-medium text-gray-500 mb-2">{{ t('searchHistory.frequencyTab') }}</h2>
+      <div class="space-y-1">
+        <div v-for="w in topWords.slice(0, 15)" :key="w.id"
+             class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
+             @click="query = w.word; searchAll()">
+          <span class="w-20 truncate font-medium">{{ w.word }}</span>
+          <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-400 rounded-full transition-all"
+                 :style="{ width: `${(w.hasSearchedTimes / maxFrequency) * 100}%` }"></div>
+          </div>
+          <span class="w-16 text-right text-xs text-gray-400">{{ w.hasSearchedTimes }}次</span>
+        </div>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-8 text-gray-400">{{ t('common.loading') }}...</div>
