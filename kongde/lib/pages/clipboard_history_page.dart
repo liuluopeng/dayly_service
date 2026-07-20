@@ -17,6 +17,7 @@ class _ClipboardHistoryPageState extends State<ClipboardHistoryPage> {
   final RxList<ClipboardEntry> _entries = RxList<ClipboardEntry>();
   final RxBool _isLoading = false.obs;
   final RxString _error = ''.obs;
+  final _baseUrl = AppConfig.instance.serverUrl;
 
   final _searchController = TextEditingController();
   String _filterType = 'all';
@@ -235,7 +236,7 @@ class _ClipboardHistoryPageState extends State<ClipboardHistoryPage> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: Image.network(
-                  '${Get.find<AppConfig>().serverUrl}${entry.imageUrl}',
+                  '$_baseUrl${entry.imageUrl}',
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.contain,
