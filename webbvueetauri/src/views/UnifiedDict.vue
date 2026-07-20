@@ -68,7 +68,8 @@ async function searchAll() {
     ]);
     topWords.value = freq.data || [];
     recentHistory.value = hist.data || [];
-    searchCount.value = topWords.value.find(w => w.word === q)?.hasSearchedTimes ?? 0;
+    const found = topWords.value.find(w => w.word === q);
+    searchCount.value = found ? found.hasSearchedTimes : 1;
   } catch {}
 
   loading.value = false;
