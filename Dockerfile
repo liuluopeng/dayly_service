@@ -82,9 +82,8 @@ COPY ./webbvueetauri/src/src-wasm/src /app/webbvueetauri/src/src-wasm/src
 # 复制其他必要文件
 COPY ./sifu_axuum/static /app/sifu_axuum/static
 
-# 编译WASM
-WORKDIR /app/webbvueetauri/src/src-wasm
-RUN wasm-pack build
+# 复制预编译的 WASM 产物（在宿主机上 wasm-pack build 后产生）
+COPY ./webbvueetauri/src/src-wasm/pkg /app/webbvueetauri/src/src-wasm/pkg
 
 # 构建前端
 WORKDIR /app/webbvueetauri

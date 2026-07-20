@@ -31,7 +31,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      memory: 10g
     dns:
       - 8.8.8.8
       - 114.114.114.114
