@@ -52,6 +52,7 @@ COPY ./Cargo.lock /app/Cargo.lock
 COPY ./common/Cargo.toml /app/common/Cargo.toml
 COPY ./sifu_axuum/Cargo.toml /app/sifu_axuum/Cargo.toml
 COPY ./kongde/rust/Cargo.toml /app/kongde/rust/Cargo.toml
+COPY ./local-agent/Cargo.toml /app/local-agent/Cargo.toml
 COPY ./my_type/Cargo.toml /app/my_type/Cargo.toml
 COPY ./webbvueetauri/src/src-wasm/Cargo.toml /app/webbvueetauri/src/src-wasm/Cargo.toml
 COPY ./webbvueetauri/src-tauri/Cargo.toml /app/webbvueetauri/src-tauri/Cargo.toml
@@ -60,6 +61,7 @@ COPY ./webbvueetauri/src-tauri/Cargo.toml /app/webbvueetauri/src-tauri/Cargo.tom
 RUN mkdir -p /app/common/src && echo 'fn main() {}' > /app/common/src/lib.rs
 RUN mkdir -p /app/sifu_axuum/src && echo 'fn main() {}' > /app/sifu_axuum/src/lib.rs
 RUN mkdir -p /app/kongde/rust/src && echo 'fn main() {}' > /app/kongde/rust/src/lib.rs
+RUN mkdir -p /app/local-agent/src && echo 'fn main() {}' > /app/local-agent/src/lib.rs
 RUN mkdir -p /app/my_type/src && echo 'fn main() {}' > /app/my_type/src/lib.rs
 RUN mkdir -p /app/webbvueetauri/src/src-wasm/src && echo 'fn main() {}' > /app/webbvueetauri/src/src-wasm/src/lib.rs
 RUN mkdir -p /app/webbvueetauri/src-tauri/src && echo 'fn main() {}' > /app/webbvueetauri/src-tauri/src/lib.rs
