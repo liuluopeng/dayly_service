@@ -51,6 +51,8 @@ COPY ./Cargo.lock /app/Cargo.lock
 # 复制各个模块的Cargo.toml文件
 COPY ./common/Cargo.toml /app/common/Cargo.toml
 COPY ./sifu_axuum/Cargo.toml /app/sifu_axuum/Cargo.toml
+COPY ./sifu_axuum/proto /app/sifu_axuum/proto
+COPY ./sifu_axuum/build.rs /app/sifu_axuum/build.rs
 COPY ./kongde/rust/Cargo.toml /app/kongde/rust/Cargo.toml
 COPY ./local-agent/Cargo.toml /app/local-agent/Cargo.toml
 COPY ./my_type/Cargo.toml /app/my_type/Cargo.toml
