@@ -100,3 +100,5 @@ mdx2sql/
 search-wubi/
 
 mhtml/
+# 打包产物
+dist/
