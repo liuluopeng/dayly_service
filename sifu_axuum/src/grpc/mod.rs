@@ -176,24 +176,22 @@ impl ClipboardSync for ClipboardSyncSvc {
             "text" => {
                 sqlx::query(
                     "INSERT INTO clipboard_entries (entry_type, text_content, content_hash, created_at)
-                     VALUES ($1, $2, $3, $4)",
+                     VALUES ($1, $2, $3, NOW())",
                 )
                 .bind(&req.content_type)
                 .bind(&req.text_content)
                 .bind(&req.content_hash)
-                .bind(&req.occurred_at)
                 .execute(&self.pool)
                 .await
             }
             "image" => {
                 sqlx::query(
                     "INSERT INTO clipboard_entries (entry_type, image_path, content_hash, created_at)
-                     VALUES ($1, $2, $3, $4)",
+                     VALUES ($1, $2, $3, NOW())",
                 )
                 .bind(&req.content_type)
                 .bind(&req.image_path)
                 .bind(&req.content_hash)
-                .bind(&req.occurred_at)
                 .execute(&self.pool)
                 .await
             }
