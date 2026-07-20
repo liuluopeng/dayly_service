@@ -11,21 +11,22 @@ pub async fn get_clipboard_history_for_dart(
     count: Option<i64>,
     type_filter: Option<String>,
     search: Option<String>,
-) -> Result<Vec<ClipboardEntry>, ApiError> {
+) -> Result<Vec<ClipboardEntry>, String> {
     log_to_dart(format!(
         "剪贴板历史: count={}, type={:?}, search={:?}",
         count.unwrap_or(20),
         type_filter,
         search,
     ));
-    let client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
+    let client = get_client_clone().map_err(|e| e.to_string())?;
     let entries = get_clipboard_history(
         &client,
         count.map(|c| c as usize),
         type_filter.as_deref(),
         search.as_deref(),
     )
-    .await?;
+    .await
+    .map_err(|e| e.to_string())?;
     log_to_dart(format!("剪贴板历史: 返回 {} 条", entries.len()));
     Ok(entries)
 }
