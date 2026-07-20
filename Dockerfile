@@ -6,9 +6,10 @@ FROM rust:1.92.0 AS base-builder
 #     && rm -rf /var/lib/apt/lists/*
 
 RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
-    apt-get update && apt-get install -y \
+    apt-get update &&     apt-get install -y \
     pkg-config \
     libssl-dev \
+    protobuf-compiler \
     curl \
     ca-certificates \
     && curl -fsSL https://deb.nodesource.com/setup_26.x | bash - \
