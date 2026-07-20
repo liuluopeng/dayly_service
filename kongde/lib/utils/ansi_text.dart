@@ -65,15 +65,15 @@ Widget ansiRichText(String text, {TextStyle? style}) {
       }
     } else {
       final cu = text.codeUnitAt(i);
-      // 处理 surrogate pair（emoji 等）
       if (cu >= 0xD800 && cu <= 0xDBFF && i + 1 < text.length) {
         final next = text.codeUnitAt(i + 1);
         if (next >= 0xDC00 && next <= 0xDFFF) {
           buf.writeCharCode(0x10000 + (cu - 0xD800) * 0x400 + (next - 0xDC00));
           i++;
-        } else {
-          buf.writeCharCode(cu);
         }
+        // 忽略孤立的 high surrogate
+      } else if (cu >= 0xDC00 && cu <= 0xDFFF) {
+        // 忽略孤立的 low surrogate
       } else {
         buf.writeCharCode(cu);
       }
