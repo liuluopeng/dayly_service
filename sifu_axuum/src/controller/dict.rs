@@ -753,15 +753,16 @@ pub async fn word_search_count(
     if word.is_empty() {
         return Ok(ApiResponse::ok(0));
     }
-    let count = sqlx::query_scalar::<_, i64>(
+    let count: i32 = sqlx::query_scalar(
         "SELECT COALESCE(has_searched_times, 0) FROM words WHERE word = $1",
     )
     .bind(word)
     .fetch_optional(&pool)
     .await
-    .map_err(|e| ApiError::Internal(e.to_string()))?;
+    .map_err(|e| ApiError::Internal(e.to_string()))?
+    .unwrap_or(0);
 
-    Ok(ApiResponse::ok(count.unwrap_or(0)))
+    Ok(ApiResponse::ok(count as i64))
 }
 
 pub fn dict_routes() -> axum::Router {
