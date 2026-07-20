@@ -64,5 +64,29 @@ else
   echo "⚠️  DMG 未生成，请检查 macOS 构建产物"
 fi
 
+# ── Tauri DMG ────────────────────────────────────────────────
+echo "═══════════════════════════════════════════════════════"
+echo "  Tauri DMG"
+echo "═══════════════════════════════════════════════════════"
+cd "$ROOT/webbvueetauri"
+
+# 临时更新 tauri.conf.json 的版本号
+TAURI_CONF="src-tauri/tauri.conf.json"
+if [ -f "$TAURI_CONF" ]; then
+  sed -i '' "s/\"version\": \".*\"/\"version\": \"$BUILD_NAME\"/" "$TAURI_CONF"
+fi
+
+pnpm tauri build --bundles dmg 2>&1 | tail -5 || true
+
+# 复制产物
+TAURI_DMG=$(ls src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1)
+if [ -n "$TAURI_DMG" ] && [ -f "$TAURI_DMG" ]; then
+  TAURI_DST="$ROOT/dist/webbvueetauri-$BUILD_NAME.dmg"
+  cp "$TAURI_DMG" "$TAURI_DST"
+  echo "✅ Tauri DMG: $TAURI_DST"
+else
+  echo "⚠️  Tauri DMG 未生成，请检查构建日志"
+fi
+
 echo ""
 echo "🎉 完成"
