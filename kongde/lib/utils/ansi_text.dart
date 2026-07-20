@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 const _ansiColors = <int, Color>{
   30: Colors.black,   31: Colors.red,      32: Colors.green,
-  33: Colors.yellow,  34: Colors.blue,      35: Colors.magenta,
+  33: Colors.yellow,  34: Colors.blue,      35: Color(0xFFFF00FF),
   36: Colors.cyan,    37: Colors.white,
   90: Colors.grey,    91: Color(0xFFFF6B6B), 92: Color(0xFF69DB7C),
   93: Color(0xFFFFD93D), 94: Color(0xFF74C0FC), 95: Color(0xFFDA77F2),
