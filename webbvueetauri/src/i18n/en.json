@@ -376,7 +376,8 @@
     "loading": "Loading...",
     "noHistory": "No search history",
     "noFrequency": "No frequency data",
-    "times": "{count} times"
+    "times": "{count} times",
+    "timesUnit": "x"
   },
   "imageGallery": {
     "title": "Image Gallery",
@@ -486,6 +487,10 @@
     "title": "Dictionary",
     "placeholder": "Search any word...",
     "search": "Search",
+    "searchBtn": "Search",
+    "stats": "Stats",
+    "history": "History",
+    "frequency": "Frequency",
     "noResults": "No results found"
   },
   "ggttSearch": {

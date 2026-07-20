@@ -374,7 +374,8 @@
     "loading": "加载中...",
     "noHistory": "暂无查询历史",
     "noFrequency": "暂无词频数据",
-    "times": "{count} 次"
+    "times": "{count} 次",
+    "timesUnit": "次"
   },
   "imageGallery": {
     "title": "图片库",
@@ -484,6 +485,10 @@
     "title": "词典",
     "placeholder": "输入要查询的词语...",
     "search": "搜索",
+    "searchBtn": "搜索",
+    "stats": "统计",
+    "history": "查询历史",
+    "frequency": "词频",
     "noResults": "未找到相关结果"
   },
   "ggttSearch": {
