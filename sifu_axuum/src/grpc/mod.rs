@@ -30,18 +30,44 @@ struct Row {
 }
 
 fn db_path() -> PathBuf {
+    let env_path = std::env::var("CLIPBOARD_DB").ok();
+    if let Some(p) = env_path {
+        return PathBuf::from(p);
+    }
     dirs::home_dir()
         .map(|p| p.join(".local-agent/history.db"))
-        .unwrap_or_else(|| PathBuf::from("/tmp/.local-agent/history.db"))
+        .unwrap_or_else(|| PathBuf::from("/app/data/clipboard.db"))
 }
 
 async fn connect() -> Result<sqlx::SqlitePool, String> {
-    let url = format!("sqlite://{}", db_path().display());
-    SqlitePoolOptions::new()
+    let path = db_path();
+    // 确保目录存在
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+    }
+    let url = format!("sqlite://{}", path.display());
+    let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect(&url)
         .await
-        .map_err(|e| format!("连接数据库失败: {}", e))
+        .map_err(|e| format!("连接数据库失败: {}", e))?;
+
+    // 自动建表
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS clipboard_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entry_type TEXT NOT NULL,
+            text_content TEXT,
+            image_path TEXT,
+            content_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )",
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| format!("建表失败: {}", e))?;
+
+    Ok(pool)
 }
 
 async fn query_entries(

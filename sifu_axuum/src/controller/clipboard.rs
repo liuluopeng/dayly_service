@@ -38,9 +38,13 @@ struct HistoryEntry {
 }
 
 fn db_path() -> PathBuf {
-    dirs::home_dir()
-        .map(|p| p.join(".local-agent/history.db"))
-        .unwrap_or_else(|| PathBuf::from("/tmp/.local-agent/history.db"))
+    std::env::var("CLIPBOARD_DB")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            dirs::home_dir()
+                .map(|p| p.join(".local-agent/history.db"))
+                .unwrap_or_else(|| PathBuf::from("/app/data/clipboard.db"))
+        })
 }
 
 /// 每次请求开一个连接池（单连接，WAL 模式廉价的本地操作）
