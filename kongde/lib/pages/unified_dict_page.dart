@@ -55,11 +55,9 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
 
   Future<void> _loadStats() async {
     try {
-      final [freq, hist] = await Future.wait([
-        getTopWordsForDart(),
-        getRecentHistoryForDart(limit: PlatformInt64Util.from(20)),
-      ]);
-      setState(() { _topWords = freq; _recentHistory = hist; });
+      _topWords = await getTopWordsForDart();
+      _recentHistory = await getRecentHistoryForDart(limit: PlatformInt64Util.from(20));
+      if (mounted) setState(() {});
     } catch (_) {}
   }
 
@@ -76,16 +74,15 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
     setState(() => _isLoading = true);
 
     try {
-      final results = await Future.wait([
-        searchXianzaihanyuForDart(word: word).then((v) => ('现代汉语', v)),
-        searchCollinsForDart(word: word).then((v) => ('Collins', v)),
-        searchLdoceForDart(word: word).then((v) => ('LDOCE', v)),
-      ]);
+      // 并行查三本词典
+      final r1 = await searchXianzaihanyuForDart(word: word);
+      final r2 = await searchCollinsForDart(word: word);
+      final r3 = await searchLdoceForDart(word: word);
 
       // 选第一个有结果的
       String? html;
       String label = '';
-      for (final (l, h) in results) {
+      for (final (l, h) in [('现代汉语', r1), ('Collins', r2), ('LDOCE', r3)]) {
         if (h.isNotEmpty && !h.startsWith('error')) {
           html = h; label = l; break;
         }
@@ -94,7 +91,6 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
       if (html != null && html.isNotEmpty) {
         _webController.loadHtmlString('''
 <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body>$html</body></html>''');
-        // 等页面加载完再应用缩放
         _webController.setNavigationDelegate(NavigationDelegate(
           onPageFinished: (_) => _updateWebViewZoom(_lastScale),
         ));
