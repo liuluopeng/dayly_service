@@ -24,7 +24,11 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// 监听剪贴板，自动保存图片并记录历史
-    Monitor,
+    Monitor {
+        /// gRPC 服务器地址
+        #[arg(short, long, default_value = "http://localhost:50051", env = "GRPC_ADDR")]
+        grpc_addr: String,
+    },
     /// 查看或搜索剪贴板历史
     History {
         /// 显示最近 N 条记录（默认 20）
@@ -50,8 +54,8 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command.unwrap_or(Commands::Monitor) {
-        Commands::Monitor => run_monitor(),
+    match cli.command.unwrap_or(Commands::Monitor { grpc_addr: "http://localhost:50051".into() }) {
+        Commands::Monitor { grpc_addr } => run_monitor(&grpc_addr),
         Commands::History {
             count,
             search,
@@ -194,7 +198,7 @@ fn cmd_history(count: usize, search: Option<&str>, filter_type: Option<&str>) {
 
 // ─── monitor（守护进程主循环） ─────────────────────────────────
 
-fn run_monitor() {
+fn run_monitor(grpc_addr: &str) {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     use std::time::Duration;
@@ -293,9 +297,6 @@ fn run_monitor() {
                 .add_directive("local_agent=info".parse().unwrap()),
         )
         .init();
-
-    let grpc_addr = std::env::var("GRPC_ADDR")
-        .unwrap_or_else(|_| "http://localhost:50051".to_string());
 
     let rt = tokio::runtime::Runtime::new().unwrap();
 
