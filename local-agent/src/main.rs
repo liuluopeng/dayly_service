@@ -348,8 +348,8 @@ fn run_monitor(grpc_addr: &str) {
                     match rt.block_on(sync_client.push_text(trimmed, &hash_hex, &now)) {
                         Ok(deduplicated) => {
                             if !deduplicated {
-                                let preview = if trimmed.len() > 80 {
-                                    format!("{}...", &trimmed[..80])
+                                let preview = if trimmed.chars().count() > 80 {
+                                    format!("{}...", trimmed.chars().take(80).collect::<String>())
                                 } else {
                                     trimmed.to_string()
                                 };
