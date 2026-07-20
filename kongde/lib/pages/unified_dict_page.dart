@@ -23,11 +23,31 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
   List<Word> _topWords = [];
   List<WordHistory> _recentHistory = [];
   int _searchCount = 0;
+  double _lastScale = 1.0;
 
   @override
   void initState() {
     super.initState();
     _loadStats();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final scale = MediaQuery.textScaleFactorOf(context);
+    if ((scale - _lastScale).abs() > 0.01) {
+      _lastScale = scale;
+      _updateWebViewZoom(scale);
+    }
+  }
+
+  void _updateWebViewZoom(double scale) {
+    _webController.runJavaScript('''
+      document.body.style.zoom = '$scale';
+      document.querySelectorAll('img, table, pre, code').forEach(el => {
+        el.style.maxWidth = '${100 / scale}%';
+      });
+    ''');
   }
 
   @override
@@ -74,6 +94,10 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
       if (html != null && html.isNotEmpty) {
         _webController.loadHtmlString('''
 <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body>$html</body></html>''');
+        // 等页面加载完再应用缩放
+        _webController.setNavigationDelegate(NavigationDelegate(
+          onPageFinished: (_) => _updateWebViewZoom(_lastScale),
+        ));
         setState(() { _currentHtml = html!; _currentLabel = label; });
       }
     } catch (e) {
