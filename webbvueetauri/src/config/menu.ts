@@ -20,22 +20,10 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
       description: t('menu.ggtt.desc')
     },
     {
-      path: '/xiandaihanyu',
-      title: t('menu.xiandaihanyu.title'),
-      icon: t('menu.xiandaihanyu.icon'),
-      description: t('menu.xiandaihanyu.desc')
-    },
-    {
-      path: '/collins',
-      title: t('menu.collins.title'),
-      icon: t('menu.collins.icon'),
-      description: t('menu.collins.desc')
-    },
-    {
-      path: '/ldoce',
-      title: t('menu.ldoce.title'),
-      icon: t('menu.ldoce.icon'),
-      description: t('menu.ldoce.desc')
+      path: '/dict',
+      title: t('menu.unifiedDict.title'),
+      icon: '📖',
+      description: t('menu.unifiedDict.desc')
     },
     {
       path: '/songs',

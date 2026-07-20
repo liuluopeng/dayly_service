@@ -55,20 +55,9 @@
       "icon": "Wubi",
       "desc": "Look up Wubi input codes"
     },
-    "xiandaihanyu": {
-      "title": "Modern Chinese Dictionary",
-      "icon": "Dict",
-      "desc": "Look up Chinese words and definitions"
-    },
-    "collins": {
-      "title": "Collins Dictionary",
-      "icon": "Collins",
-      "desc": "Look up English words"
-    },
-    "ldoce": {
-      "title": "Longman Dictionary",
-      "icon": "LDOCE",
-      "desc": "Look up English words"
+    "unifiedDict": {
+      "title": "Dictionary",
+      "desc": "Search multiple dictionaries at once"
     },
     "songs": {
       "title": "Music",
@@ -493,20 +482,11 @@
     "allSongsLoaded": "All {total} songs loaded",
     "fetchFailed": "Failed to fetch songs: {error}"
   },
-  "collinsSearch": {
-    "title": "Collins Dictionary",
-    "placeholder": "Enter English word...",
-    "search": "Search"
-  },
-  "ldoceSearch": {
-    "title": "Longman Dictionary",
-    "placeholder": "Enter English word...",
-    "search": "Search"
-  },
-  "xiandaihanyuSearch": {
-    "title": "Modern Chinese Dictionary",
-    "placeholder": "Enter Chinese character or word...",
-    "search": "Search"
+  "unifiedDict": {
+    "title": "Dictionary",
+    "placeholder": "Search any word...",
+    "search": "Search",
+    "noResults": "No results found"
   },
   "ggttSearch": {
     "title": "GGTT Search",

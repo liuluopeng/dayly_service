@@ -55,20 +55,9 @@
       "icon": "五笔",
       "desc": "查询五笔编码"
     },
-    "xiandaihanyu": {
-      "title": "现代汉语词典",
-      "icon": "词典",
-      "desc": "查询词语解释"
-    },
-    "collins": {
-      "title": "柯林斯词典",
-      "icon": "Collins",
-      "desc": "查询英语单词"
-    },
-    "ldoce": {
-      "title": "朗文词典",
-      "icon": "LDOCE",
-      "desc": "查询英语单词"
+    "unifiedDict": {
+      "title": "词典",
+      "desc": "聚合词典搜索（现代汉语/柯林斯/朗文）"
     },
     "songs": {
       "title": "听歌",
@@ -491,20 +480,11 @@
     "allSongsLoaded": "已加载全部 {total} 首歌曲",
     "fetchFailed": "获取歌曲失败: {error}"
   },
-  "collinsSearch": {
-    "title": "柯林斯词典",
-    "placeholder": "输入英语单词...",
-    "search": "搜索"
-  },
-  "ldoceSearch": {
-    "title": "朗文词典",
-    "placeholder": "输入英语单词...",
-    "search": "搜索"
-  },
-  "xiandaihanyuSearch": {
-    "title": "现代汉语词典",
-    "placeholder": "输入汉字或词语...",
-    "search": "搜索"
+  "unifiedDict": {
+    "title": "词典",
+    "placeholder": "输入要查询的词语...",
+    "search": "搜索",
+    "noResults": "未找到相关结果"
   },
   "ggttSearch": {
     "title": "GGTT搜索",

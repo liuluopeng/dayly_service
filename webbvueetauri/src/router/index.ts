@@ -2,9 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import Menu from '../views/Menu.vue';
 import GgttSearch from '../views/GgttSearch.vue';
-import XiandaihanyuSearch from '../views/XiandaihanyuSearch.vue';
-import CollinsSearch from '../views/CollinsSearch.vue';
-import LdoceSearch from '../views/LdoceSearch.vue';
+import UnifiedDict from '../views/UnifiedDict.vue';
 import SongView from '../views/SongView.vue';
 import MusicPlayer from '../views/MusicPlayer.vue';
 import MusicPlayerWasm from '../views/MusicPlayerWasm.vue';
@@ -72,20 +70,13 @@ const routes = [
     component: GgttSearch
   },
   {
-    path: '/xiandaihanyu',
-    name: 'XiandaihanyuSearch',
-    component: XiandaihanyuSearch
+    path: '/dict',
+    name: 'UnifiedDict',
+    component: UnifiedDict
   },
-  {
-    path: '/collins',
-    name: 'CollinsSearch',
-    component: CollinsSearch
-  },
-  {
-    path: '/ldoce',
-    name: 'LdoceSearch',
-    component: LdoceSearch
-  },
+  { path: '/xiandaihanyu', redirect: '/dict' },
+  { path: '/collins', redirect: '/dict' },
+  { path: '/ldoce', redirect: '/dict' },
   {
     path: '/songs',
     name: 'SongView',
@@ -161,11 +152,7 @@ const routes = [
     name: 'NoteDetail',
     component: NoteDetail
   },
-  {
-    path: '/search-history',
-    name: 'SearchHistory',
-    component: SearchHistory
-  },
+  { path: '/search-history', redirect: '/dict' },
 
   {
     path: '/tools/base64',
@@ -312,7 +299,7 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const token = localStorage.getItem('token');
 
-  const requiresAuth = ['/menu', '/ggtt', '/xiandaihanyu', '/collins', '/ldoce', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/search-history', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history', '/game2048', '/game-snake', '/game-minesweeper', '/game-tetris'];
+  const requiresAuth = ['/menu', '/ggtt', '/dict', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history', '/game2048', '/game-snake', '/game-minesweeper', '/game-tetris'];
 
   if (to.path === '/login' && token) {
     return '/menu';
