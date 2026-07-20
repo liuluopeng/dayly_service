@@ -39,6 +39,7 @@ services:
     restart: unless-stopped
     ports:
       - "23000:23000"
+      - "50051:50051"
     environment:
       PG_DATABASE: dayly_db
       PG_HOST: db
