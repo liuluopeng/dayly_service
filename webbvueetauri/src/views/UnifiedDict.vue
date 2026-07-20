@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { search_xiandaihanyu, search_collins, search_ldoce } from "../types/wasm-typed";
 
 const { t } = useI18n();
+const inputRef = ref<HTMLInputElement | null>(null);
+
+onMounted(() => setTimeout(() => inputRef.value?.focus(), 100));
 
 const query = ref("");
 const loading = ref(false);
@@ -44,7 +47,7 @@ function hasResults() {
     <h1 class="text-2xl font-bold mb-4">{{ t('unifiedDict.title') }}</h1>
 
     <div class="flex gap-2 mb-4">
-      <input v-model="query" :placeholder="t('unifiedDict.placeholder')"
+      <input ref="inputRef" v-model="query" :placeholder="t('unifiedDict.placeholder')"
              class="flex-1 px-4 py-2 border rounded text-sm" @keyup.enter="searchAll" />
       <button @click="searchAll" :disabled="loading || !query.trim()"
               class="px-4 py-2 bg-blue-500 text-white rounded text-sm disabled:opacity-50">
