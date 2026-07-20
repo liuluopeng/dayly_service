@@ -187,22 +187,12 @@ pub async fn http_logging_middleware(
     let duration = start_time.elapsed();
     let status = response.status();
 
-    // 根据状态码添加颜色，使用不同的格式
     let status_code = status.as_u16();
-    let colored_status = match status_code / 100 {
-        1 => format!("\u{001b}[34m{}\u{001b}[0m", status_code), // 1xx - 蓝色
-        2 => format!("\u{001b}[32m{}\u{001b}[0m", status_code), // 2xx - 绿色
-        3 => format!("\u{001b}[33m{}\u{001b}[0m", status_code), // 3xx - 黄色
-        4 => format!("\u{001b}[31m{}\u{001b}[0m", status_code), // 4xx - 红色
-        5 => format!("\u{001b}[31m{}\u{001b}[0m", status_code), // 5xx - 红色
-        _ => status_code.to_string(),                           // 其他 - 默认
-    };
-
     tracing::info!(
         "HTTP 响应: method={}, path={}, status={}, duration={:?}",
         method,
         path,
-        colored_status,
+        status_code,
         duration
     );
 
