@@ -139,7 +139,7 @@ pub async fn word_search_count(
     client: &ApiClient,
     word: &str,
 ) -> ApiResult<ApiResponse<i64>> {
-    let path = format!("/api/dict/word-count?word={}", urlencoding::encode(word));
+    let path = format!("/api/dict/word-count?search={}", urlencoding::encode(word));
     let response = client
         .get(&path)
         .await
