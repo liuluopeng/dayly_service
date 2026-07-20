@@ -3,20 +3,16 @@ allprojects {
         google()
         mavenCentral()
     }
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "11"
-    }
-    tasks.withType<JavaCompile>().configureEach {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
-    }
 }
 
-// Kotlin 2.x 默认会校验 Java/Kotlin JVM 目标一致性，
-// 某些第三方插件（如 audioplayers_android）的 Java 目标无法覆盖，
-// 此处关闭此校验。
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    compilerOptions.jvmTargetValidationMode.set(org.jetbrains.kotlin.gradle.dsl.JvmTargetValidationMode.WARNING)
+subprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions.jvmTarget = "1.8"
+    }
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
+    }
 }
 
 val newBuildDir: Directory =
