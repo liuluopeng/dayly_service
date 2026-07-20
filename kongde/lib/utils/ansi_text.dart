@@ -64,7 +64,19 @@ Widget ansiRichText(String text, {TextStyle? style}) {
         }
       }
     } else {
-      buf.writeCharCode(text.codeUnitAt(i));
+      final cu = text.codeUnitAt(i);
+      // 处理 surrogate pair（emoji 等）
+      if (cu >= 0xD800 && cu <= 0xDBFF && i + 1 < text.length) {
+        final next = text.codeUnitAt(i + 1);
+        if (next >= 0xDC00 && next <= 0xDFFF) {
+          buf.writeCharCode(0x10000 + (cu - 0xD800) * 0x400 + (next - 0xDC00));
+          i++;
+        } else {
+          buf.writeCharCode(cu);
+        }
+      } else {
+        buf.writeCharCode(cu);
+      }
     }
     i++;
   }
