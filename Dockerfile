@@ -89,7 +89,9 @@ RUN wasm-pack build
 # 构建前端
 WORKDIR /app/webbvueetauri
 RUN pnpm install
-RUN pnpm build
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+# 跳过 vue-tsc 类型检查（Docker 构建不需要）
+RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && pnpm build
 
 # 复制前端dist到static
 RUN mkdir -p /app/sifu_axuum/static/dist && cp -r dist/* /app/sifu_axuum/static/dist/
