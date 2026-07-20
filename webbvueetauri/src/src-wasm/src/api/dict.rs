@@ -167,3 +167,12 @@ pub async fn get_top_words() -> Result<JsValue, JsValue> {
         }
     }
 }
+
+#[wasm_bindgen]
+pub async fn word_search_count_wasm(word: &str) -> Result<i64, JsValue> {
+    let client = get_api_client(None);
+    match dict::word_search_count(client, word).await {
+        Ok(response) => Ok(response.data.unwrap_or(0)),
+        Err(e) => Err(JsValue::from_str(&format!("{}", e))),
+    }
+}

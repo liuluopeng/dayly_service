@@ -135,6 +135,22 @@ pub async fn get_top_words(client: &ApiClient) -> ApiResult<ApiResponse<Vec<Word
     Ok(words)
 }
 
+pub async fn word_search_count(
+    client: &ApiClient,
+    word: &str,
+) -> ApiResult<ApiResponse<i64>> {
+    let path = format!("/api/dict/word-count?word={}", urlencoding::encode(word));
+    let response = client
+        .get(&path)
+        .await
+        .map_err(|e| crate::api::base::ApiError::Internal(e.to_string()))?;
+    let count: ApiResponse<i64> = response
+        .json()
+        .await
+        .map_err(|e| crate::api::base::ApiError::Internal(e.to_string()))?;
+    Ok(count)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -87,6 +87,7 @@ export const chinese_dict = (word: string): Promise<string> => wasm.chinese_dict
 export const search_ggtt = (code: string): Promise<GgttResult> => wasm.search_ggtt(code) as any;
 export const get_recent_history = (limit: bigint): Promise<{ msg: string; data: WordHistory[] }> => wasm.get_recent_history(limit) as any;
 export const get_top_words = (): Promise<{ msg: string; data: Word[] }> => wasm.get_top_words() as any;
+export const word_search_count_wasm = (word: string): Promise<number> => wasm.word_search_count_wasm(word) as any;
 
 // === AI 对话 ===
 export const create_session = (title: string): Promise<OpenAiSession> => wasm.create_session(title) as any;

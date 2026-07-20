@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { search_xiandaihanyu, search_collins, search_ldoce, get_top_words, get_recent_history } from "../types/wasm-typed";
+import { search_xiandaihanyu, search_collins, search_ldoce, get_top_words, get_recent_history, word_search_count_wasm } from "../types/wasm-typed";
 import type { Word, WordHistory } from "../types/models";
 
 const { t, locale } = useI18n();
@@ -62,14 +62,14 @@ async function searchAll() {
 
   // 刷新统计 + 从数据库查询精确搜索次数
   try {
-    const [freq, hist, allHist] = await Promise.all([
+    const [freq, hist, count] = await Promise.all([
       get_top_words(),
       get_recent_history(BigInt(20)),
-      get_recent_history(BigInt(9999)),
+      word_search_count_wasm(q),
     ]);
     topWords.value = freq.data || [];
     recentHistory.value = hist.data || [];
-    searchCount.value = (allHist.data || []).filter((h: any) => h.word === q).length;
+    searchCount.value = count;
   } catch {}
 
   loading.value = false;

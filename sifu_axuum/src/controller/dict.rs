@@ -744,6 +744,26 @@ fn get_content_type(path: &str) -> &'static str {
     }
 }
 
+pub async fn word_search_count(
+    claims: Claims,
+    Extension(pool): Extension<PgPool>,
+    Query(query): Query<DictSearchQuery>,
+) -> ApiResult<ApiResponse<i64>> {
+    let word = query.search.as_str();
+    if word.is_empty() {
+        return Ok(ApiResponse::ok(0));
+    }
+    let count = sqlx::query_scalar::<_, i64>(
+        "SELECT COALESCE(has_searched_times, 0) FROM words WHERE word = $1",
+    )
+    .bind(word)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
+
+    Ok(ApiResponse::ok(count.unwrap_or(0)))
+}
+
 pub fn dict_routes() -> axum::Router {
     axum::Router::new()
         .route("/collins", axum::routing::get(search_collins))
@@ -751,4 +771,5 @@ pub fn dict_routes() -> axum::Router {
         .route("/xiandaihanyu", axum::routing::get(search_xiandaihanyu))
         .route("/recent-history", axum::routing::get(get_recent_history))
         .route("/top-words", axum::routing::get(get_top_words))
+        .route("/word-count", axum::routing::get(word_search_count))
 }
