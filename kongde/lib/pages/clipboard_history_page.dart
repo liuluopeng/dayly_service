@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:kongde/config/app_config.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 import 'package:kongde/src/rust/api/wifi_api/clipboard.dart';
 
@@ -234,7 +235,7 @@ class _ClipboardHistoryPageState extends State<ClipboardHistoryPage> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: Image.network(
-                  entry.imageUrl!,
+                  '${Get.find<AppConfig>().serverUrl}${entry.imageUrl}',
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.contain,
