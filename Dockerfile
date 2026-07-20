@@ -88,10 +88,10 @@ COPY ./sifu_axuum/static /app/sifu_axuum/static
 WORKDIR /app/webbvueetauri/src/src-wasm
 RUN wasm-pack build
 
-# 构建前端（跳过 vue-tsc，WASM 已在上一步编译）
+# 构建前端
 WORKDIR /app/webbvueetauri
 RUN pnpm install
-RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && npx vite build
+RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && pnpm build
 
 # 复制前端dist到static
 RUN mkdir -p /app/sifu_axuum/static/dist && cp -r dist/* /app/sifu_axuum/static/dist/
