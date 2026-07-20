@@ -10,6 +10,7 @@ const topWords = ref<Word[]>([]);
 const recentHistory = ref<WordHistory[]>([]);
 const freqLoading = ref(true);
 const activeTab = ref<"search" | "stats">("search");
+const searchCount = ref(0);
 
 const maxFrequency = computed(() => {
   if (topWords.value.length === 0) return 1;
@@ -59,6 +60,17 @@ async function searchAll() {
   dicts.value[2].html = results[2].status === "fulfilled" ? results[2].value : null;
   dicts.value[2].error = results[2].status === "rejected" ? String(results[2].reason) : null;
 
+  // 刷新统计 + 获取搜索次数
+  try {
+    const [freq, hist] = await Promise.all([
+      get_top_words(),
+      get_recent_history(BigInt(20)),
+    ]);
+    topWords.value = freq.data || [];
+    recentHistory.value = hist.data || [];
+    searchCount.value = topWords.value.find(w => w.word === q)?.hasSearchedTimes ?? 0;
+  } catch {}
+
   loading.value = false;
 }
 
@@ -94,6 +106,10 @@ function hasResults() {
               class="px-4 py-2 bg-blue-500 text-white rounded text-sm disabled:opacity-50">
         {{ loading ? t('common.loading') : t('unifiedDict.searchBtn') }}
       </button>
+    </div>
+
+    <div v-if="searchCount > 0 && !loading && query" class="text-xs text-gray-400 mb-2">
+      {{ t('unifiedDict.searchCount', { word: query, count: searchCount }) }}
     </div>
 
     <div v-if="loading" class="text-center py-8 text-gray-400">{{ t('common.loading') }}...</div>

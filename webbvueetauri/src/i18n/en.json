@@ -491,6 +491,7 @@
     "stats": "Stats",
     "history": "History",
     "frequency": "Frequency",
+    "searchCount": "\"{word}\" has been searched {count} times",
     "noResults": "No results found"
   },
   "ggttSearch": {

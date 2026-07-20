@@ -489,6 +489,7 @@
     "stats": "统计",
     "history": "查询历史",
     "frequency": "词频",
+    "searchCount": "「{word}」已查询 {count} 次",
     "noResults": "未找到相关结果"
   },
   "ggttSearch": {
