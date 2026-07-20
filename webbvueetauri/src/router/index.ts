@@ -19,7 +19,6 @@ import NoteSearch from '../views/NoteSearch.vue';
 import NoteDetail from '../views/NoteDetail.vue';
 import NoteList from '../views/NoteList.vue';
 import NoteCreate from '../views/NoteCreate.vue';
-import SearchHistory from '../views/SearchHistory.vue';
 import ImageGallery from '../views/ImageGallery.vue';
 import VideoList from '../views/VideoList.vue';
 import UserDirectoryAdmin from '../views/UserDirectoryAdmin.vue';

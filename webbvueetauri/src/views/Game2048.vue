@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import {
-  game2048_init, game2048_board, game2048_score, game2048_max_tile,
+  game2048_init, game2048_board, game2048_score,
   game2048_won, game2048_over, game2048_move, game2048_undo,
 } from "../types/wasm-typed";
 
@@ -19,7 +19,7 @@ const tc = (v:number) => v<=4?"#776e65":"#f9f6f2";
 const fs = (v:number) => v>=1000?"1.2rem":v>=100?"1.5rem":"1.8rem";
 
 function refresh() {
-  board.value = game2048_board(); score.value = game2048_score();
+  board.value = Array.from(game2048_board()); score.value = game2048_score();
   won.value = game2048_won(); over.value = game2048_over();
   best.value = Math.max(best.value, score.value);
 }

@@ -9,7 +9,7 @@ const score = ref(0);
 const over = ref(false);
 let timer: number | null = null;
 
-function refresh() { board.value = tetris_board(); score.value = tetris_score(); over.value = tetris_over(); }
+function refresh() { board.value = Array.from(tetris_board()); score.value = tetris_score(); over.value = tetris_over(); }
 function tick() { if (over.value) return; tetris_tick(); refresh(); }
 function move(dir: string) { tetris_move(dir); refresh(); }
 

@@ -13,7 +13,7 @@ const flags = ref(0);
 const flagMode = ref(false);
 
 function refresh() {
-  cells.value = ms_cells(); revealed.value = ms_revealed(); flagged.value = ms_flagged();
+  cells.value = Array.from(ms_cells()); revealed.value = Array.from(ms_revealed()); flagged.value = Array.from(ms_flagged());
   over.value = ms_over(); won.value = ms_won(); flags.value = ms_flag_count();
 }
 

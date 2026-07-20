@@ -10,7 +10,7 @@ const over = ref(false);
 let timer: number | null = null;
 let tx = 0, ty = 0;
 
-function refresh() { board.value = snake_board(); score.value = snake_score(); over.value = snake_over(); }
+function refresh() { board.value = Array.from(snake_board()); score.value = snake_score(); over.value = snake_over(); }
 function tick() { if (over.value) return; snake_tick(); refresh(); }
 
 function setDir(d: string) { snake_set_dir(d); }
