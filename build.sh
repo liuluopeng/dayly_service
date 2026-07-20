@@ -2,6 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# ── 选择 flutter 命令 ─────────────────────────────────────────
+FLUTTER="flutter"
+if command -v fvm &>/dev/null; then
+  FLUTTER="fvm flutter"
+fi
+echo "🔨 使用: $FLUTTER"
+
 cd "$ROOT/kongde"
 
 # ── 读取版本号 ──────────────────────────────────────────────
@@ -15,7 +23,7 @@ echo ""
 echo "═══════════════════════════════════════════════════════"
 echo "  Android APK"
 echo "═══════════════════════════════════════════════════════"
-fvm flutter build apk --release \
+$FLUTTER build apk --release \
   --build-name="$BUILD_NAME" \
   --build-number="$BUILD_NUMBER"
 
@@ -30,7 +38,7 @@ echo ""
 echo "═══════════════════════════════════════════════════════"
 echo "  macOS DMG"
 echo "═══════════════════════════════════════════════════════"
-fvm flutter build macos --release \
+$FLUTTER build macos --release \
   --build-name="$BUILD_NAME" \
   --build-number="$BUILD_NUMBER"
 
@@ -39,8 +47,8 @@ DMG_DST="$ROOT/dist/kongde-$BUILD_NAME.dmg"
 mkdir -p "$ROOT/dist"
 
 # 如果 flutter build macos 直接支持 --dmg
-if fvm flutter build macos --help 2>&1 | grep -q '\-\-dmg'; then
-  fvm flutter build macos --release --dmg \
+if $FLUTTER build macos --help 2>&1 | grep -q '\-\-dmg'; then
+  $FLUTTER build macos --release --dmg \
     --build-name="$BUILD_NAME" \
     --build-number="$BUILD_NUMBER"
   cp "build/macos/Build/Products/Release/kongde.dmg" "$DMG_DST" 2>/dev/null || true
