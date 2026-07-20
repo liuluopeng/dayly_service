@@ -15,6 +15,7 @@ mkdir -p "$ROOT/dist"
 if [ "$SPLIT" = "--split" ]; then
   # 分架构打包，每个 APK 更小
   $FLUTTER build apk --release --split-per-abi \
+    --target-platform android-arm64,android-arm,android-x64 \
     --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER"
   for apk in build/app/outputs/flutter-apk/*.apk; do
     name=$(basename "$apk" | sed "s/app-/kongde-$BUILD_NAME-/")
@@ -22,8 +23,8 @@ if [ "$SPLIT" = "--split" ]; then
     echo "✅ $ROOT/dist/$name"
   done
 else
-  # 默认只打 arm64-v8a（已在 build.gradle.kts 中配置）
-  $FLUTTER build apk --release \
+  # 默认只打 arm64-v8a
+  $FLUTTER build apk --release --target-platform android-arm64 \
     --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER"
   cp build/app/outputs/flutter-apk/app-release.apk "$ROOT/dist/kongde-$BUILD_NAME.apk"
   echo "✅ $ROOT/dist/kongde-$BUILD_NAME.apk"
