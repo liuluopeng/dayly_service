@@ -60,16 +60,16 @@ async function searchAll() {
   dicts.value[2].html = results[2].status === "fulfilled" ? results[2].value : null;
   dicts.value[2].error = results[2].status === "rejected" ? String(results[2].reason) : null;
 
-  // 刷新统计 + 获取搜索次数
+  // 刷新统计 + 从数据库查询精确搜索次数
   try {
-    const [freq, hist] = await Promise.all([
+    const [freq, hist, allHist] = await Promise.all([
       get_top_words(),
       get_recent_history(BigInt(20)),
+      get_recent_history(BigInt(9999)),
     ]);
     topWords.value = freq.data || [];
     recentHistory.value = hist.data || [];
-    const found = topWords.value.find(w => w.word === q);
-    searchCount.value = found ? found.hasSearchedTimes : 1;
+    searchCount.value = (allHist.data || []).filter((h: any) => h.word === q).length;
   } catch {}
 
   loading.value = false;
