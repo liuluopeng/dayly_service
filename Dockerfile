@@ -84,13 +84,13 @@ COPY ./webbvueetauri/src/src-wasm/src /app/webbvueetauri/src/src-wasm/src
 # 复制其他必要文件
 COPY ./sifu_axuum/static /app/sifu_axuum/static
 
-# 复制预编译的 WASM 产物（在宿主机上 wasm-pack build 后产生）
-COPY ./webbvueetauri/src/src-wasm/pkg /app/webbvueetauri/src/src-wasm/pkg
+# 编译 WASM
+WORKDIR /app/webbvueetauri/src/src-wasm
+RUN wasm-pack build
 
-# 构建前端
+# 构建前端（跳过 vue-tsc，WASM 已在上一步编译）
 WORKDIR /app/webbvueetauri
 RUN pnpm install
-# 跳过 vue-tsc 类型检查 + wasm-pack（pkg/ 已 COPY，不需要重编）
 RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && npx vite build
 
 # 复制前端dist到static
