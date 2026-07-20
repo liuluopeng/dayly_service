@@ -12,6 +12,13 @@ allprojects {
     }
 }
 
+// Kotlin 2.x 默认会校验 Java/Kotlin JVM 目标一致性，
+// 某些第三方插件（如 audioplayers_android）的 Java 目标无法覆盖，
+// 此处关闭此校验。
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions.jvmTargetValidationMode.set(org.jetbrains.kotlin.gradle.dsl.JvmTargetValidationMode.WARNING)
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
