@@ -5,8 +5,7 @@ import 'package:kongde/pages/video_library_page.dart';
 import 'package:kongde/pages/image_gallery_page.dart';
 import 'package:kongde/pages/scan_page.dart';
 import 'package:kongde/pages/melatonin_movies_page.dart';
-import 'package:kongde/pages/collins_dict_page.dart';
-import 'package:kongde/pages/ldoce_dict_page.dart';
+import 'package:kongde/pages/unified_dict_page.dart';
 import 'package:kongde/pages/online_music_page.dart';
 import 'package:kongde/pages/local_music_page.dart';
 import 'package:kongde/pages/file_manager_page.dart';
@@ -77,7 +76,7 @@ class _ContactsPageState extends State<ContactsPage> {
                   crossAxisSpacing: crossAxisSpacing,
                   childAspectRatio: 0.85,
                 ),
-                itemCount: 16,
+                itemCount: 15,
                 itemBuilder: (context, index) {
                   final menuItems = [
                     {
@@ -110,13 +109,8 @@ class _ContactsPageState extends State<ContactsPage> {
                     },
                     {
                       'icon': Icons.book,
-                      'title': 'menu.collinsDict'.tr,
-                      'onTap': () => Get.to(() => const CollinsDictPage()),
-                    },
-                    {
-                      'icon': Icons.menu_book,
-                      'title': 'menu.ldoceDict'.tr,
-                      'onTap': () => Get.to(() => const LdoceDictPage()),
+                      'title': 'menu.unifiedDict'.tr,
+                      'onTap': () => Get.to(() => const UnifiedDictPage()),
                     },
                     {
                       'icon': Icons.headphones,
