@@ -5,13 +5,17 @@ allprojects {
     }
 }
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTargetValidationMode
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 subprojects {
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "1.8"
+    tasks.withType<KotlinCompile>().configureEach {
+        kotlinOptions.jvmTarget = "11"
+        compilerOptions.jvmTargetValidationMode.set(JvmTargetValidationMode.WARNING)
     }
     tasks.withType<JavaCompile>().configureEach {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
+        sourceCompatibility = JavaVersion.VERSION_11.toString()
+        targetCompatibility = JavaVersion.VERSION_11.toString()
     }
 }
 
