@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-wasm-pack build --target web --out-dir www/pkg
-echo "✅ WASM 构建完成，产物在 www/pkg/"
-echo "用任意 HTTP 服务器打开 www/ 目录即可预览"
+
+if [ "${1:-}" = "dev" ]; then
+  trunk serve --open
+else
+  trunk build --release --dist dist
+  echo "✅ 构建完成，产物在 dist/"
+fi

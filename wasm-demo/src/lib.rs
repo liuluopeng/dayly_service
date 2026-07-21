@@ -1,10 +1,15 @@
 use common::api::{
     client::ApiClient,
-    user::{user_login, LoginRequest},
     ggtt::{search_ggtt_code, SearchRequest},
+    user::{user_login, LoginRequest},
 };
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(start)]
+pub fn start() {
+    console_error_panic_hook::set_once();
+}
 
 static mut CLIENT: Option<ApiClient> = None;
 
