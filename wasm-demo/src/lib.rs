@@ -123,10 +123,20 @@ pub fn start() {
         match search_ggtt_code(client, req).await {
             Ok(resp) => {
                 if let Some(d) = resp.data {
-                    let diagram = if d.has_diagram { "<div style='color:#888;font-size:13px;margin-top:4px'>含字根图</div>" } else { "" };
+                    let mut svgs = String::new();
+                    for svg in [&d.svg1, &d.svg2, &d.svg3, &d.svg4] {
+                        if let Some(s) = svg {
+                            if !s.is_empty() && s.contains("<path") {
+                                svgs.push_str(&format!("<div style='display:inline-block;width:75px;height:75px;margin:4px'>{}</div>", s));
+                            }
+                        }
+                    }
+                    let svg_section = if svgs.is_empty() { String::new() } else {
+                        format!("<div style='margin-top:12px'>{}</div>", svgs)
+                    };
                     set_html("wubi-result", &format!(
                         "<div style='color:#0078D4;font-size:18px;font-weight:600'>{} → {}</div>{}",
-                        d.char, d.code_86, diagram,
+                        d.char, d.code_86, svg_section,
                     ));
                 } else { set_text("wubi-result", "无结果"); }
             }
