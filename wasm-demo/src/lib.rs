@@ -80,18 +80,34 @@ fn on_click(id: &str, mut f: impl FnMut() + 'static) {
 }
 
 fn route() {
-    if load_token().is_some() {
-        hide("page-login");
-        unhide("page-app");
-    } else {
-        unhide("page-login");
-        hide("page-app");
+    let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
+    let has_token = load_token().is_some();
+
+    match hash.as_str() {
+        "#/ggtt" if has_token => {
+            hide("page-login");
+            unhide("page-app");
+        }
+        "#/login" | _ => {
+            unhide("page-login");
+            hide("page-app");
+        }
     }
+}
+
+fn navigate(hash: &str) {
+    web_sys::window().unwrap().location().set_hash(hash).ok();
 }
 
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
+
+    // 监听 hash 变化
+    let cb = Closure::wrap(Box::new(route) as Box<dyn FnMut()>);
+    let f: &js_sys::Function = cb.as_ref().unchecked_ref();
+    web_sys::window().unwrap().set_onhashchange(Some(f));
+    cb.forget();
 
     // 恢复已保存的 token
     match load_token() {
@@ -100,6 +116,15 @@ pub fn start() {
             set_token_inner(&token);
         }
         None => log("token 不存在"),
+    }
+
+    // 如果已登录但 hash 指向登录页，跳转到应用
+    if load_token().is_some() {
+        let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
+        if hash == "" || hash == "#/login" {
+            navigate("#/ggtt");
+            return;
+        }
     }
     route();
 
@@ -111,7 +136,7 @@ pub fn start() {
         match token {
             Ok(t) => {
                 save_token(&t);
-                route();
+                navigate("#/ggtt");
             }
             Err(e) => set_text("login-msg", &format!("失败: {}", e)),
         }
@@ -156,7 +181,7 @@ pub fn start() {
 
     on_click("logout-btn", || {
         clear_token();
-        route();
+        navigate("#/login");
     });
 }
 
