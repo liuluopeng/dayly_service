@@ -11,7 +11,7 @@ ThemeData wp10Theme({required bool dark}) {
     brightness: dark ? Brightness.dark : Brightness.light,
     scaffoldBackgroundColor: bg,
     colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: dark ? Brightness.dark : Brightness.light),
-    fontFamily: 'Roboto',
+    fontFamily: 'LXGWWenKaiMono',
 
     appBarTheme: AppBarTheme(
       backgroundColor: accent,
