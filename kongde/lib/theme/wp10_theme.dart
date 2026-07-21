@@ -21,7 +21,7 @@ ThemeData wp10Theme({required bool dark}) {
       titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w300),
     ),
 
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
@@ -81,7 +81,7 @@ ThemeData wp10Theme({required bool dark}) {
       side: BorderSide.none,
     ),
 
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: dark ? const Color(0xFF2D2D2D) : Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),

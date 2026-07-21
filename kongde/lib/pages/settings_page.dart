@@ -15,7 +15,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  void _restartApp() => (context as Element).reassemble();
+  void _restartApp() => Get.forceAppUpdate();
   final appConfig = config.AppConfig.instance;
 
   @override
