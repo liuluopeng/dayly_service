@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kongde/controllers/settings_controller.dart';
 import 'package:kongde/pages/wubi_query_page.dart';
 import 'package:kongde/pages/video_library_page.dart';
 import 'package:kongde/pages/image_gallery_page.dart';
@@ -181,13 +182,45 @@ class _ContactsPageState extends State<ContactsPage> {
     required GestureTapCallback? onTap,
     double borderRadius = 12,
   }) {
+    final isWp10 = Get.find<SettingsController>().uiStyle.value == UiStyle.wp10;
+    final accent = Theme.of(context).colorScheme.primary;
+
+    if (isWp10) {
+      // WP10 磁贴风格
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: accent.withAlpha(30),
+            borderRadius: BorderRadius.circular(0),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                left: 8, bottom: 8,
+                child: Icon(icon, size: 28, color: accent),
+              ),
+              Positioned(
+                left: 8, right: 8, bottom: 6,
+                child: Text(
+                  title, textAlign: TextAlign.left,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  maxLines: 2, overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Material 风格
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: 60, height: 60,
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(borderRadius),
@@ -196,12 +229,9 @@ class _ContactsPageState extends State<ContactsPage> {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
+            child: Text(title, textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              maxLines: 2, overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
