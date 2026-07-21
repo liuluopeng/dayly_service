@@ -145,13 +145,13 @@ class SettingsController extends GetxController {
   Future<void> setUiStyle(UiStyle style) async {
     await _store.setString('ui_style', style.name);
     uiStyle.value = style;
-    final isDark = themeMode.value == AppThemeMode.dark;
+    // Get.changeTheme 通过 brightness 自动区分 light/dark
     if (style == UiStyle.wp10) {
       Get.changeTheme(wp10Theme(dark: false));
-      Get.changeDarkTheme(wp10Theme(dark: true));
+      Get.changeTheme(wp10Theme(dark: true));
     } else {
       Get.changeTheme(ThemeData(colorSchemeSeed: Colors.blueGrey));
-      Get.changeDarkTheme(ThemeData(colorSchemeSeed: Colors.blueGrey, brightness: Brightness.dark));
+      Get.changeTheme(ThemeData(colorSchemeSeed: Colors.blueGrey, brightness: Brightness.dark));
     }
   }
 
