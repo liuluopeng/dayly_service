@@ -8,27 +8,13 @@ class MetroDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return MaterialApp(
       theme: wp10Theme(dark: false),
       darkTheme: wp10Theme(dark: true),
       themeMode: ThemeMode.dark,
       home: const MetroDemoPage(),
     );
   }
-}
-
-// 简化的 GetX 替代，避免依赖 get
-class _Get {
-  static void to(Widget page) {}
-}
-class GetMaterialApp extends StatelessWidget {
-  final ThemeData? theme;
-  final ThemeData? darkTheme;
-  final ThemeMode? themeMode;
-  final Widget? home;
-  const GetMaterialApp({super.key, this.theme, this.darkTheme, this.themeMode, this.home});
-  @override
-  Widget build(BuildContext context) => MaterialApp(theme: theme, darkTheme: darkTheme, themeMode: themeMode, home: home);
 }
 
 class MetroDemoPage extends StatefulWidget {
