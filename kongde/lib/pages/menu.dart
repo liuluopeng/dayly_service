@@ -65,7 +65,9 @@ class _ContactsPageState extends State<ContactsPage> {
           padding = 16.0;
         }
 
+        final isWp10 = Get.find<SettingsController>().uiStyle.value == UiStyle.wp10;
         return Scaffold(
+          backgroundColor: isWp10 ? const Color(0xFF000000) : null,
           appBar: CommonAppBar(title: 'menu.title'.tr),
           body: SafeArea(
             child: Padding(
@@ -183,28 +185,25 @@ class _ContactsPageState extends State<ContactsPage> {
     double borderRadius = 12,
   }) {
     final isWp10 = Get.find<SettingsController>().uiStyle.value == UiStyle.wp10;
-    final accent = Theme.of(context).colorScheme.primary;
 
     if (isWp10) {
-      // WP10 磁贴风格
+      // WP10 磁贴风格 — 图标在左上，文字在下，纯黑背景
       return GestureDetector(
         onTap: onTap,
         child: Container(
-          decoration: BoxDecoration(
-            color: accent.withAlpha(30),
-            borderRadius: BorderRadius.circular(0),
-          ),
-          child: Stack(
+          color: const Color(0xFF1A1A1A),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Positioned(
-                left: 8, bottom: 8,
-                child: Icon(icon, size: 28, color: accent),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 0, 0),
+                child: Icon(icon, size: 24, color: Colors.white70),
               ),
-              Positioned(
-                left: 8, right: 8, bottom: 6,
-                child: Text(
-                  title, textAlign: TextAlign.left,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                child: Text(title,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
                   maxLines: 2, overflow: TextOverflow.ellipsis,
                 ),
               ),
