@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WASM Demo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header><h1>WASM Demo</h1></header>
+    <div id="page-login" class="page">
+      <h2>登录</h2>
+      <input id="login-user" type="text" placeholder="用户名" class="metro-input">
+      <input id="login-pass" type="password" placeholder="密码" class="metro-input">
+      <button id="login-btn" class="metro-btn">登录</button>
+      <p id="login-msg" class="msg"></p>
+    </div>
+    <div id="page-app" class="page hidden">
+      <h2>五笔查询</h2>
+      <input id="wubi-input" type="text" placeholder="输入汉字" class="metro-input" maxlength="1">
+      <button id="wubi-btn" class="metro-btn">查询</button>
+      <div id="wubi-result" class="result"></div>
+      <button id="logout-btn" class="metro-btn secondary" style="margin-top:24px">退出登录</button>
+    </div>
+  </div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
