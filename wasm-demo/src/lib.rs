@@ -128,6 +128,7 @@ pub fn start() {
         disable_btn("wubi-btn", true);
         set_html("wubi-result", "");
         let client = get_client();
+        log(&format!("使用的 token: {:?}", unsafe { CLIENT.as_ref().and_then(|c| c.token().map(|s| &s[..20])) }));
         let req = SearchRequest { search: input("wubi-input") };
         match search_ggtt_code(client, req).await {
             Ok(resp) => {
