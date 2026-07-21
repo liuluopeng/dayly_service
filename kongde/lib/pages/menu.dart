@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_metro_ui/flutter_metro_ui.dart';
 import 'package:get/get.dart';
 import 'package:kongde/controllers/settings_controller.dart';
 import 'package:kongde/pages/wubi_query_page.dart';
@@ -184,55 +185,19 @@ class _ContactsPageState extends State<ContactsPage> {
     required GestureTapCallback? onTap,
     double borderRadius = 12,
   }) {
-    final isWp10 = Get.find<SettingsController>().uiStyle.value == UiStyle.wp10;
-
-    if (isWp10) {
-      // WP10 磁贴 — 大图标 + 底部文字
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          color: const Color(0xFF1A1A1A),
-          child: Stack(
-            children: [
-              Center(
-                child: Opacity(
-                  opacity: 0.25,
-                  child: Icon(icon, size: 64, color: Colors.white),
-                ),
-              ),
-              Positioned(
-                left: 10, right: 10, bottom: 8,
-                child: Text(title,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
-                  maxLines: 2, overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+    if (Get.find<SettingsController>().uiStyle.value == UiStyle.wp10) {
+      return MetroTile(icon: icon, label: title, onTap: onTap);
     }
-
-    // Material 风格
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Container(
-            width: 60, height: 60,
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(borderRadius),
-            ),
+          Container(width: 60, height: 60,
+            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(borderRadius)),
             child: Icon(icon, size: 30, color: Colors.blue),
           ),
           const SizedBox(height: 8),
-          Expanded(
-            child: Text(title, textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12),
-              maxLines: 2, overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Expanded(child: Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
