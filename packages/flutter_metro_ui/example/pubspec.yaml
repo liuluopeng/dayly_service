@@ -1,0 +1,15 @@
+name: flutter_metro_ui_example
+description: "Example app for flutter_metro_ui"
+version: 0.1.0
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_metro_ui:
+    path: ../
+
+flutter:
+  uses-material-design: true

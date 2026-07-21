@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kongde/src/rust/api/wifi_api/user.dart';
 import 'package:kongde/services/sqlite_storage.dart';
-import 'package:kongde/theme/wp10_theme.dart';
+import 'package:flutter_metro_ui/flutter_metro_ui.dart';
 import 'package:kongde/utils.dart';
 
 enum BackgroundType { solid, blur, defaultColor }

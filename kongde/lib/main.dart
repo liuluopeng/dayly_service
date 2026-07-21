@@ -11,7 +11,7 @@ import 'package:kongde/pages/collins_dict_page.dart';
 import 'package:kongde/config/app_config.dart';
 import 'package:logger/logger.dart';
 import 'package:kongde/controllers/settings_controller.dart';
-import 'package:kongde/theme/wp10_theme.dart';
+import 'package:flutter_metro_ui/flutter_metro_ui.dart';
 import 'package:kongde/locales/messages.dart';
 import 'package:kongde/services/navigation_service.dart';
 
