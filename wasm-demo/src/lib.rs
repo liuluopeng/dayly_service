@@ -112,8 +112,8 @@ pub fn start() {
         }
     }));
 
-    on_keydown("login-pass", "Enter", || doc().get_element_by_id("login-btn").unwrap().dyn_into::<HtmlElement>().unwrap().click().ok());
-    on_keydown("wubi-input", "Enter", || doc().get_element_by_id("wubi-btn").unwrap().dyn_into::<HtmlElement>().unwrap().click().ok());
+    on_keydown("login-pass", "Enter", || { let _ = el("login-btn").click(); });
+    on_keydown("wubi-input", "Enter", || { let _ = el("wubi-btn").click(); });
 
     on_click("wubi-btn", || spawn_local(async {
         disable_btn("wubi-btn", true);
