@@ -6,9 +6,10 @@ use common::api::{
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{Document, HtmlElement, HtmlInputElement};
+use web_sys::{Document, HtmlElement, HtmlInputElement, Storage};
 
 static mut CLIENT: Option<ApiClient> = None;
+const TOKEN_KEY: &str = "wasm_demo_token";
 
 fn get_client() -> &'static mut ApiClient {
     unsafe {
@@ -17,6 +18,26 @@ fn get_client() -> &'static mut ApiClient {
         }
         CLIENT.as_mut().unwrap()
     }
+}
+
+fn storage() -> Option<Storage> {
+    web_sys::window().unwrap().local_storage().ok()?
+}
+
+fn save_token(token: &str) {
+    if let Some(s) = storage() { s.set_item(TOKEN_KEY, token).ok(); }
+    set_token_inner(token);
+}
+
+fn load_token() -> Option<String> {
+    let s = storage()?;
+    let token = s.get_item(TOKEN_KEY).ok()??;
+    if token.is_empty() { None } else { Some(token) }
+}
+
+fn clear_token() {
+    if let Some(s) = storage() { s.remove_item(TOKEN_KEY).ok(); }
+    set_token_inner("");
 }
 
 fn doc() -> Document { web_sys::window().unwrap().document().unwrap() }
@@ -35,9 +56,19 @@ fn set_html(id: &str, html: &str) { doc().get_element_by_id(id).unwrap().set_inn
 fn set_text(id: &str, text: &str) { doc().get_element_by_id(id).unwrap().set_text_content(Some(text)); }
 fn hide(id: &str) { el(id).set_attribute("style", "display:none").ok(); }
 fn unhide(id: &str) { el(id).set_attribute("style", "display:block").ok(); }
+
 fn disable_btn(id: &str, disabled: bool) {
     if disabled { el(id).set_attribute("disabled", "true").ok(); }
     else { el(id).remove_attribute("disabled").ok(); }
+}
+
+fn on_keydown(id: &str, key: &str, mut f: impl FnMut() + 'static) {
+    let cb = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
+        if &e.key() == key { f(); }
+    }) as Box<dyn FnMut(_)>);
+    doc().get_element_by_id(id).unwrap()
+        .add_event_listener_with_callback("keydown", cb.as_ref().dyn_ref().unwrap()).ok();
+    cb.forget();
 }
 
 fn on_click(id: &str, mut f: impl FnMut() + 'static) {
@@ -47,9 +78,25 @@ fn on_click(id: &str, mut f: impl FnMut() + 'static) {
     cb.forget();
 }
 
+fn route() {
+    if load_token().is_some() {
+        hide("page-login");
+        unhide("page-app");
+    } else {
+        unhide("page-login");
+        hide("page-app");
+    }
+}
+
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
+
+    // 恢复已保存的 token
+    if let Some(token) = load_token() {
+        set_token_inner(&token);
+    }
+    route();
 
     on_click("login-btn", || spawn_local(async {
         disable_btn("login-btn", true);
@@ -58,33 +105,30 @@ pub fn start() {
         disable_btn("login-btn", false);
         match token {
             Ok(t) => {
-                set_token_inner(&t);
-                hide("page-login");
-                unhide("page-app");
+                save_token(&t);
+                route();
             }
             Err(e) => set_text("login-msg", &format!("失败: {}", e)),
         }
     }));
 
+    on_keydown("login-pass", "Enter", || doc().get_element_by_id("login-btn").unwrap().dyn_into::<HtmlElement>().unwrap().click().ok());
+    on_keydown("wubi-input", "Enter", || doc().get_element_by_id("wubi-btn").unwrap().dyn_into::<HtmlElement>().unwrap().click().ok());
+
     on_click("wubi-btn", || spawn_local(async {
         disable_btn("wubi-btn", true);
         set_html("wubi-result", "");
-        let code = input("wubi-input");
         let client = get_client();
-        let req = SearchRequest { search: code };
+        let req = SearchRequest { search: input("wubi-input") };
         match search_ggtt_code(client, req).await {
             Ok(resp) => {
                 if let Some(d) = resp.data {
                     let diagram = if d.has_diagram { "<div style='color:#888;font-size:13px;margin-top:4px'>含字根图</div>" } else { "" };
                     set_html("wubi-result", &format!(
                         "<div style='color:#0078D4;font-size:18px;font-weight:600'>{} → {}</div>{}",
-                        &d.char,
-                        &d.code_86,
-                        diagram,
+                        d.char, d.code_86, diagram,
                     ));
-                } else {
-                    set_text("wubi-result", "无结果");
-                }
+                } else { set_text("wubi-result", "无结果"); }
             }
             Err(e) => set_text("wubi-result", &format!("失败: {}", e)),
         }
@@ -92,9 +136,8 @@ pub fn start() {
     }));
 
     on_click("logout-btn", || {
-        set_token_inner("");
-        hide("page-app");
-        unhide("page-login");
+        clear_token();
+        route();
     });
 }
 
