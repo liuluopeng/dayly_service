@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kongde/src/rust/api/wifi_api/user.dart';
 import 'package:kongde/services/sqlite_storage.dart';
+import 'package:kongde/theme/wp10_theme.dart';
 import 'package:kongde/utils.dart';
 
 enum BackgroundType { solid, blur, defaultColor }
@@ -144,6 +145,14 @@ class SettingsController extends GetxController {
   Future<void> setUiStyle(UiStyle style) async {
     await _store.setString('ui_style', style.name);
     uiStyle.value = style;
+    final isDark = themeMode.value == AppThemeMode.dark;
+    if (style == UiStyle.wp10) {
+      Get.changeTheme(wp10Theme(dark: false));
+      Get.changeDarkTheme(wp10Theme(dark: true));
+    } else {
+      Get.changeTheme(ThemeData(colorSchemeSeed: Colors.blueGrey));
+      Get.changeDarkTheme(ThemeData(colorSchemeSeed: Colors.blueGrey, brightness: Brightness.dark));
+    }
   }
 
   Future<void> _loadUiStyle() async {
