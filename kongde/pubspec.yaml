@@ -108,6 +108,18 @@ flutter:
     - family: LXGWWenKaiMono
       fonts:
         - asset: assets/fonts/lxgw-wenkai-v1.522/LXGWWenKaiMono-Regular.ttf
+    - family: SegoeWP
+      fonts:
+        - asset: assets/fonts/SegoeWP-Light.woff
+          weight: 200
+        - asset: assets/fonts/SegoeWP-Semilight.woff
+          weight: 300
+        - asset: assets/fonts/SegoeWP.woff
+          weight: 400
+        - asset: assets/fonts/SegoeWP-Semibold.woff
+          weight: 600
+        - asset: assets/fonts/SegoeWP-Bold.woff
+          weight: 700
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 ThemeData wp10Theme({required bool dark}) {
   final accent = const Color(0xFF0078D4);
+  final brightness = Brightness.dark;
   final bg = Colors.black;
   final surface = const Color(0xFF1A1A1A);
   final cardBg = const Color(0xFF1A1A1A);
@@ -11,14 +12,14 @@ ThemeData wp10Theme({required bool dark}) {
 
   return ThemeData(
     useMaterial3: false,
-    brightness: dark ? Brightness.dark : Brightness.light,
+    brightness: brightness,
     scaffoldBackgroundColor: bg,
     colorScheme: ColorScheme.fromSeed(
       seedColor: accent,
-      brightness: Brightness.dark,
+      brightness: brightness,
       surface: surface,
     ),
-    fontFamily: 'LXGWWenKaiMono',
+    fontFamily: 'SegoeWP',
 
     // 视觉密度 — 紧凑但间距舒适
     visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -29,7 +30,7 @@ ThemeData wp10Theme({required bool dark}) {
       elevation: 0,
       centerTitle: false,
       titleSpacing: 16,
-      titleTextStyle: TextStyle(color: text, fontSize: 20, fontWeight: FontWeight.w300, fontFamily: 'LXGWWenKaiMono'),
+      titleTextStyle: TextStyle(color: text, fontSize: 24, fontWeight: FontWeight.w300, fontFamily: 'SegoeWP'),
     ),
 
     cardTheme: CardThemeData(
@@ -155,8 +156,8 @@ ThemeData wp10Theme({required bool dark}) {
       labelColor: accent,
       unselectedLabelColor: secondary,
       indicatorColor: accent,
-      labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, fontFamily: 'LXGWWenKaiMono'),
-      unselectedLabelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w300, fontFamily: 'LXGWWenKaiMono'),
+      labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, fontFamily: 'SegoeWP'),
+      unselectedLabelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w300, fontFamily: 'SegoeWP'),
     ),
 
     listTileTheme: ListTileThemeData(
@@ -181,15 +182,16 @@ ThemeData wp10Theme({required bool dark}) {
 
     // 默认文字样式
     textTheme: TextTheme(
-      headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: text, fontFamily: 'LXGWWenKaiMono'),
-      headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w300, color: text, fontFamily: 'LXGWWenKaiMono'),
-      titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: text, fontFamily: 'LXGWWenKaiMono'),
-      titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: text, fontFamily: 'LXGWWenKaiMono'),
-      bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: text, fontFamily: 'LXGWWenKaiMono'),
-      bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: text, fontFamily: 'LXGWWenKaiMono'),
-      bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: secondary, fontFamily: 'LXGWWenKaiMono'),
-      labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: text, fontFamily: 'LXGWWenKaiMono'),
-      labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: secondary, fontFamily: 'LXGWWenKaiMono'),
+      displayLarge: TextStyle(fontSize: 48, fontWeight: FontWeight.w200, color: text, fontFamily: 'SegoeWP'),
+      headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: text, fontFamily: 'SegoeWP'),
+      headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w300, color: text, fontFamily: 'SegoeWP'),
+      titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: text, fontFamily: 'SegoeWP'),
+      titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: text, fontFamily: 'SegoeWP'),
+      bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: text, fontFamily: 'SegoeWP'),
+      bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: text, fontFamily: 'SegoeWP'),
+      bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: secondary, fontFamily: 'SegoeWP'),
+      labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: text, fontFamily: 'SegoeWP'),
+      labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: secondary, fontFamily: 'SegoeWP'),
     ),
   );
 }
