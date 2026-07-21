@@ -7,6 +7,7 @@ members = [
     "webbvueetauri/src/src-wasm",
     "my_type",
     "local-agent",
+    "wasm-demo",
 ]
 
 

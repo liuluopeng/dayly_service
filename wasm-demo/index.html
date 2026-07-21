@@ -6,40 +6,274 @@
 <title>WASM Demo</title>
 <link data-trunk rel="rust" href="Cargo.toml"/>
 <link data-trunk rel="tailwind-css" href="src/input.css">
+<style>
+body { margin: 0; overflow-x: hidden; }
+#sidebar { width: 200px; transition: width .2s; }
+#sidebar.collapsed { width: 52px; }
+#sidebar.collapsed .slabel { display: none; }
+#sidebar.collapsed .sicon { margin-right: 0; text-align: center; }
+#sidebar.collapsed .sgroup-label { font-size: 0; padding: 8px 0; text-align: center; }
+#sidebar.collapsed .sgroup-label::first-letter { font-size: 14px; }
+#main { margin-left: 200px; transition: margin-left .2s; }
+#sidebar.collapsed + #main { margin-left: 52px; }
+.sidebar-item.active { background: #0078D4; color: white; }
+</style>
 </head>
 <body class="bg-black text-white font-sans min-h-screen">
-  <div id="app" class="max-w-md mx-auto">
-    <header class="bg-[#0078D4] px-5 py-3">
-      <h1 class="text-2xl font-light text-white">WASM Demo</h1>
+  <!-- ==================== SIDEBAR ==================== -->
+  <nav id="sidebar" class="fixed left-0 top-0 h-full bg-[#1A1A1A] z-50 overflow-hidden flex flex-col border-r border-[#333]">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[#333] shrink-0">
+      <span id="s-title" class="text-lg font-light text-white">WASM Demo</span>
+      <button id="s-toggle" class="text-white text-lg bg-transparent border-none cursor-pointer px-1 hover:text-[#0078D4]">☰</button>
+    </div>
+    <div class="flex-1 overflow-y-auto py-2 text-sm">
+      <div class="sgroup-label px-4 py-2 text-[#888] text-xs uppercase tracking-wider">🔧 工具</div>
+      <a id="snav-ggtt" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="ggtt"><span class="sicon text-base mr-3 w-5 text-center">🖋</span><span class="slabel">五笔查询</span></a>
+      <a id="snav-dict" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="dict"><span class="sicon text-base mr-3 w-5 text-center">📖</span><span class="slabel">辞典</span></a>
+      <a id="snav-qrcode" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="qrcode"><span class="sicon text-base mr-3 w-5 text-center">📱</span><span class="slabel">二维码</span></a>
+      <a id="snav-password" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="password"><span class="sicon text-base mr-3 w-5 text-center">🔒</span><span class="slabel">密码</span></a>
+      <a id="snav-uuid" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="uuid"><span class="sicon text-base mr-3 w-5 text-center">🆔</span><span class="slabel">UUID</span></a>
+      <a id="snav-base64" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="base64"><span class="sicon text-base mr-3 w-5 text-center">🔢</span><span class="slabel">Base64</span></a>
+      <a id="snav-timestamp" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="timestamp"><span class="sicon text-base mr-3 w-5 text-center">⏰</span><span class="slabel">时间戳</span></a>
+      <a id="snav-songs" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="songs"><span class="sicon text-base mr-3 w-5 text-center">🎵</span><span class="slabel">音乐</span></a>
+
+      <div class="sgroup-label px-4 py-2 text-[#888] text-xs uppercase tracking-wider mt-2">📖 字词</div>
+      <a id="snav-zici-chars" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="zici-chars"><span class="sicon text-base mr-3 w-5 text-center">🈶</span><span class="slabel">生字表</span></a>
+      <a id="snav-zici-words" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="zici-words"><span class="sicon text-base mr-3 w-5 text-center">📝</span><span class="slabel">生词表</span></a>
+      <a id="snav-search-history" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="search-history"><span class="sicon text-base mr-3 w-5 text-center">📊</span><span class="slabel">搜索历史</span></a>
+
+      <div class="sgroup-label px-4 py-2 text-[#888] text-xs uppercase tracking-wider mt-2">📝 笔记</div>
+      <a id="snav-notes" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="notes"><span class="sicon text-base mr-3 w-5 text-center">📚</span><span class="slabel">笔记列表</span></a>
+      <a id="snav-short-notes" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="short-notes"><span class="sicon text-base mr-3 w-5 text-center">📝</span><span class="slabel">短笔记</span></a>
+
+      <div class="sgroup-label px-4 py-2 text-[#888] text-xs uppercase tracking-wider mt-2">📋 系统</div>
+      <a id="snav-clipboard" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="clipboard"><span class="sicon text-base mr-3 w-5 text-center">📋</span><span class="slabel">剪贴板</span></a>
+      <a id="snav-logout" class="sidebar-item flex items-center px-4 py-2.5 text-[#f44336] hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="logout"><span class="sicon text-base mr-3 w-5 text-center">🚪</span><span class="slabel">退出登录</span></a>
+    </div>
+  </nav>
+
+  <!-- ==================== MAIN ==================== -->
+  <div id="main" class="min-h-screen">
+    <header class="bg-[#0078D4] px-5 py-3 flex items-center justify-between">
+      <h1 id="page-title" class="text-2xl font-light text-white">WASM Demo</h1>
     </header>
 
-    <div id="page-login" class="hidden p-6">
+    <div id="content" class="max-w-2xl mx-auto">
+
+    <!-- ==================== LOGIN ==================== -->
+    <div id="page-login" class="p-6">
       <h2 class="text-xl font-light text-white mb-5">登录</h2>
       <input id="login-user" type="text" placeholder="用户名"
         class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]">
       <input id="login-pass" type="password" placeholder="密码"
         class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]">
       <button id="login-btn"
-        class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-2 hover:bg-[#006CBE] disabled:opacity-50 disabled:cursor-default">
-        登录
-      </button>
+        class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-2 hover:bg-[#006CBE] disabled:opacity-50 disabled:cursor-default">登录</button>
       <p id="login-msg" class="text-[#888] text-xs mt-2"></p>
     </div>
 
-    <div id="page-app" class="hidden p-6">
-      <h2 class="text-xl font-light text-white mb-5">五笔查询</h2>
+    <!-- ==================== GGTT ==================== -->
+    <div id="page-ggtt" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">五笔查询</h2>
       <input id="wubi-input" type="text" placeholder="输入汉字" maxlength="1"
         class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]">
       <button id="wubi-btn"
-        class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-2 hover:bg-[#006CBE] disabled:opacity-50 disabled:cursor-default">
-        查询
-      </button>
+        class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-2 hover:bg-[#006CBE] disabled:opacity-50 disabled:cursor-default">查询</button>
       <div id="wubi-result" class="bg-[#1A1A1A] p-4 mt-3 text-sm whitespace-pre-wrap break-all min-h-12"></div>
-      <button id="logout-btn"
-        class="block w-full bg-[#2D2D2D] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mt-6 hover:bg-[#3D3D3D]">
-        退出登录
-      </button>
     </div>
-  </div>
+
+    <!-- ==================== DICT ==================== -->
+    <div id="page-dict" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">辞典搜索</h2>
+      <input id="dict-input" type="text" placeholder="输入搜索词语"
+        class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]">
+      <div class="flex gap-2 mb-3">
+        <select id="dict-select" class="bg-[#1A1A1A] text-white border-none px-2 py-2 text-sm flex-1 outline-none">
+          <option value="all">全部</option>
+          <option value="xiandai">现代汉语</option>
+          <option value="collins">柯林斯</option>
+          <option value="ldoce">朗文</option>
+        </select>
+        <button id="dict-btn"
+          class="bg-[#0078D4] text-white border-none px-4 py-2 text-sm cursor-pointer hover:bg-[#006CBE] disabled:opacity-50">搜索</button>
+      </div>
+      <div id="dict-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm break-all min-h-12 max-h-96 overflow-y-auto"></div>
+    </div>
+
+    <!-- ==================== QRCODE ==================== -->
+    <div id="page-qrcode" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">二维码生成</h2>
+      <textarea id="qr-input" rows="3" placeholder="输入文本或URL"
+        class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]"></textarea>
+      <button id="qr-btn"
+        class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-2 hover:bg-[#006CBE]">生成</button>
+      <div id="qr-result" class="bg-[#1A1A1A] p-4 mt-3 text-center min-h-12">
+        <p id="qr-info" class="text-xs text-[#888] mt-2"></p>
+      </div>
+    </div>
+
+    <!-- ==================== PASSWORD ==================== -->
+    <div id="page-password" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">密码生成</h2>
+      <div class="flex gap-2 mb-3">
+        <input id="pw-length" type="number" value="16" min="4" max="128"
+          class="w-20 bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] outline-none focus:border-b-2 focus:border-[#0078D4]">
+        <button id="pw-btn" class="flex-1 bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer hover:bg-[#006CBE]">生成密码</button>
+        <button id="pw-strong-btn" class="flex-1 bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer hover:bg-[#006CBE]">强密码</button>
+      </div>
+      <div id="pw-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm font-mono break-all select-all"></div>
+    </div>
+
+    <!-- ==================== UUID ==================== -->
+    <div id="page-uuid" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">UUID 生成</h2>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button id="uuid-v4-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">UUID v4</button>
+        <button id="uuid-v5-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">UUID v5</button>
+        <button id="uuid-v6-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">UUID v6</button>
+        <button id="uuid-v7-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">UUID v7</button>
+      </div>
+      <div id="uuid-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm font-mono break-all select-all"></div>
+      <hr class="border-[#333] my-4">
+      <h3 class="text-base font-light text-white mb-3">校验 UUID</h3>
+      <input id="uuid-validate-input" type="text" placeholder="输入 UUID"
+        class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]">
+      <button id="uuid-validate-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">校验</button>
+      <p id="uuid-validate-result" class="text-sm mt-2"></p>
+    </div>
+
+    <!-- ==================== BASE64 ==================== -->
+    <div id="page-base64" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">Base64 编码 / 解码</h2>
+      <textarea id="b64-input" rows="3" placeholder="输入文本"
+        class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]"></textarea>
+      <div class="flex gap-2 mb-3">
+        <button id="b64-encode-btn" class="flex-1 bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer hover:bg-[#006CBE]">编码</button>
+        <button id="b64-decode-btn" class="flex-1 bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer hover:bg-[#006CBE]">解码</button>
+      </div>
+      <div id="b64-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm font-mono break-all select-all"></div>
+    </div>
+
+    <!-- ==================== TIMESTAMP ==================== -->
+    <div id="page-timestamp" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">时间戳工具</h2>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button id="ts-now-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">当前时间</button>
+        <button id="ts-utc-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">UTC 时间</button>
+        <button id="ts-timestamp-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">当前时间戳</button>
+      </div>
+      <div id="ts-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm break-all min-h-12"></div>
+      <hr class="border-[#333] my-4">
+      <h3 class="text-base font-light text-white mb-3">时间戳 → 时间</h3>
+      <div class="flex gap-2 mb-2">
+        <input id="ts-input" type="text" placeholder="输入时间戳"
+          class="flex-1 bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] outline-none focus:border-b-2 focus:border-[#0078D4]">
+        <button id="ts-to-local-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">转本地</button>
+        <button id="ts-to-utc-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">转 UTC</button>
+      </div>
+      <h3 class="text-base font-light text-white mb-3 mt-4">时间 → 时间戳</h3>
+      <div class="flex gap-2">
+        <input id="ts-str-input" type="text" placeholder="2025-01-01 12:00:00"
+          class="flex-1 bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] outline-none focus:border-b-2 focus:border-[#0078D4]">
+        <button id="ts-parse-btn" class="bg-[#0078D4] text-white border-none px-3 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">转换</button>
+      </div>
+    </div>
+
+    <!-- ==================== SONGS ==================== -->
+    <div id="page-songs" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">音乐播放</h2>
+      <div class="flex gap-2 mb-4">
+        <button id="songs-refresh-btn" class="flex-1 bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer hover:bg-[#006CBE]">刷新列表</button>
+        <button id="songs-scan-btn" class="bg-[#2D2D2D] text-white border-none px-3 py-2.5 text-sm cursor-pointer hover:bg-[#3D3D3D]">扫描</button>
+      </div>
+      <p id="songs-count" class="text-xs text-[#888] mb-3"></p>
+
+      <!-- Player controls -->
+      <div id="song-player-bar" class="bg-[#1A1A1A] p-4 mb-4 rounded hidden">
+        <div class="flex items-center gap-3 mb-3">
+          <img id="song-current-cover" class="w-12 h-12 rounded object-cover bg-[#333]" src="" alt="cover">
+          <div class="flex-1 min-w-0">
+            <div id="song-current-title" class="text-sm font-semibold truncate"></div>
+            <div id="song-current-artist" class="text-xs text-[#888] truncate"></div>
+          </div>
+        </div>
+        <div class="flex items-center justify-center gap-4 mb-2">
+          <button id="song-prev-btn" class="bg-transparent text-white text-lg border-none cursor-pointer hover:text-[#0078D4]">⏮</button>
+          <button id="song-play-btn" class="bg-[#0078D4] text-white w-10 h-10 rounded-full border-none text-lg cursor-pointer hover:bg-[#006CBE] flex items-center justify-center">▶</button>
+          <button id="song-next-btn" class="bg-transparent text-white text-lg border-none cursor-pointer hover:text-[#0078D4]">⏭</button>
+        </div>
+        <audio id="song-player" class="w-full" controls preload="metadata"></audio>
+        <div id="spectrum-container" class="flex items-end h-16 gap-px mt-2" style="height:64px"></div>
+        <div class="flex justify-between text-[10px] text-[#555] mt-1 px-0.5"><span>20</span><span>200</span><span>2k</span><span>20k</span></div>
+      </div>
+
+      <!-- Song list -->
+      <div id="songs-list" class="bg-[#1A1A1A] text-sm min-h-12 max-h-[60vh] overflow-y-auto"></div>
+    </div>
+
+    <!-- ==================== CLIPBOARD ==================== -->
+    <div id="page-clipboard" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">剪贴板历史</h2>
+      <button id="clip-btn" class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-2 hover:bg-[#006CBE]">刷新</button>
+      <div id="clip-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm break-all min-h-12 max-h-96 overflow-y-auto"></div>
+    </div>
+
+    <!-- ==================== NOTES ==================== -->
+    <div id="page-notes" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">笔记</h2>
+      <button id="notes-refresh-btn" class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-3 hover:bg-[#006CBE]">刷新列表</button>
+      <div id="notes-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm break-all min-h-12 max-h-80 overflow-y-auto"></div>
+    </div>
+
+    <!-- ==================== ZICI CHARS ==================== -->
+    <div id="page-zici-chars" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">生字表</h2>
+      <div id="zici-grade-btns" class="flex flex-wrap gap-2 mb-4">
+        <button id="zc-1-1" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">一年级·上</button>
+        <button id="zc-1-2" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">一年级·下</button>
+        <button id="zc-2-1" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">二年级·上</button>
+        <button id="zc-2-2" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">二年级·下</button>
+        <button id="zc-3-1" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">三年级·上</button>
+        <button id="zc-3-2" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">三年级·下</button>
+        <button id="zc-4-1" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">四年级·上</button>
+        <button id="zc-4-2" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">四年级·下</button>
+        <button id="zc-5-1" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">五年级·上</button>
+        <button id="zc-5-2" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">五年级·下</button>
+        <button id="zc-6-1" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">六年级·上</button>
+        <button id="zc-6-2" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">六年级·下</button>
+      </div>
+      <div id="zici-char-display" class="bg-[#1A1A1A] p-4 min-h-12 text-lg leading-loose tracking-wider"></div>
+    </div>
+
+    <!-- ==================== ZICI WORDS ==================== -->
+    <div id="page-zici-words" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">生词表</h2>
+      <input id="zici-word-search" type="text" placeholder="搜索词语"
+        class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-3 outline-none focus:border-b-2 focus:border-[#0078D4]">
+      <button id="zici-word-search-btn" class="bg-[#0078D4] text-white border-none px-4 py-2 text-sm cursor-pointer hover:bg-[#006CBE] mb-3">搜索</button>
+      <div id="zici-word-display" class="bg-[#1A1A1A] p-4 min-h-12 text-sm break-all max-h-96 overflow-y-auto"></div>
+    </div>
+
+    <!-- ==================== SEARCH HISTORY ==================== -->
+    <div id="page-search-history" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">搜索历史</h2>
+      <button id="shistory-btn" class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-2 hover:bg-[#006CBE]">加载历史</button>
+      <div id="shistory-result" class="bg-[#1A1A1A] p-4 mt-1 text-sm break-all min-h-12"></div>
+    </div>
+
+    <!-- ==================== SHORT NOTES ==================== -->
+    <div id="page-short-notes" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-4">短笔记</h2>
+      <div class="mb-4">
+        <textarea id="sn-content" rows="2" placeholder="输入笔记内容"
+          class="block w-full bg-[#1A1A1A] text-white border-none px-3 py-2.5 text-[15px] mb-2 outline-none focus:border-b-2 focus:border-[#0078D4]"></textarea>
+        <button id="sn-create-btn" class="bg-[#0078D4] text-white border-none px-4 py-2 text-sm cursor-pointer hover:bg-[#006CBE]">创建</button>
+      </div>
+      <button id="sn-refresh-btn" class="block w-full bg-[#0078D4] text-white border-none px-3 py-2.5 text-[15px] cursor-pointer mb-3 hover:bg-[#006CBE]">刷新列表</button>
+      <div id="sn-result" class="bg-[#1A1A1A] p-4 text-sm break-all min-h-12 max-h-80 overflow-y-auto"></div>
+    </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
 </body>
 </html>

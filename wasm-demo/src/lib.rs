@@ -1,20 +1,34 @@
 use std::cell::RefCell;
 use common::api::{
     client::ApiClient,
+    clipboard::get_clipboard_history,
+    dict,
     ggtt::{search_ggtt_code, SearchRequest},
-    user::{user_login, LoginRequest},
+    note::list_notes,
+    short_note::{create_short_note, list_short_notes, CreateShortNoteRequest},
+    songs::{get_all_songs, scan_songs},
+    user::user_login,
+};
+use my_type::dto::SongWithUrl;
+use common::front_can_do::{
+    base64::{base64_decode, base64_encode},
+    password::{generate_password, generate_strong_password},
+    qrcode::{generate_qr_unicode, qr_info},
+    timestamp,
+    uuid,
 };
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{Document, HtmlElement, HtmlInputElement, Storage};
+use web_sys::{Document, HtmlElement, HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement, Storage};
 
 const TOKEN_KEY: &str = "wasm_demo_token";
 
 thread_local! {
     static CLIENT: RefCell<Option<ApiClient>> = const { RefCell::new(None) };
+    static SONG_LIST: RefCell<Vec<SongWithUrl>> = const { RefCell::new(Vec::new()) };
+    static SONG_INDEX: RefCell<usize> = const { RefCell::new(0) };
 }
-
 
 fn log(msg: &str) {
     web_sys::console::log_1(&msg.into());
@@ -53,6 +67,18 @@ fn input(id: &str) -> String {
         .value()
 }
 
+fn select_val(id: &str) -> String {
+    doc().get_element_by_id(id).unwrap()
+        .dyn_into::<HtmlSelectElement>().unwrap()
+        .value()
+}
+
+fn textarea(id: &str) -> String {
+    doc().get_element_by_id(id).unwrap()
+        .dyn_into::<HtmlTextAreaElement>().unwrap()
+        .value()
+}
+
 fn set_html(id: &str, html: &str) { doc().get_element_by_id(id).unwrap().set_inner_html(html); }
 fn set_text(id: &str, text: &str) { doc().get_element_by_id(id).unwrap().set_text_content(Some(text)); }
 fn hide(id: &str) { el(id).set_attribute("style", "display:none").ok(); }
@@ -72,25 +98,70 @@ fn on_keydown(id: &str, key: &str, mut f: impl FnMut() + 'static) {
     cb.forget();
 }
 
-fn on_click(id: &str, mut f: impl FnMut() + 'static) {
+fn on_click(id: &str, f: impl FnMut() + 'static) {
     let cb = Closure::wrap(Box::new(f) as Box<dyn FnMut()>);
     doc().get_element_by_id(id).unwrap()
         .add_event_listener_with_callback("click", cb.as_ref().dyn_ref().unwrap()).ok();
     cb.forget();
 }
 
-fn route() {
-    let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
-    let has_token = load_token().is_some();
+// ==================== NAVIGATION ====================
 
-    match hash.as_str() {
-        "#/ggtt" if has_token => {
-            hide("page-login");
-            unhide("page-app");
+const ALL_PAGES: &[&str] = &[
+    "page-login", "page-ggtt", "page-dict", "page-qrcode",
+    "page-password", "page-uuid", "page-base64", "page-timestamp",
+    "page-clipboard", "page-notes", "page-zici-chars", "page-zici-words",
+    "page-search-history", "page-short-notes", "page-songs",
+];
+
+const PAGE_TITLES: &[(&str, &str)] = &[
+    ("page-login", "登录"),
+    ("page-ggtt", "五笔查询"),
+    ("page-dict", "辞典搜索"),
+    ("page-qrcode", "二维码生成"),
+    ("page-password", "密码生成"),
+    ("page-uuid", "UUID"),
+    ("page-base64", "Base64"),
+    ("page-timestamp", "时间戳"),
+    ("page-clipboard", "剪贴板历史"),
+    ("page-notes", "笔记"),
+    ("page-zici-chars", "生字表"),
+    ("page-zici-words", "生词表"),
+    ("page-search-history", "搜索历史"),
+    ("page-short-notes", "短笔记"),
+    ("page-songs", "音乐"),
+];
+
+const SIDEBAR_IDS: &[&str] = &[
+    "snav-ggtt", "snav-dict", "snav-qrcode", "snav-password",
+    "snav-uuid", "snav-base64", "snav-timestamp", "snav-songs",
+    "snav-zici-chars", "snav-zici-words", "snav-search-history",
+    "snav-clipboard", "snav-notes", "snav-short-notes",
+];
+
+fn show_page(page_id: &str) {
+    for id in ALL_PAGES {
+        if *id == page_id { unhide(id); } else { hide(id); }
+    }
+    // update title
+    for (id, title) in PAGE_TITLES {
+        if *id == page_id {
+            el("page-title").set_text_content(Some(title));
+            break;
         }
-        "#/login" | _ => {
-            unhide("page-login");
-            hide("page-app");
+    }
+    // sidebar active
+    for sid in SIDEBAR_IDS {
+        if let Some(snav) = doc().get_element_by_id(sid) {
+            if let Ok(e) = snav.dyn_into::<HtmlElement>() {
+                let target_page = sid.strip_prefix("snav-").unwrap_or("");
+                let expected = format!("page-{}", target_page);
+                if expected == page_id {
+                    e.class_list().add_1("active").ok();
+                } else if target_page != "logout" {
+                    e.class_list().remove_1("active").ok();
+                }
+            }
         }
     }
 }
@@ -99,114 +170,66 @@ fn navigate(hash: &str) {
     web_sys::window().unwrap().location().set_hash(hash).ok();
 }
 
-#[wasm_bindgen(start)]
-pub fn start() {
-    console_error_panic_hook::set_once();
+fn route() {
+    let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
+    let has_token = load_token().is_some();
 
-    // 监听 hash 变化
-    let cb = Closure::wrap(Box::new(route) as Box<dyn FnMut()>);
-    let f: &js_sys::Function = cb.as_ref().unchecked_ref();
-    web_sys::window().unwrap().set_onhashchange(Some(f));
-    cb.forget();
-
-    // 恢复已保存的 token
-    match load_token() {
-        Some(token) => {
-            log("token 已从 localStorage 恢复");
-            set_token_inner(&token);
-        }
-        None => log("token 不存在"),
+    if !has_token {
+        show_page("page-login");
+        return;
     }
 
-    // 如果已登录但 hash 指向登录页，跳转到应用
-    if load_token().is_some() {
-        let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
-        if hash == "" || hash == "#/login" {
+    match hash.as_str() {
+        "#/ggtt" => show_page("page-ggtt"),
+        "#/dict" => show_page("page-dict"),
+        "#/qrcode" => show_page("page-qrcode"),
+        "#/password" => show_page("page-password"),
+        "#/uuid" => show_page("page-uuid"),
+        "#/base64" => show_page("page-base64"),
+        "#/timestamp" => show_page("page-timestamp"),
+        "#/clipboard" | "#/clipboard-history" => show_page("page-clipboard"),
+        "#/notes" => show_page("page-notes"),
+        "#/zici-chars" | "#/zici/chars" => show_page("page-zici-chars"),
+        "#/zici-words" | "#/zici/words" => show_page("page-zici-words"),
+        "#/songs" => { show_page("page-songs"); }
+        "#/search-history" => show_page("page-search-history"),
+        "#/short-notes" => show_page("page-short-notes"),
+        _ => {
+            // default hub → ggtt
             navigate("#/ggtt");
-            return;
+            show_page("page-ggtt");
         }
     }
-    route();
-
-    on_click("login-btn", || spawn_local(async {
-        disable_btn("login-btn", true);
-        set_text("login-msg", "登录中...");
-        let token = login_impl(&input("login-user"), &input("login-pass")).await;
-        disable_btn("login-btn", false);
-        match token {
-            Ok(t) => {
-                save_token(&t);
-                navigate("#/ggtt");
-            }
-            Err(e) => set_text("login-msg", &format!("失败: {}", e)),
-        }
-    }));
-
-    on_keydown("login-pass", "Enter", || { let _ = el("login-btn").click(); });
-    on_keydown("wubi-input", "Enter", || { let _ = el("wubi-btn").click(); });
-
-    on_click("wubi-btn", || spawn_local(async {
-        disable_btn("wubi-btn", true);
-        set_html("wubi-result", "");
-        let req = SearchRequest { search: input("wubi-input") };
-        let client = get_client();
-        log(&format!("token: {:?}", client.token().map(|s| &s[..20.min(s.len())])));
-        match search_ggtt_code(&client, req).await {
-            Ok(resp) => {
-                if let Some(d) = resp.data {
-                    let mut svgs = String::new();
-                    for svg in [&d.svg1, &d.svg2, &d.svg3, &d.svg4] {
-                        if let Some(s) = svg {
-                            if !s.is_empty() && s.contains("<path") {
-                                svgs.push_str(&format!("<div style='display:inline-block;width:75px;height:75px;margin:4px'>{}</div>", s));
-                            }
-                        }
-                    }
-                    let svg_section = if svgs.is_empty() { String::new() } else {
-                        format!("<div style='margin-top:12px'>{}</div>", svgs)
-                    };
-                    set_html("wubi-result", &format!(
-                        "<div style='color:#0078D4;font-size:18px;font-weight:600'>{} → {}</div>{}",
-                        d.char, d.code_86, svg_section,
-                    ));
-                } else { set_text("wubi-result", "无结果"); }
-            }
-            Err(e) => {
-                log(&format!("GGTT 查询失败: {}", e));
-                set_text("wubi-result", &format!("失败: {}", e));
-            },
-        }
-        disable_btn("wubi-btn", false);
-    }));
-
-    on_click("logout-btn", || {
-        clear_token();
-        navigate("#/login");
-    });
 }
 
 fn get_client() -> ApiClient {
-    let mut c = ApiClient::new("http://localhost:23001");
     CLIENT.with(|rc| {
-        if let Some(t) = rc.borrow().as_ref().and_then(|c| c.token()) {
-            c.set_token(t);
+        let b = rc.borrow();
+        if let Some(client) = b.as_ref() {
+            let mut c = ApiClient::new("http://localhost:23001");
+            if let Some(t) = client.token() {
+                c.set_token(t);
+            }
+            c
+        } else {
+            ApiClient::new("http://localhost:23001")
         }
-    });
-    c
+    })
 }
 
 fn set_token_inner(token: &str) {
     CLIENT.with(|c| {
         let mut b = c.borrow_mut();
-        if let Some(client) = b.as_mut() {
-            if token.is_empty() { client.clear_token(); }
-            else { client.set_token(token); }
-        }
+        let client = b.get_or_insert_with(|| ApiClient::new("http://localhost:23001"));
+        if token.is_empty() { client.clear_token(); }
+        else { client.set_token(token); }
     });
 }
 
 #[wasm_bindgen]
 pub fn set_token(token: &str) { set_token_inner(token); }
+
+// ==================== LOGIN ====================
 
 async fn login_impl(user: &str, pass: &str) -> Result<String, String> {
     let client = get_client();
@@ -214,4 +237,1010 @@ async fn login_impl(user: &str, pass: &str) -> Result<String, String> {
         Ok(resp) => resp.data.map(|d| d.token).ok_or("无数据".into()),
         Err(e) => Err(format!("{}", e)),
     }
+}
+
+// ==================== GGTT ====================
+
+async fn do_wubi_search() {
+    disable_btn("wubi-btn", true);
+    set_html("wubi-result", "");
+    let req = SearchRequest { search: input("wubi-input") };
+    let client = get_client();
+    match search_ggtt_code(&client, req).await {
+        Ok(resp) => {
+            if let Some(d) = resp.data {
+                let mut svgs = String::new();
+                for svg in [&d.svg1, &d.svg2, &d.svg3, &d.svg4] {
+                    if let Some(s) = svg {
+                        if !s.is_empty() && s.contains("<path") {
+                            svgs.push_str(&format!("<div style='display:inline-block;width:75px;height:75px;margin:4px'>{}</div>", s));
+                        }
+                    }
+                }
+                let svg_section = if svgs.is_empty() { String::new() } else {
+                    format!("<div style='margin-top:12px'>{}</div>", svgs)
+                };
+                set_html("wubi-result", &format!(
+                    "<div style='color:#0078D4;font-size:18px;font-weight:600'>{} → {}</div>{}",
+                    d.char, d.code_86, svg_section,
+                ));
+            } else { set_text("wubi-result", "无结果"); }
+        }
+        Err(e) => set_text("wubi-result", &format!("失败: {}", e)),
+    }
+    disable_btn("wubi-btn", false);
+}
+
+// ==================== DICT ====================
+
+async fn do_dict_search() {
+    disable_btn("dict-btn", true);
+    set_html("dict-result", "<div style='color:#888'>搜索中...</div>");
+    let word = input("dict-input");
+    if word.is_empty() { set_text("dict-result", "请输入搜索词语"); disable_btn("dict-btn", false); return; }
+    let dict_type = select_val("dict-select");
+    let client = get_client();
+
+    let result = match dict_type.as_str() {
+        "xiandai" => {
+            match dict::search_xiandaihanyu(&client, &word).await {
+                Ok(r) => format!("【现代汉语词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default()),
+                Err(e) => format!("失败: {}", e),
+            }
+        }
+        "collins" => {
+            match dict::search_collins(&client, &word).await {
+                Ok(r) => format!("【柯林斯词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default()),
+                Err(e) => format!("失败: {}", e),
+            }
+        }
+        "ldoce" => {
+            match dict::search_ldoce(&client, &word).await {
+                Ok(r) => format!("【朗文词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default()),
+                Err(e) => format!("失败: {}", e),
+            }
+        }
+        _ => {
+            let mut out = String::new();
+            match dict::search_xiandaihanyu(&client, &word).await {
+                Ok(r) => out.push_str(&format!("【现代汉语词典】\n{}\n\n", serde_json::to_string_pretty(&r.data).unwrap_or_default())),
+                Err(e) => out.push_str(&format!("【现代汉语词典】失败: {}\n\n", e)),
+            }
+            match dict::search_collins(&client, &word).await {
+                Ok(r) => out.push_str(&format!("【柯林斯词典】\n{}\n\n", serde_json::to_string_pretty(&r.data).unwrap_or_default())),
+                Err(e) => out.push_str(&format!("【柯林斯词典】失败: {}\n\n", e)),
+            }
+            match dict::search_ldoce(&client, &word).await {
+                Ok(r) => out.push_str(&format!("【朗文词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default())),
+                Err(e) => out.push_str(&format!("【朗文词典】失败: {}", e)),
+            }
+            out
+        }
+    };
+
+    set_text("dict-result", &result);
+    disable_btn("dict-btn", false);
+}
+
+// ==================== QR CODE ====================
+
+fn do_qr_generate() {
+    let text = textarea("qr-input");
+    if text.is_empty() { set_text("qr-result", "请输入文本"); return; }
+    match generate_qr_unicode(&text) {
+        Ok(qr_unicode) => {
+            set_html("qr-result", &format!("<pre style='font-size:10px;line-height:1;font-family:monospace;background:#1A1A1A;padding:8px;overflow:auto;text-align:center'>{}</pre>", qr_unicode));
+        }
+        Err(e) => set_text("qr-result", &format!("生成失败: {}", e)),
+    }
+    match qr_info(&text) {
+        Ok((version, size)) => {
+            el("qr-info").set_text_content(Some(&format!("版本: {}, 尺寸: {}x{}", version, size, size)));
+        }
+        Err(_) => {}
+    }
+}
+
+// ==================== PASSWORD ====================
+
+fn do_password_gen() {
+    let len: usize = input("pw-length").parse().unwrap_or(16);
+    set_text("pw-result", &generate_password(len));
+}
+fn do_password_strong() {
+    let len: usize = input("pw-length").parse().unwrap_or(16);
+    set_text("pw-result", &generate_strong_password(len));
+}
+
+// ==================== UUID ====================
+
+fn do_uuid_v4() { set_text("uuid-result", &uuid::generate_uuid_v4()); }
+fn do_uuid_v5() { set_text("uuid-result", &uuid::generate_uuid_v5("6ba7b810-9dad-11d1-80b4-00c04fd430c8", "wasm-demo")); }
+fn do_uuid_v6() { set_text("uuid-result", &uuid::generate_uuid_v6()); }
+fn do_uuid_v7() { set_text("uuid-result", &uuid::generate_uuid_v7()); }
+fn do_uuid_validate() {
+    let u = input("uuid-validate-input");
+    if uuid::validate_uuid(&u) {
+        set_html("uuid-validate-result", "<span style='color:#4CAF50'>✓ 有效的 UUID</span>");
+    } else {
+        set_html("uuid-validate-result", "<span style='color:#f44336'>✗ 无效的 UUID</span>");
+    }
+}
+
+// ==================== BASE64 ====================
+
+fn do_b64_encode() { set_text("b64-result", &base64_encode(&textarea("b64-input"))); }
+fn do_b64_decode() {
+    match base64_decode(&textarea("b64-input")) {
+        Some(d) => set_text("b64-result", &d),
+        None => set_text("b64-result", "解码失败: 无效的 Base64"),
+    }
+}
+
+// ==================== TIMESTAMP ====================
+
+fn do_ts_now() {
+    let local = timestamp::get_current_local_time();
+    let utc = timestamp::get_current_utc_time();
+    let ts = timestamp::get_current_timestamp();
+    set_html("ts-result", &format!(
+        "<div>本地时间: {}</div><div>UTC 时间: {}</div><div>时间戳: {}</div>", local, utc, ts
+    ));
+}
+fn do_ts_utc() { set_text("ts-result", &timestamp::get_current_utc_time()); }
+fn do_ts_timestamp() { set_text("ts-result", &timestamp::get_current_timestamp().to_string()); }
+fn do_ts_to_local() {
+    let ts: i64 = input("ts-input").parse().unwrap_or(0);
+    set_text("ts-result", &timestamp::timestamp_to_local(ts));
+}
+fn do_ts_to_utc() {
+    let ts: i64 = input("ts-input").parse().unwrap_or(0);
+    set_text("ts-result", &timestamp::timestamp_to_utc(ts));
+}
+fn do_ts_parse() {
+    match timestamp::local_to_timestamp(&input("ts-str-input")) {
+        Some(ts) => set_text("ts-result", &ts.to_string()),
+        None => set_text("ts-result", "解析失败，格式示例: 2025-01-01 12:00:00"),
+    }
+}
+
+// ==================== CLIPBOARD ====================
+
+async fn do_clipboard_refresh() {
+    disable_btn("clip-btn", true);
+    set_text("clip-result", "加载中...");
+    let client = get_client();
+    match get_clipboard_history(&client, Some(30), None, None).await {
+        Ok(entries) => {
+            if entries.is_empty() { set_text("clip-result", "暂无记录"); }
+            else {
+                let mut html = String::from("<div style='font-size:13px'>");
+                for (i, e) in entries.iter().enumerate() {
+                    let content = e.text_content.as_deref().unwrap_or("");
+                    let preview = if content.len() > 100 { format!("{}...", &content[..100]) } else { content.to_string() };
+                    let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                    html.push_str(&format!(
+                        "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\
+                         <div style='color:#888;font-size:11px'>#{} | {} | {}</div>\
+                         <div style='margin-top:4px;word-break:break-all'>{}</div></div>",
+                        i + 1, e.entry_type, e.created_at, escaped,
+                    ));
+                }
+                html.push_str("</div>");
+                set_html("clip-result", &html);
+            }
+        }
+        Err(e) => set_text("clip-result", &format!("获取失败: {}", e)),
+    }
+    disable_btn("clip-btn", false);
+}
+
+// ==================== NOTES ====================
+
+async fn do_notes_refresh() {
+    disable_btn("notes-refresh-btn", true);
+    set_text("notes-result", "加载中...");
+    let client = get_client();
+    match list_notes(&client, Some(1), Some(30)).await {
+        Ok(resp) => {
+            if let Some(notes) = resp.data {
+                if notes.is_empty() { set_text("notes-result", "暂无笔记"); }
+                else {
+                    let mut html = String::from("<div style='font-size:13px'>");
+                    for (i, note) in notes.iter().enumerate() {
+                        let content = note.text.as_deref().or(note.simple_text.as_deref()).unwrap_or("");
+                        let preview = if content.len() > 80 { format!("{}...", &content[..80]) } else { content.to_string() };
+                        let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                        let created = note.created_at.format("%Y-%m-%d %H:%M").to_string();
+                        html.push_str(&format!(
+                            "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\
+                             <div style='color:#888;font-size:11px'>#{} | {}</div>\
+                             <div style='margin-top:4px;word-break:break-all'>{}</div></div>",
+                            i + 1, created, escaped,
+                        ));
+                    }
+                    html.push_str("</div>");
+                    set_html("notes-result", &html);
+                }
+            } else { set_text("notes-result", "暂无数据"); }
+        }
+        Err(e) => set_text("notes-result", &format!("获取失败: {}", e)),
+    }
+    disable_btn("notes-refresh-btn", false);
+}
+
+// ==================== ZICI CHARS ====================
+
+static NEW_CHARS_DATA: [&str; 12] = [
+    "一二三上口目耳手日田禾火虫云山八十课文了子人大月儿头里可东西天四是女开水去来不小少牛果鸟早书刀尺本木林土力心中五立正在后我好长比巴把下个雨们问有半从你才明同学自己门衣白的又和竹牙马用几只石出见对妈全回工厂",
+    "春冬风雪花飞入姓什么双国王方青清气晴情请生字左右红时动万吃叫主江住没以多会走北京广过各种样伙伴这太阳校金秋因为他地河说也听哥单居招呼快乐玩很当音讲行许思床前光低故乡色外看爸晚笑再午节叶米真分豆那着到高兴千成间迷造运池欢网古凉细夕李语香打拍跑足声身体之相近习远玉首采无树爱尖角亮机台放鱼朵美直呀边呢吗吧加文次找平办让包钟丁元共已经坐要连百还舌点块非常往瓜进空病医别干奇七星吓怕跟家羊象都捉条爬姐您草房义",
+    "两哪宽顶眼睛肚皮孩跳变极片傍海洋作坏给带法如公它娃她毛更知识处园桥群队旗铜号领巾杨壮桐枫松柏棉杉化桂歌写丛深六熊猫九朋友季吹肥农事忙归戴辛苦称柱底杆秤做岁站船然画幅评奖纸报另及拿并封信今支圆珠笔灯电影哄先闭脸沉发窗沙依尽黄层照炉烟挂川南部些巨位向每升闪狗湾名胜迹央丽展现份产坡枝起客老收城市井观沿答渴喝话际脚面阵朗枯却第将难纷棵谢想盯言邻治怪楼年夜披轻利扁担志伍师军战士忘泼度龙炮穿始令刘民反村被关道兵危敢惊阴似野苍茫于论岸屋切久散步唱赶旺旁浑候谁汽食物爷就爪神活猪折张祝扎抓吵但哭车得秧苗汗急场伤路",
+    "诗童趁碧妆绿丝剪冲寻姑娘仔吐柳荡桃杏鲜邮递员原叔局堆认礼邓植格引注满休息锋昨冒留弯背洒温暖能桌味买具甘甜菜劳匹妹波纹像景恋舍求州华岛峡族谊齐奋贴街舟艾敬转团热闹贝壳甲骨钱币与财购烧茄烤鸭肉鸡蛋炒饭彩梦森拉结苹般精灵伞姨弟便教游戏母周围句补充药合死记屁股尿净屎幸使劲亡牢钻劝丢告筋疲图课摆座室交哈页抢嘻愿意麦该伯刻突掉湖莲穷荷绝含岭吴雷乌黑压垂户新迎扑指针帮助导永碰特积杯失洗澡容易浴桶扇慢遇兔安根痛最店决定商夫终完换期蛙卖搬倒籽泉破应整抽纺织编怎布消祖啊浓望蓝摘掏赛忆世界功复式简弄由觉值类艰弓炎害此",
+    "晨绒球汉艳服装扮静停孔雀粗落荒笛舞狂罚假互所够猜扬臂寒径斜霜赠盖菊残君橙送挑铺泥晶院墙印排列规则乱棕迟盒颜料票争仙闻勾紧洞油曲丰柴旧裙怜饿蜡烛伸忽板富颗奶旅咱偷救命拼扫胃管乎咬流泪准备等暴睡壁砍蜘蛛漂撞饱晒搭亲父啦响羽翠嘴悄吞哦捕蒲英盛耍喊欠钓而察拢掌趣喜断楚至孤帆饮初镜未磨遥银盘优淡浅错岩挺刺鼓数厚宝贵业滨灰飘渔遍躺载靠亚夏除踩洁脑袋严实挡视线坛显材软刮库妙演奏琴感受激击器滴敲鸣诉读虾麻勇蚂蚁短栽梨寸柔摇册朝雾蒙鼻总抖露湿吸猎翅膀重司庭登跌众弃持郊养粉谷粒男或者冻冷惜肯诚术斗焰刚烈离血仍取匆险",
+    "融燕鸳鸯惠崇芦芽梅溪泛减凑拂集聚形掠偶尔沾倦闲纤痕瓣蓬胀裂姿势仿佛随蹈止守株待宋耕触颈释其骄傲谦虚懦弱提尘讶捧代价鹿塘映欣赏匀致配传哎狮追叹符欲魂借酒何牧兄独异佳伟录保存约验捞阿欧洲社赵省县匠设计史创举且智慧历芬芳内醒寿苏强示昆修建组蜜蜂辨阻跨括检查确误途陌宇宙淌秘密栋梯铃乘绪篇越状狐狸腰零巧克肠继续抬烦墨染竿腾碎拨浪葫爽蘑菇表胆鬼理夺骂仇差付倍虽泡件皂廊剩碗悠若透娇扯仰串婴希呈幻诱润芒冰剑普通模型宁官汪参攻推迅速退轮煤铁必胡灿骑秒腿凶猛接庙威武镇性卷货夹夸务衬衫负责艺漏喂胖驴贼狼莫厉抱架胶粘偏",
+    "潮据堤阔盼滚顿逐渐堵犹崩震霎余淘牵鹅卵坑洼填庄稼俗跃葡萄稻熟豌按舒适暗恐僵硬枪耐探愉曾沟蚊即科横竖绳系蝇证研究达驾驶唤纪技改程超亿核奥益联质哲任善暮吟题侧峰庐缘降费须逊输虎操占嫩顺均叠隙茎柄萎瞧固宅临慎选择址良穴厅卧专卫较睁翻斧劈缓浊丈撑竭累液奔茂滋帝曰溺返衔悲惨兽佩坚违抗环锁既狠著愤获嗅呆奈巢齿躯掩护幼搏庞量愣级链颤攀猴念辫呵摸甚跪捶绕顽脖脱概惹昏握摔凭掐班殷段俩练套裤逃亏挖撤堂砸锅否旋况兵败椅尤恨帅预溃品丑豪塞秦征词催醉杰亦雄项肃默晰振胸怀赞效凡顾训斥戎尝诸竞唯豹派娶媳妇淹逼浮旱徒扔饶骗灌溉",
+    "杂稀篱蜻蜓蝶宿徐疏茅檐翁笼赖剥构饰蹲凤序例率觅耸踏倘绘谐寄眠慰藉卜锐滩帐烁蝙蝠霸鹰怒吼脂拭餐划晌辣渗挣番埋刷测详笨钝鸽毫凌末描隧态吨颅膨肢翼辟纳拥箱臭蔬碳钢隐健康胞疾防灶需繁漫灭藤萝膝涛躲瓶挤叉挥桦涂茸绣潇穗朦胧寂霞抹忧虑贪职屏蹭稿腔解闷蛇遭殃盆勃讨厌坝忠毒绩孵警戒歪咕汤掘伏啼吠促颇剧苟譬侍馆附脾敏捷昂供添扩范努刹烂替镶紫仅浙罗杜鹃窄郁肩臀移额陆乳笋端源囊萤恭勤博贫焉逢卒晋炕铅呜哩栓胳膊劫绸扒敌尸趁慌芙蓉洛壶雁砚乾坤伦腹剖窟窿混嘶维秩岗宰措遣践介绍妖矩乖撵烫丫拽福舔葵瘦棒罢硕允砌牌禁惩踪啸私颊拆",
+    "宜鹤嫌朱嵌框匣哨恩韵亩播浇吩咐亭榨慕矮谈懂兰箩婆糕饼浸缠茶捡汛访鞋挽隔懒惰稳衡协召臣议缺宫献诺典抄罪怯拒荆冠俯喷枚箭筒束赤圈置侵略筑堡党丘妨蔽陷拐酬珍叮嘱塌焦誓谎延悔扶郎爹嫂辆歹罕纱妻趟托溜婚辈挨祭乃熏杭亥恃哀拘泻潜试胎皇履疆毁估拱辉煌殿陵览境宏唐闯统销奉摄氏殖粮炭区杀菌疗鼠秀玲珑歇窝滑拾狭勉梳辞抑碌吊酷暑噪脊罩竟哇忍械酸权蚕考疼席糖屑启迪钉陪毕煮枕孙泊愁寺畔黎晕漆匆幕愈旷怡逸免桨榕纠耀桩涨塔梢暇眉抛耻诲谓诵岂舅津斩限凯葛述贾衰刊琐朴某",
+    "昼耘桑晓蝴蚂蚱嗡樱拔瞎铲锄割尾承拴瓢逛妒忌曹督委鲁遮寨擂呐插冈饥碟斤俺榜杖申兼勿拖悉坠膛截仞岳摩遗涕巫彭拟谋瑞损锻炼眷赴搞殊尊签革庆诊沃龄匪绷审剂施吭崭衷慈祥荣跤搂仗鞭欺挠扳腕剃腮疤监侄喉咙浆傅袱桶障芝圣犯馅轰堪诈傻捏怔矛盾誉吾赢拳擦策荐艘航肆帽桅撕逗唬钩扭咧舱鸥瞄尼斯艇纵艄翘垫帘姆祷雇簇哗码笼仪眺骏驰辽绵凳吆铛罐恢踢牲畜梁诣禽拇搔痒秽轧拧螺纽扣貌仓渺享庸憎",
+    "毯玻璃裳虹蹄腐稍微缀窥幽雅案拙薄糊蕾恰襟恍怨德鹊蝉律崖渡索寇副榴弹抡贯棋悬沸涧雹屹悦迈屈政府宾盏栏汇爆宣阅制坦距隆射凛疙瘩棍裁筹橡雕跺颓沮丧溜趴屉谜尚氧倾揭斑燥漠磁素盗培咆哮嗓哑揪瞪呻废汹涌澎湃熄掀困唉淋嘿糟嘛皱勺棚苔藓坪蔗瀑增缝谚袖篷缩疯瓦柜喧甩嚷蒜酱唇蹦涯莺莹裹篮蔼资矿慷慨贡滥基睹哉巍弦锦曝矣谱莱茵盲纯键缕陶郑拜租厨毡羞撒缚猬伶俐窜搁综澄萍漾削瞬凝骤掷陡",
+    "蒜醋饺摊拌眨宵燃贩彼贺轿骆驼恰腊粥咽匙盏搅稠肿熬褐缸脏筷侯皎章泣盈脉栖鸦惧凄寞宴霉籍聊乏栅控贷剔毙袭覆藏挪徘徊蒸裸媚砖蚁叨绊绞耽揉绽搓惶吻偎络锤凿焚稚避峻啪瞪僻瞅靴魔刑哼绑啃袍执彻迁泰迫批标牺炊葬援俱弗辩域惯圃盐溅蕊魏搜蚯蚓版阶脆拦玻璃恶怖",
+];
+
+fn do_zici_show_chars(grade: usize, term: usize) {
+    let index = (grade - 1) * 2 + (term - 1);
+    if index >= NEW_CHARS_DATA.len() { set_text("zici-char-display", "无数据"); return; }
+    let chars: String = NEW_CHARS_DATA[index].chars().map(|c| format!("<span style='display:inline-block;padding:4px 6px;margin:2px;background:#2D2D2D;border-radius:4px;font-size:20px'>{}</span>", c)).collect();
+    set_html("zici-char-display", &format!("<div style='line-height:2.5'>{}</div>", chars));
+}
+
+// ==================== ZICI WORDS ====================
+
+static NEW_WORDS_DATA: [&str; 2182] = [
+    "看见", "哪里", "那边", "头顶", "眼睛", "雪白", "肚皮", "孩子", "天空", "傍晚",
+    "人们", "冬天", "花朵", "平常", "江河", "海洋", "田地", "工作", "办法", "如果",
+    "长大", "四海为家", "娃娃", "只要", "皮毛", "那里", "知识", "花园", "石桥", "队旗",
+    "铜号", "红领巾", "欢笑", "杨树", "树叶", "枫树", "松柏", "木棉", "水杉", "化石",
+    "金桂", "写字", "丛林", "深处", "竹林", "熊猫", "朋友", "四季", "农事", "月光",
+    "辛苦", "棉衣", "一同", "柱子", "一边", "到底", "秤杆", "力气", "出来", "船身",
+    "石头", "地方", "果然", "评奖", "时间", "报纸", "来不及", "事情", "坏事", "好事",
+    "出国", "今天", "圆珠笔", "开心", "以前", "还有", "台灯", "这时", "阳光", "电影",
+    "明亮", "故事", "头发", "窗外", "黄山", "南部", "那些", "山顶", "一动不动", "云海",
+    "巨石", "前方", "每当", "金光闪闪", "它们", "群山", "树木", "名胜古迹", "中央", "美丽",
+    "灯光", "中午", "展现", "风光", "出产", "水果", "月份", "山坡", "枝叶", "展开",
+    "五光十色", "好客", "老乡", "城市", "空气", "水分", "坐井观天", "井沿", "回答", "口渴",
+    "大话", "井口", "无边无际", "山脚", "当作", "前面", "晴朗", "枯草", "正好", "清早",
+    "现在", "将来", "难过", "大雪纷飞", "枝头", "从前", "细长", "可爱", "每天", "自言自语",
+    "南瓜", "邻居", "奇怪", "八角楼", "深夜", "军衣", "星星之火", "沉思", "胜利", "扁担",
+    "同志", "带领", "队伍", "会师", "红军", "来回", "战士", "白天", "起来", "难忘",
+    "泼水节", "一年一度", "四面八方", "龙船", "花炮", "欢呼", "人群", "欢乐", "开始", "柏树枝",
+    "多么", "年轻", "村子", "知道", "广场", "民兵", "于是", "无论", "船只", "连同",
+    "岸边", "同时", "房屋", "一切", "不久", "出现", "散步", "空地", "唱歌", "回家",
+    "赶快", "旁边", "火星", "连忙", "浑身", "时候", "谢谢", "水汽", "食物", "身边",
+    "为什么", "爪子", "面前", "神气活现", "野猪", "往常", "身后", "信以为真", "纸船", "松果",
+    "纸条", "可是", "但是", "屋顶", "和好", "田野", "风车", "飞快", "秧苗", "不住",
+    "点头", "急忙", "伤心", "路边", "生气", "春天", "寻找", "姑娘", "仔细", "野花",
+    "柳枝", "秋千", "桃花", "杏花", "鲜花", "邮递员", "先生", "原来", "大叔", "邮局",
+    "太太", "做客", "惊奇", "快活", "美好", "礼物", "爷爷", "植树", "碧空如洗", "万里无云",
+    "公园", "格外", "引人注目", "已经", "汗珠", "休息", "树苗", "小心", "笔直", "叔叔",
+    "足迹", "昨天", "迷路", "温暖", "春风", "爱心", "也许", "桌子", "平时", "难道",
+    "味道", "就是", "农民", "加工", "种子", "农具", "甜菜", "工具", "劳动", "经过",
+    "出色", "妹妹", "河水", "碧绿", "波纹", "河岸", "柳叶", "非常", "景色", "恋恋不舍",
+    "柳树", "枝条", "高兴", "识字", "神州", "中华", "山川", "黄河", "长江", "长城",
+    "台湾岛", "海峡", "民族", "情谊", "奋发", "节日", "春节", "花灯", "清明节", "先人",
+    "龙舟", "中秋", "转眼", "团圆", "热闹", "动物", "贝壳", "自己", "身体", "甲骨文",
+    "样子", "可以", "钱币", "钱财", "有关", "比如", "美食", "红烧", "茄子", "烤鸭",
+    "羊肉", "蛋炒饭", "课文", "彩色", "脚尖", "森林", "雪松", "歌声", "苹果", "精灵",
+    "季节", "好像", "一直", "说话", "童话", "称呼", "对岸", "发现", "弟弟", "游戏",
+    "发明", "字母", "周围", "补充", "公主", "伙伴", "飞机", "地道", "火药", "合力",
+    "忘记", "屁股", "苍耳", "留神", "只是", "干净", "从来", "幸运", "快乐", "使劲",
+    "夜晚", "听见", "草地", "亡羊补牢", "劝告", "禾苗", "筋疲力尽", "明白", "图画", "老师",
+    "讲桌", "同学", "座位", "教室", "哈哈大笑", "五角星", "然后", "画纸", "神情", "角度",
+    "愿意", "麦子", "为难", "四周", "伯伯", "立刻", "突然", "吃惊", "认真", "脚步",
+    "难为情", "雷雨", "乌云", "闪电", "雷声", "房子", "窗户", "清新", "迎面", "野外",
+    "大自然", "天然", "指南针", "帮助", "方向", "向导", "指点", "北极星", "永远", "黑夜",
+    "帮忙", "特别", "积雪", "太空", "生活", "别处", "活动", "主要", "方便", "杯子",
+    "喝水", "使用", "洗澡", "容易", "浴桶", "大象", "耳朵", "扇子", "遇到", "兔子",
+    "毛病", "后来", "不安", "头痛", "最后", "人家", "决定", "商店", "工夫", "终于",
+    "围巾", "星期", "青蛙", "草籽", "野鸭", "泉水", "竹子", "应该", "花丛", "尽情",
+    "道路", "毛虫", "叶子", "目光", "周游", "纺织", "编织", "怎样", "声音", "色彩",
+    "花纹", "消失", "祖先", "原始", "意思", "浓绿", "一望无边", "蓝天", "野果", "野兔",
+    "赛跑", "回忆", "世界", "学习", "成功", "月亮", "主意", "反反复复", "变化", "方式",
+    "简单", "自由", "生长", "相当", "结局", "开头", "光明", "觉得", "值日", "人类",
+    "艰难", "决心", "苦海", "炎热", "害怕", "从此", "花草树木", "生机", "早晨", "穿戴",
+    "鲜艳", "服装", "打扮", "敬爱", "国旗", "敬礼", "安静", "树枝", "好奇", "孔雀",
+    "招引", "粗壮", "枝干", "影子", "阵雨", "荒野", "跳舞", "狂欢", "功课", "放假",
+    "互相", "狂风", "急急忙忙", "自然", "能够", "双臂", "水泥", "放晴", "明朗", "亮晶晶",
+    "金黄", "雨珠", "院墙", "落叶", "闪闪发光", "尽头", "平展", "排列", "规则", "歌唱",
+    "迟到", "清凉", "留意", "颜料", "枫叶", "邮票", "果树", "菊花", "仙子", "气味",
+    "香甜", "香味", "加紧", "过冬", "丰收", "火柴", "围裙", "可怜", "哪怕", "暖和",
+    "蜡烛", "亮光", "忽然", "地板", "烛光", "温和", "赶紧", "痛苦", "清晨", "旅行",
+    "要好", "咱们", "草堆", "作声", "偷偷", "答应", "做梦", "来得及", "救命", "拼命",
+    "大吃一惊", "消化", "当然", "几乎", "知觉", "光亮", "眼泪", "变成", "门板", "准备",
+    "暴风雨", "安心", "睡觉", "主人", "墙壁", "母鸡", "注意", "根本", "蜘蛛", "漂亮",
+    "因此", "母亲", "外祖父", "雨点", "船夫", "用力", "船头", "羽毛", "翠绿", "静悄悄",
+    "翠鸟", "捕鱼", "窗前", "蒲公英", "盛开", "玩耍", "一本正经", "绒毛", "假装", "哈欠",
+    "钓鱼", "观察", "合拢", "手掌", "有趣", "喜爱", "位于", "部分", "风景", "优美",
+    "物产", "丰富", "相互", "交错", "成群结队", "游动", "堆积", "宝贵", "肥料", "祖国",
+    "事业", "发展", "海滨", "街道", "交界", "来来往往", "渔民", "遍地", "远处", "汽笛",
+    "船队", "满载", "银光闪闪", "靠岸", "初夏", "散发", "除了", "整洁", "东北", "脑袋",
+    "严严实实", "挡住", "视线", "花坛", "显得", "苍翠", "飞舞", "名贵", "药材", "雪花",
+    "巨大", "宝库", "美妙", "音乐家", "演奏", "感受", "激动", "合奏", "乐曲", "充满",
+    "乐器", "雨滴", "滴答", "所有", "河流", "轻快", "告诉", "高远", "麻雀", "蚂蚁",
+    "搬家", "井然", "勇敢", "精神", "趣味", "鲜美", "如同", "温柔", "摇摆", "倒影",
+    "无穷", "无尽", "乐趣", "父亲", "童年", "雾蒙蒙", "轻声", "生怕", "惊动", "气息",
+    "总是", "抖动", "露水", "呼吸", "时刻", "猎人", "翅膀", "沉重", "郊外", "养病",
+    "跳动", "欢快", "谷粒", "男孩", "或者", "严寒", "本来", "可惜", "肯定", "诚实",
+    "手术台", "阵地", "战斗", "打响", "气焰", "刚刚", "不断", "激烈", "眼球", "血丝",
+    "烟雾", "仍然", "取出", "匆匆", "离开", "危险", "转告", "乌黑", "活泼", "春日",
+    "轻风", "吹拂", "洒落", "赶集", "聚拢", "形成", "加入", "春光", "湖面", "偶尔",
+    "闲散", "纤细", "荷花", "清香", "圆盘", "花瓣", "莲蓬", "破裂", "姿势", "眼前",
+    "本领", "仿佛", "随风", "飘动", "舞蹈", "停止", "国王", "骄傲", "傲慢", "谦虚",
+    "懦弱", "神气", "住嘴", "相提并论", "王朝", "尘土", "惊讶", "光洁", "美观", "古代",
+    "价值", "动手", "池塘", "痛快", "倒映", "欣赏", "匀称", "精美", "别致", "没精打采",
+    "机灵", "哎呀", "狮子", "机会", "叹气", "造纸术", "伟大", "记录", "保存", "大约",
+    "吸收", "经验", "原料", "满足", "朝鲜", "半岛", "日本", "阿拉伯", "欧洲", "社会",
+    "赵州桥", "石匠", "设计", "创举", "冲击", "节省", "不但", "而且", "各自", "似乎",
+    "体现", "人民", "智慧", "才干", "历史", "争奇斗艳", "芬芳", "迷人", "艳丽", "睡莲",
+    "醒来", "万寿菊", "欣然", "苏醒", "含笑", "展示", "昆虫", "修建", "组成", "蜜蜂",
+    "辨认", "能力", "阻力", "将近", "包括", "检查", "迷失", "准确", "无误", "尽管",
+    "沿途", "陌生", "确实", "记忆", "本能", "宇宙", "星空", "流淌", "秘密", "楼梯",
+    "相遇", "铃声", "万物", "乘法", "思绪", "形状", "狐狸", "担心", "丁零", "失望",
+    "背包", "巧克力", "香肠", "面包", "花生", "牛奶", "继续", "饭菜", "排骨", "抬头",
+    "麻烦", "水墨画", "垂柳", "钓竿", "扑腾", "扇动", "戏耍", "拨动", "浪花", "葫芦",
+    "松树", "清爽", "松针", "蘑菇", "大师", "表弟", "胆小", "中药", "姑父", "理发",
+    "欢迎", "仇人", "摆布", "双倍", "过年", "央求", "虽然", "天分", "电灯泡", "肥皂泡",
+    "种类", "其中", "网球", "透明", "分裂", "形式", "圆满", "轻悠悠", "飞越", "婴儿",
+    "目送", "希望", "奇妙", "呈现", "变幻", "群星", "奇迹", "诱人", "圆润", "感叹",
+    "光芒", "冰柱", "锋利", "刀剑", "普通", "模型", "存在", "海底", "宁静", "器官",
+    "行进", "海参", "攻击", "反推力", "迅速", "后退", "轮船", "长途", "石油", "天然气",
+    "火烧云", "晚饭", "胡子", "金灿灿", "凶猛", "接着", "威武", "镇静", "性子", "布料",
+    "交货", "笑话", "大方", "夸奖", "道理", "实在", "提前", "服务", "衬衫", "负责",
+    "名声", "手艺", "感动", "里屋", "莫非", "厉害", "发抖", "松手", "跟前", "甘心",
+    "奇观", "农历", "据说", "宽阔", "人山人海", "滚动", "顿时", "逐渐", "犹如", "齐头并进",
+    "山崩地裂", "霎时", "余波", "依旧", "柔和", "鹅卵石", "河床", "新鲜", "修补", "坑坑洼洼",
+    "庄稼", "风俗", "葡萄", "满意", "水稻", "成熟", "招待", "传说", "豌豆", "按照",
+    "暖洋洋", "舒适", "黑暗", "恐怕", "僵硬", "丰满", "等待", "强壮", "虚弱", "耐心",
+    "愉快", "兴奋", "曾经", "水沟", "感激", "蚊子", "即使", "灵巧", "科学家", "横七竖八",
+    "绳子", "苍蝇", "证明", "研究", "雷达", "显示", "驾驶员", "呼风唤雨", "世纪", "技术",
+    "改变", "程度", "超过", "腾云驾雾", "幻想", "原子核", "奥秘", "日益", "联系", "物质",
+    "哲学", "任何", "创造", "改善", "爬山虎", "操场", "嫩红", "舒服", "均匀", "重叠",
+    "空隙", "叶柄", "反面", "触角", "弯曲", "细小", "痕迹", "瞧不起", "牢固", "休想",
+    "住宅", "临时", "功夫", "随遇而安", "慎重", "选择", "住址", "优良", "洞穴", "大厅",
+    "卧室", "专家", "平整", "清洁", "卫生", "疲劳", "睁眼", "黑乎乎", "翻身", "斧头",
+    "缓缓", "上升", "下降", "精疲力竭", "血液", "奔流不息", "汗毛", "茂盛", "滋润", "雨露",
+    "人间", "悲惨", "情景", "危害", "猛兽", "严厉", "敬佩", "悄悄", "坚定", "违抗",
+    "狠心", "尖利", "著名", "愤愤不平", "获得", "打猎", "猛烈", "无可奈何", "拍打", "嘴角",
+    "分明", "牙齿", "绝望", "尖叫", "身躯", "掩护", "幼儿", "搏斗", "庞大", "安然",
+    "强大", "力量", "假日", "云彩", "石级", "发颤", "年纪", "奋力", "猴子", "纪念",
+    "辫子", "笑呵呵", "鼓舞", "居然", "甚至", "顽皮", "故意", "脖子", "扑打", "忙乱",
+    "大概", "助威", "昏乱", "结实", "汉子", "可笑", "无缘无故", "平白", "文艺", "表演",
+    "班级", "角色", "殷切", "期待", "排练", "危机", "通情达理", "充分", "自信", "提示",
+    "撤换", "紧张", "哄堂大笑", "砸锅", "至今", "冰天雪地", "否则", "旋转", "重整旗鼓", "况且",
+    "得心应手", "椅子", "尤其", "手舞足蹈", "恨不得", "预料", "不动声色", "顽强", "溃败", "自豪",
+    "严肃", "默默", "清晰", "抱负", "胸怀", "赞叹", "表情", "忘怀", "果真", "非凡",
+    "左顾右盼", "指望", "训斥", "体会", "分量", "响亮", "管理", "人烟", "媳妇", "新娘",
+    "眼睁睁", "干旱", "迎接", "徒弟", "面如土色", "求饶", "灌溉", "收成", "屋檐", "构成",
+    "装饰", "顺序", "华丽", "独特", "照例", "率领", "踏步", "倘若", "和谐", "催眠曲",
+    "甜蜜", "梦乡", "慰藉", "扫荡", "威力", "锐利", "河滩", "帐子", "闪烁", "奇幻",
+    "蝙蝠", "霸气", "猫头鹰", "复杂", "怒吼", "松脂", "拂拭", "灰尘", "美餐", "晌午",
+    "热辣辣", "淹没", "挣扎", "成千上万", "冲刷", "断绝", "推测", "详细", "情形", "恐龙",
+    "笨重", "迟钝", "鸽子", "凌空", "根据", "末期", "描绘", "隧道", "形态", "膨大",
+    "前肢", "具备", "开辟", "脱离", "纳米", "无能为力", "拥有", "冰箱", "功能", "蔬菜",
+    "材料", "钢铁", "隐形", "健康", "细胞", "疾病", "预防", "病灶", "需要", "深刻",
+    "繁星", "藤萝", "波涛", "墨绿", "嫩绿", "集中", "交叉", "教练", "指挥", "整齐",
+    "节拍", "白桦", "毛茸茸", "潇洒", "朦胧", "寂静", "朝霞", "呼唤", "响动", "尽职",
+    "屏息", "稿纸", "梅花", "解闷", "勇猛", "满月", "淘气", "讨厌", "理由", "心事",
+    "反抗", "忠厚", "毒手", "成绩", "警戒", "预备", "汤圆", "即将", "姿态", "高傲",
+    "狂吠", "局促", "京剧", "一丝不苟", "譬如", "侍候", "饭馆", "附近", "脾气", "敏捷",
+    "空空如也", "昂首", "供养", "清静", "扩大", "范围", "努力", "刹那", "夺目", "分辨",
+    "灿烂", "不仅", "杜鹃", "气势", "聚集", "拥挤", "心情", "脚跟", "移动", "昏暗",
+    "挤压", "额角", "登陆", "宽广", "石钟乳", "石笋", "观赏", "芦花", "发愣", "铅笔",
+    "枪栓", "胳膊", "劫难", "鬼脸", "戒指", "绸子", "敌人", "尸首", "防备", "慌忙",
+    "行驶", "凌晨", "窟窿", "混乱", "维持", "秩序", "岗位", "主宰", "调遣", "践行",
+    "介绍", "声明", "妖怪", "规矩", "劈面", "幸福", "向日葵", "柔嫩", "丰硕", "允许",
+    "禁止", "踪迹", "呼啸", "始终", "吼叫", "自私", "举动", "脸颊", "凶狠", "拆除",
+    "精巧", "配合", "身段", "适宜", "白鹤", "生硬", "寻常", "忘却", "镜匣", "孤独",
+    "悠然", "黄昏", "恩惠", "美中不足", "播种", "浇水", "吩咐", "榨油", "爱慕", "体面",
+    "桂花", "懂得", "糕饼", "茶叶", "汛期", "山洪", "暴发", "间隔", "唯独", "懒惰",
+    "平稳", "保持", "平衡", "协调", "美感", "示意", "家常", "假如", "理所当然", "联结",
+    "无价之宝", "召集", "大臣", "商议", "解决", "完好无缺", "称赞", "商量", "允诺", "典礼",
+    "得罪", "胆怯", "示弱", "拒绝", "职位", "同心协力", "猎豹", "冠军", "陆地", "俯冲",
+    "高速公路", "搭乘", "火箭", "发动机", "手电筒", "赤道", "难以置信", "侵略", "修筑", "粉碎",
+    "领导", "不计其数", "打击", "坚持", "游击", "隐蔽", "陷坑", "拐弯", "无穷无尽", "猎物",
+    "酬谢", "珍宝", "叮嘱", "复活", "议论", "崩塌", "焦急", "发誓", "千真万确", "谎话",
+    "迟延", "镇定", "后悔", "悲痛", "震天动地", "嫂子", "剩饭", "床铺", "亲密", "笑嘻嘻",
+    "成家立业", "好歹", "稀罕", "妻子", "晚霞", "一辈子", "结婚", "相依为命", "毁灭", "不可估量",
+    "举世闻名", "众星拱月", "金碧辉煌", "殿堂", "象征", "仿照", "诗情画意", "建筑", "漫游", "天南海北",
+    "饱览", "风景名胜", "境界", "宏伟", "奇珍异宝", "博物馆", "统统", "搬运", "销毁", "罪证",
+    "奉命", "寸草不生", "摄氏度", "繁殖", "粮食", "煤炭", "飘浮", "地区", "杀菌", "治疗",
+    "松鼠", "乖巧", "清秀", "玲珑", "歇凉", "追逐", "警觉", "触动", "光滑", "狭窄",
+    "勉强", "脱落", "梳理", "长篇", "连续", "广播", "铁路", "辞退", "挣钱", "压抑",
+    "潮湿", "忙碌", "阴暗", "酷暑", "炎夏", "噪声", "瘦弱", "脊背", "口罩", "忍心",
+    "机械", "数落", "权利", "渔船", "报考", "教训", "心疼", "席子", "庙会", "彩排",
+    "糖果", "抽象", "启迪", "毕业", "寄宿", "师范", "路费", "轮换", "领略", "意境",
+    "磨灭", "精致", "黎明", "红晕", "漆黑", "萤火虫", "大雁", "夜幕", "降临", "心旷神怡",
+    "炭火", "火盆", "走廊", "闲逸", "未免", "陆续", "白茫茫", "榕树", "纠正", "不可计数",
+    "照耀", "涨潮", "树梢", "应接不暇", "画眉", "舅父", "津津有味", "英雄", "无限", "一知半解",
+    "述说", "厌烦", "荒唐", "辛酸", "访问", "书刊", "烦琐", "真情实感", "质朴", "刊物",
+    "蝴蝶", "蜻蜓", "蚂蚱", "圆滚滚", "明晃晃", "樱桃", "瞎闹", "锄头", "承认", "随意",
+    "妒忌", "委托", "照办", "预计", "紧急", "军令状", "探听", "私自", "布置", "调度",
+    "呐喊", "神机妙算", "半夜三更", "寻思", "耻笑", "胸膛", "武艺", "拟定", "参谋", "损失",
+    "锻炼", "情不自禁", "慰问", "眷恋", "奔赴", "繁忙", "特殊", "尊重", "签字", "下意识",
+    "诊所", "年龄", "熟练", "审视", "一针见血", "施行", "清醒", "颤抖", "一声不吭", "崭新",
+    "由衷", "苍白", "慈祥", "肃然起敬", "荣幸", "摔跤", "手疾眼快", "欺负", "脚腕子", "挺脱",
+    "肢体", "格局", "威严", "侄子", "喉咙", "粉刷", "师傅", "绝活", "派头", "包袱",
+    "手法", "鼓点", "衔接", "屏障", "芝麻", "神圣", "侵犯", "露馅儿", "轰然", "难堪",
+    "发怔", "赏识", "脚力", "胸有成竹", "摩拳擦掌", "跃跃欲试", "兴致勃勃", "出谋划策", "引荐", "航行",
+    "风平浪静", "取乐", "放肆", "桅杆", "哭笑不得", "眼巴巴", "吓唬", "船舱", "海鸥", "瞄准",
+    "心惊胆战", "纵横", "船艄", "垫子", "窗帘", "操纵", "手忙脚乱", "保姆", "簇拥", "沉寂",
+    "停泊", "码头", "笼罩", "仪态", "端庄", "远眺", "骏马", "遮掩", "阻挡", "飞驰",
+    "辽阔", "赞许", "板凳", "吆喝", "铃铛", "恢复", "沉睡", "牲畜", "灯塔", "拇指",
+    "接触", "纽扣", "相貌", "养尊处优", "渺小", "享乐", "附庸", "团结", "绿毯", "线条",
+    "柔美", "惊叹", "回味", "目的地", "洒脱", "玻璃", "衣裳", "彩虹", "马蹄", "热乎乎",
+    "礼貌", "拘束", "举杯", "感人", "会心", "微笑", "宅院", "幽雅", "伏案", "浑浊",
+    "笨拙", "眼帘", "参差", "单薄", "文思", "梦想", "迷蒙", "模糊", "花蕾", "恰如",
+    "衣襟", "恍然", "愁怨", "顺心", "平淡", "日寇", "奋战", "险要", "手榴弹", "全神贯注",
+    "悬崖", "斩钉截铁", "热血沸腾", "攀登", "居高临下", "山涧", "粉身碎骨", "雹子", "屹立", "眺望",
+    "喜悦", "壮烈", "豪迈", "不屈", "惊天动地", "政府", "外宾", "汇集", "预定", "爆发",
+    "排山倒海", "就位", "宣告", "雄伟", "肃静", "语调", "完毕", "检阅", "制服", "坦克",
+    "一致", "距离", "高潮", "次序", "威风凛凛", "疙瘩", "疲倦", "呆头呆脑", "冰棍", "别出心裁",
+    "技高一筹", "橡皮", "跺脚", "大步流星", "颓然", "暴露无遗", "沮丧", "抽屉", "念念有词", "忘乎所以",
+    "心满意足", "发达", "理论", "类似", "猜测", "起源", "适当", "氧气", "提供", "能源",
+    "昼夜", "神秘", "观测", "拍摄", "斑点", "枯萎", "干燥", "沙漠", "磁场", "因素",
+    "考察", "培养", "咆哮", "惊慌", "嗓子", "跌跌撞撞", "拥戴", "沙哑", "党员", "呻吟",
+    "废话", "吞没", "猛然", "渔夫", "汹涌澎湃", "风暴", "轰鸣", "心惊肉跳", "抱怨", "倾听",
+    "探望", "照顾", "困难", "阴冷", "自作自受", "湿淋淋", "渔网", "糟糕", "忧虑", "后脑勺",
+    "活生生", "苔藓", "草坪", "甘蔗", "瀑布", "增加", "缝隙", "软绵绵", "谚语", "农作物",
+    "尽量", "斗篷", "情况", "袖子", "瓦蓝", "衣柜", "预报", "喧闹", "遮盖", "讲座",
+    "酱油", "逗引", "嘴唇", "晶莹", "摇篮", "壮观", "和蔼", "资源", "有限", "矿产",
+    "无私", "慷慨", "节制", "枯竭", "贡献", "毁坏", "滥用", "生态", "设想", "例如",
+    "基地", "目睹", "子孙", "谱写", "钢琴", "幽静", "断断续续", "茅屋", "失明", "纯熟",
+    "清幽", "琴键", "景象", "陶醉", "一望无际", "家景", "郑重", "供品", "祭器", "讲究",
+    "盼望", "厨房", "毡帽", "项圈", "刺猬", "伶俐", "经历", "潮汛", "预告", "昏沉",
+    "错综", "澄碧", "荡漾", "解散", "退缩", "瘦削", "浮动", "瞬间", "凝视", "骤然",
+    "凌乱", "陡然", "热情", "自傲", "饺子", "万象更新", "鞭炮", "眨眼", "通宵", "间断",
+    "万不得已", "截然", "燃放", "小贩", "摆摊儿", "彼此", "贺年", "骆驼", "恰好", "一律",
+    "彩绘", "分外", "腊八粥", "感觉", "沸腾", "何况", "搅和", "资格", "可靠", "罢了",
+    "要不然", "猜想", "肿胀", "惊异", "总之", "染缸", "解释", "筷子", "浪漫", "奈何",
+    "流落", "凄凉", "防御", "寂寞", "宴会", "恐惧", "倒霉", "忧伤", "书籍", "缺乏",
+    "处境", "理智", "控制", "心平气和", "抛弃", "重见天日", "侵袭", "倾覆", "宽慰", "深重",
+    "困境", "焉知非福", "确乎", "空虚", "不禁", "挪移", "觉察", "叹息", "徘徊", "微风",
+    "何曾", "游丝", "赤裸裸", "明媚", "时光", "拨弄", "草丛", "画报", "翻箱倒柜", "念叨",
+    "停顿", "晃动", "耽搁", "沉郁", "漫长", "休止", "惊惶", "亲吻", "依偎", "挽回",
+    "荒凉", "埋头", "幼稚", "含糊", "避免", "局势", "严峻", "轻易", "尖锐", "僻静",
+    "魔鬼", "苦刑", "冷笑", "残暴", "匪徒", "法庭", "安定", "占据", "会意", "执行",
+    "过度", "革命", "解放", "彻底", "利益", "意义", "剥削", "压迫", "批评", "兴旺",
+    "五湖四海", "目标", "责任", "牺牲", "死得其所", "制度", "寄托", "哀思", "真理", "领域",
+    "建树", "司空见惯", "疑问", "敏感", "提取", "明显", "无聊", "不可思议", "吻合", "偶然",
+    "文献", "证据", "系统", "整理", "见微知著", "灵感", "机遇", "机器", "钟楼", "洪亮",
+    "街心", "盲人", "坚硬", "清脆", "单调", "请求", "加速", "齿轮", "唯恐", "丑恶",
+    "恐怖", "证实",
+];
+
+fn do_zici_word_search() {
+    let q = input("zici-word-search");
+    let html: String = if q.is_empty() {
+        NEW_WORDS_DATA.iter().enumerate().map(|(i, w)| {
+            format!("<span style='display:inline-block;padding:4px 8px;margin:3px;background:#2D2D2D;border-radius:4px;font-size:14px'>{} <span style='color:#888'>({})</span></span>", w, i + 1)
+        }).collect()
+    } else {
+        NEW_WORDS_DATA.iter().enumerate().filter(|(_, w)| w.contains(&q)).map(|(i, w)| {
+            format!("<span style='display:inline-block;padding:4px 8px;margin:3px;background:#2D2D2D;border-radius:4px;font-size:14px'>{} <span style='color:#888'>({})</span></span>", w, i + 1)
+        }).collect::<Vec<_>>().join("")
+    };
+    if html.is_empty() { set_text("zici-word-display", "无匹配结果"); }
+    else { set_html("zici-word-display", &html); }
+}
+
+// ==================== SEARCH HISTORY ====================
+
+async fn do_search_history() {
+    disable_btn("shistory-btn", true);
+    set_text("shistory-result", "加载中...");
+    let client = get_client();
+    match dict::get_recent_history(&client, 30).await {
+        Ok(resp) => {
+            if let Some(history) = resp.data {
+                if history.is_empty() { set_text("shistory-result", "暂无搜索历史"); }
+                else {
+                    let mut html = String::from("<div style='font-size:13px'>");
+                    for (_i, h) in history.iter().enumerate() {
+                        let escaped = h.word.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                        let time_str = h.time.format("%Y-%m-%d %H:%M").to_string();
+                        html.push_str(&format!(
+                            "<div style='padding:6px 8px;margin-bottom:3px;border-bottom:1px solid #333'>\
+                             <span style='color:#0078D4'>{}</span> \
+                             <span style='color:#888;font-size:11px'>| {}</span></div>",
+                            escaped, time_str,
+                        ));
+                    }
+                    html.push_str("</div>");
+                    set_html("shistory-result", &html);
+                }
+            } else { set_text("shistory-result", "暂无数据"); }
+        }
+        Err(e) => set_text("shistory-result", &format!("获取失败: {}", e)),
+    }
+    disable_btn("shistory-btn", false);
+}
+
+// ==================== SHORT NOTES ====================
+
+async fn do_short_notes_refresh() {
+    disable_btn("sn-refresh-btn", true);
+    set_text("sn-result", "加载中...");
+    let client = get_client();
+    match list_short_notes(&client, Some(1), Some(30)).await {
+        Ok(resp) => {
+            if let Some(notes) = resp.data {
+                if notes.is_empty() { set_text("sn-result", "暂无短笔记"); }
+                else {
+                    let mut html = String::from("<div style='font-size:13px'>");
+                    for (i, note) in notes.iter().enumerate() {
+                        let content = note.content.as_deref().unwrap_or("");
+                        let preview = if content.len() > 80 { format!("{}...", &content[..80]) } else { content.to_string() };
+                        let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                        html.push_str(&format!(
+                            "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\
+                             <div style='color:#888;font-size:11px'>#{} | {}</div>\
+                             <div style='margin-top:4px;word-break:break-all'>{}</div></div>",
+                            i + 1, note.created_at, escaped,
+                        ));
+                    }
+                    html.push_str("</div>");
+                    set_html("sn-result", &html);
+                }
+            } else { set_text("sn-result", "暂无数据"); }
+        }
+        Err(e) => set_text("sn-result", &format!("获取失败: {}", e)),
+    }
+    disable_btn("sn-refresh-btn", false);
+}
+
+async fn do_short_note_create() {
+    let content = textarea("sn-content");
+    if content.trim().is_empty() { set_text("sn-result", "请输入内容"); return; }
+    disable_btn("sn-create-btn", true);
+    let client = get_client();
+    let req = CreateShortNoteRequest { content: Some(content), view_name: None };
+    match create_short_note(&client, req).await {
+        Ok(resp) => {
+            set_text("sn-result", &format!("创建成功: {}", resp.msg));
+            el("sn-content").dyn_into::<HtmlTextAreaElement>().ok().map(|e| e.set_value(""));
+            do_short_notes_refresh().await;
+        }
+        Err(e) => set_text("sn-result", &format!("创建失败: {}", e)),
+    }
+    disable_btn("sn-create-btn", false);
+}
+
+// ==================== SIDEBAR ====================
+
+fn do_sidebar_toggle() {
+    let sidebar = el("sidebar");
+    if sidebar.class_list().contains("collapsed") {
+        sidebar.class_list().remove_1("collapsed").ok();
+    } else {
+        sidebar.class_list().add_1("collapsed").ok();
+    }
+}
+
+// ==================== SONGS ====================
+
+fn songs_base_url() -> String {
+    let url = CLIENT.with(|rc| {
+        rc.borrow().as_ref().map(|c| c.base_url().to_string())
+    });
+    url.unwrap_or_else(|| "http://localhost:23001".to_string())
+}
+
+fn songs_render_list() {
+    SONG_LIST.with(|sl| {
+        let list = sl.borrow();
+        let count = list.len();
+        el("songs-count").set_text_content(Some(&format!("共 {} 首歌曲", count)));
+
+        if count == 0 {
+            set_html("songs-list", "<div style='color:#888;padding:16px'>暂无歌曲，请先扫描</div>");
+            return;
+        }
+
+        let mut html = String::new();
+        for (i, song) in list.iter().enumerate() {
+            let cover_url = song.cover_url.as_deref().unwrap_or("");
+            let title = song.title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+            let artist = song.artist.as_deref().unwrap_or("未知艺术家").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+            let album = song.album.as_deref().unwrap_or("未知专辑").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+            let cover_img = if !cover_url.is_empty() {
+                format!("<img src='{}' class='w-10 h-10 rounded object-cover bg-[#333]' style='width:40px;height:40px;border-radius:4px;object-fit:cover;background:#333'>", cover_url)
+            } else {
+                "<div style='width:40px;height:40px;border-radius:4px;background:#333;display:flex;align-items:center;justify-content:center;font-size:18px'>🎵</div>".to_string()
+            };
+            html.push_str(&format!(
+                "<div class='song-item' data-index='{}' style='display:flex;align-items:center;gap:10px;padding:8px;cursor:pointer;border-bottom:1px solid #333;transition:background .15s' \
+                 onmouseover='this.style.background=\"#2D2D2D\"' onmouseout='this.style.background=\"\"'>\
+                 {}\
+                 <div style='flex:1;min-width:0'>\
+                 <div style='font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>{}</div>\
+                 <div style='font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>{} · {}</div>\
+                 </div></div>",
+                i, cover_img, title, artist, album,
+            ));
+        }
+        set_html("songs-list", &html);
+        // Bind click handlers on each song item
+        let list_el = el("songs-list");
+        for i in 0..list_el.children().length() {
+            if let Some(child) = list_el.children().item(i) {
+                let idx_str = child.get_attribute("data-index").unwrap_or_default();
+                if let Ok(idx) = idx_str.parse::<usize>() {
+                    let cb = Closure::wrap(Box::new(move || { do_song_play_by_index(idx); }) as Box<dyn FnMut()>);
+                    child.add_event_listener_with_callback("click", cb.as_ref().dyn_ref().unwrap()).ok();
+                    cb.forget();
+                }
+            }
+        }
+    });
+}
+
+async fn do_songs_list() {
+    disable_btn("songs-refresh-btn", true);
+    set_text("songs-list", "加载中...");
+    let client = get_client();
+    match get_all_songs(&client, Some(1), Some(200)).await {
+        Ok(resp) => {
+            if let Some(page) = resp.data {
+                SONG_LIST.with(|sl| *sl.borrow_mut() = page.data);
+                songs_render_list();
+            } else {
+                set_text("songs-list", "暂无数据");
+            }
+        }
+        Err(e) => {
+            set_text("songs-list", &format!("加载失败: {}", e));
+        }
+    }
+    disable_btn("songs-refresh-btn", false);
+}
+
+async fn do_songs_scan() {
+    disable_btn("songs-scan-btn", true);
+    el("songs-scan-btn").set_text_content(Some("扫描中..."));
+    let client = get_client();
+    match scan_songs(&client).await {
+        Ok(_) => {
+            do_songs_list().await;
+        }
+        Err(e) => {
+            set_text("songs-list", &format!("扫描失败: {}", e));
+        }
+    }
+    el("songs-scan-btn").set_text_content(Some("扫描"));
+    disable_btn("songs-scan-btn", false);
+}
+
+fn do_song_play_by_index(index: usize) {
+    SONG_LIST.with(|sl| {
+        let list = sl.borrow();
+        if index >= list.len() { return; }
+        let song = &list[index];
+        SONG_INDEX.with(|si| *si.borrow_mut() = index);
+
+        let player_bar = el("song-player-bar");
+        player_bar.set_attribute("style", "display:block").ok();
+
+        let base = songs_base_url();
+        let file_url = format!("{}/api/songs/file/{}", base, song.id);
+        let cover_url = song.cover_url.as_deref().unwrap_or("").to_string();
+
+        el("song-current-title").set_text_content(Some(&song.title));
+        let artist = song.artist.as_deref().unwrap_or("未知艺术家");
+        let album = song.album.as_deref().unwrap_or("未知专辑");
+        el("song-current-artist").set_text_content(Some(&format!("{} · {}", artist, album)));
+
+        if !cover_url.is_empty() {
+            if let Some(img) = doc().get_element_by_id("song-current-cover") {
+                img.set_attribute("src", &cover_url).ok();
+            }
+        }
+
+        if let Some(audio_el) = doc().get_element_by_id("song-player") {
+            if let Ok(audio) = audio_el.dyn_into::<web_sys::HtmlAudioElement>() {
+                audio.set_src(&file_url);
+                let _ = audio.play();
+                el("song-play-btn").set_text_content(Some("⏸"));
+            }
+        }
+        ensure_spectrum();
+        start_spectrum();
+    });
+}
+
+fn do_song_play_pause() {
+    if let Some(audio_el) = doc().get_element_by_id("song-player") {
+        if let Ok(audio) = audio_el.dyn_into::<web_sys::HtmlAudioElement>() {
+            if audio.paused() {
+                let _ = audio.play();
+                el("song-play-btn").set_text_content(Some("⏸"));
+            } else {
+                let _ = audio.pause();
+                el("song-play-btn").set_text_content(Some("▶"));
+            }
+        }
+    }
+}
+
+fn do_song_prev() {
+    SONG_INDEX.with(|si| {
+        let idx = si.borrow();
+        if *idx > 0 { do_song_play_by_index(*idx - 1); }
+    });
+}
+
+fn do_song_next() {
+    SONG_INDEX.with(|si| {
+        let idx = *si.borrow();
+        SONG_LIST.with(|sl| {
+            let len = sl.borrow().len();
+            if idx + 1 < len { do_song_play_by_index(idx + 1); }
+        });
+    });
+}
+
+// ==================== SPECTRUM ====================
+
+thread_local! {
+    static SPECTRUM_CTX: RefCell<Option<web_sys::AudioContext>> = const { RefCell::new(None) };
+    static SPECTRUM_ANALYSER: RefCell<Option<web_sys::AnalyserNode>> = const { RefCell::new(None) };
+    static SPECTRUM_INT: RefCell<Option<i32>> = const { RefCell::new(None) };
+    static SPECTRUM_CB: RefCell<Option<Closure<dyn FnMut()>>> = const { RefCell::new(None) };
+    static SPECTRUM_BINS: RefCell<Vec<u16>> = const { RefCell::new(Vec::new()) };
+}
+
+fn ensure_spectrum() {
+    if SPECTRUM_CTX.with(|c| c.borrow().is_some()) { return; }
+
+    let ctx = match web_sys::AudioContext::new() {
+        Ok(c) => c,
+        Err(_) => { log("AudioContext 创建失败"); return; }
+    };
+    let analyser = match ctx.create_analyser() {
+        Ok(a) => a,
+        Err(_) => { log("AnalyserNode 创建失败"); return; }
+    };
+    analyser.set_fft_size(256);
+    analyser.set_smoothing_time_constant(0.5);
+
+    // Connect audio element → analyser → destination
+    if let Some(audio_el) = doc().get_element_by_id("song-player") {
+        if let Ok(audio) = audio_el.dyn_into::<web_sys::HtmlAudioElement>() {
+            if let Ok(source) = ctx.create_media_element_source(&audio) {
+                let _ = source.connect_with_audio_node(&analyser);
+                let _ = analyser.connect_with_audio_node(&ctx.destination());
+            }
+        }
+    }
+
+    // Pre-calculate logarithmic frequency bin mapping
+    let buffer_len = analyser.frequency_bin_count() as usize; // fftSize/2 = 128
+    let sample_rate = ctx.sample_rate() as f64; // usually 48000
+    let log_min = (20.0f64).ln();
+    let log_max = (20000.0f64).ln();
+    let mut bins = Vec::with_capacity(48);
+    for i in 0..48 {
+        let freq = (log_min + (log_max - log_min) * i as f64 / 47.0f64).exp();
+        let bin = ((freq * 256.0 / sample_rate).floor() as u16).min(buffer_len as u16 - 1);
+        bins.push(bin);
+    }
+
+    SPECTRUM_CTX.with(|c| *c.borrow_mut() = Some(ctx));
+    SPECTRUM_ANALYSER.with(|a| *a.borrow_mut() = Some(analyser));
+    SPECTRUM_BINS.with(|b| *b.borrow_mut() = bins);
+}
+
+fn start_spectrum() {
+    // Ensure analyser exists
+    if SPECTRUM_ANALYSER.with(|a| a.borrow().is_none()) { return; }
+    stop_spectrum();
+
+    let cb = Closure::wrap(Box::new(|| {
+        spectrum_tick();
+    }) as Box<dyn FnMut()>);
+
+    if let Some(window) = web_sys::window() {
+        if let Ok(id) = window.set_interval_with_callback_and_timeout_and_arguments_0(
+            cb.as_ref().unchecked_ref(),
+            50, // 20fps
+        ) {
+            SPECTRUM_INT.with(|si| *si.borrow_mut() = Some(id));
+            SPECTRUM_CB.with(|sc| *sc.borrow_mut() = Some(cb));
+        }
+    }
+}
+
+fn stop_spectrum() {
+    SPECTRUM_INT.with(|si| {
+        if let Some(id) = si.borrow_mut().take() {
+            if let Some(window) = web_sys::window() {
+                window.clear_interval_with_handle(id);
+            }
+        }
+    });
+    SPECTRUM_CB.with(|sc| *sc.borrow_mut() = None);
+    // Reset bars to zero
+    for i in 0..48 {
+        if let Some(bar) = doc().get_element_by_id(&format!("spb-{}", i)) {
+            bar.set_attribute("style", "height:1%;background:hsl(260,80%,55%);opacity:0.4").ok();
+        }
+    }
+}
+
+fn spectrum_tick() {
+    let analyser = match SPECTRUM_ANALYSER.with(|a| a.borrow().as_ref().cloned()) {
+        Some(a) => a,
+        None => return,
+    };
+    let bins = SPECTRUM_BINS.with(|b| b.borrow().clone());
+    if bins.is_empty() { return; }
+
+    let buf_len = analyser.frequency_bin_count() as usize;
+    let mut data = vec![0u8; buf_len];
+    analyser.get_byte_frequency_data(&mut data);
+
+    for i in 0..48.min(bins.len()) {
+        let bin = bins[i] as usize;
+        let val = data.get(bin).copied().unwrap_or(0) as f64 / 255.0;
+        let height = (val * 100.0f64).max(1.0);
+        let hue = 260.0 + (i as f64 / 47.0) * 40.0;
+        let lightness = 55.0 + val * 35.0;
+        let opacity = 0.4 + val * 0.6;
+        if let Some(bar) = doc().get_element_by_id(&format!("spb-{}", i)) {
+            bar.set_attribute("style", &format!(
+                "height:{}%;background:hsl({:.0},80%,{:.0}%);opacity:{:.2}",
+                height, hue, lightness, opacity,
+            )).ok();
+        }
+    }
+}
+
+fn init_spectrum_bars() {
+    // Create 48 bar divs in the spectrum container
+    if let Some(container) = doc().get_element_by_id("spectrum-container") {
+        for i in 0..48 {
+            if let Ok(bar) = doc().create_element("div") {
+                bar.set_id(&format!("spb-{}", i));
+                bar.set_attribute("class", "flex-1 rounded-sm").ok();
+                bar.set_attribute("style", "height:1%;background:hsl(260,80%,55%);opacity:0.4").ok();
+                let _ = container.append_child(&bar);
+            }
+        }
+    }
+}
+
+// ==================== START ====================
+
+#[wasm_bindgen(start)]
+pub fn start() {
+    console_error_panic_hook::set_once();
+
+    // hash routing
+    let cb = Closure::wrap(Box::new(route) as Box<dyn FnMut()>);
+    let f: &js_sys::Function = cb.as_ref().unchecked_ref();
+    web_sys::window().unwrap().set_onhashchange(Some(f));
+    cb.forget();
+
+    // Restore token
+    match load_token() {
+        Some(token) => { log("token 已从 localStorage 恢复"); set_token_inner(&token); }
+        None => log("token 不存在"),
+    }
+
+    if load_token().is_none() {
+        show_page("page-login");
+    } else {
+        let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
+        if hash.is_empty() || hash == "#/login" || hash == "#/" {
+            navigate("#/ggtt");
+        }
+        route();
+    }
+
+    // Sidebar toggle
+    on_click("s-toggle", do_sidebar_toggle);
+
+    // Sidebar navigation
+    on_click("snav-ggtt", || navigate("#/ggtt"));
+    on_click("snav-dict", || navigate("#/dict"));
+    on_click("snav-qrcode", || navigate("#/qrcode"));
+    on_click("snav-password", || navigate("#/password"));
+    on_click("snav-uuid", || navigate("#/uuid"));
+    on_click("snav-base64", || navigate("#/base64"));
+    on_click("snav-timestamp", || navigate("#/timestamp"));
+    on_click("snav-clipboard", || navigate("#/clipboard"));
+    on_click("snav-notes", || navigate("#/notes"));
+    on_click("snav-zici-chars", || navigate("#/zici-chars"));
+    on_click("snav-zici-words", || navigate("#/zici-words"));
+    on_click("snav-search-history", || navigate("#/search-history"));
+    on_click("snav-short-notes", || navigate("#/short-notes"));
+    on_click("snav-songs", || navigate("#/songs"));
+    on_click("snav-logout", || { clear_token(); navigate("#/login"); });
+
+    // Login
+    on_click("login-btn", || spawn_local(async {
+        disable_btn("login-btn", true);
+        set_text("login-msg", "登录中...");
+        match login_impl(&input("login-user"), &input("login-pass")).await {
+            Ok(t) => { save_token(&t); navigate("#/ggtt"); }
+            Err(e) => set_text("login-msg", &format!("失败: {}", e)),
+        }
+        disable_btn("login-btn", false);
+    }));
+    on_keydown("login-pass", "Enter", || { let _ = el("login-btn").click(); });
+
+    // GGTT
+    on_keydown("wubi-input", "Enter", || { let _ = el("wubi-btn").click(); });
+    on_click("wubi-btn", || spawn_local(do_wubi_search()));
+
+    // Dict
+    on_keydown("dict-input", "Enter", || { let _ = el("dict-btn").click(); });
+    on_click("dict-btn", || spawn_local(do_dict_search()));
+
+    // QR Code
+    on_click("qr-btn", do_qr_generate);
+
+    // Password
+    on_click("pw-btn", do_password_gen);
+    on_click("pw-strong-btn", do_password_strong);
+
+    // UUID
+    on_click("uuid-v4-btn", do_uuid_v4);
+    on_click("uuid-v5-btn", do_uuid_v5);
+    on_click("uuid-v6-btn", do_uuid_v6);
+    on_click("uuid-v7-btn", do_uuid_v7);
+    on_click("uuid-validate-btn", do_uuid_validate);
+
+    // Base64
+    on_click("b64-encode-btn", do_b64_encode);
+    on_click("b64-decode-btn", do_b64_decode);
+
+    // Timestamp
+    on_click("ts-now-btn", do_ts_now);
+    on_click("ts-utc-btn", do_ts_utc);
+    on_click("ts-timestamp-btn", do_ts_timestamp);
+    on_click("ts-to-local-btn", do_ts_to_local);
+    on_click("ts-to-utc-btn", do_ts_to_utc);
+    on_click("ts-parse-btn", do_ts_parse);
+
+    // Clipboard
+    on_click("clip-btn", || spawn_local(do_clipboard_refresh()));
+
+    // Notes
+    on_click("notes-refresh-btn", || spawn_local(do_notes_refresh()));
+
+    // Zici chars — grade/term buttons
+    for (g, t) in [(1,1),(1,2),(2,1),(2,2),(3,1),(3,2),(4,1),(4,2),(5,1),(5,2),(6,1),(6,2)] {
+        let id = format!("zc-{}-{}", g, t);
+        on_click(&id, move || do_zici_show_chars(g, t));
+    }
+
+    // Zici words
+    on_click("zici-word-search-btn", do_zici_word_search);
+    on_keydown("zici-word-search", "Enter", || { let _ = el("zici-word-search-btn").click(); });
+
+    // Search history
+    on_click("shistory-btn", || spawn_local(do_search_history()));
+
+    // Short notes
+    on_click("sn-refresh-btn", || spawn_local(do_short_notes_refresh()));
+    on_click("sn-create-btn", || spawn_local(do_short_note_create()));
+
+    // Init spectrum bars
+    init_spectrum_bars();
+
+    // Songs
+    on_click("songs-refresh-btn", || spawn_local(do_songs_list()));
+    on_click("songs-scan-btn", || spawn_local(do_songs_scan()));
+    on_click("song-play-btn", do_song_play_pause);
+    on_click("song-prev-btn", do_song_prev);
+    on_click("song-next-btn", do_song_next);
 }

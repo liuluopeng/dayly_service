@@ -58,6 +58,7 @@ COPY ./kongde/rust/Cargo.toml /app/kongde/rust/Cargo.toml
 COPY ./local-agent/Cargo.toml /app/local-agent/Cargo.toml
 COPY ./my_type/Cargo.toml /app/my_type/Cargo.toml
 COPY ./webbvueetauri/src/src-wasm/Cargo.toml /app/webbvueetauri/src/src-wasm/Cargo.toml
+COPY ./wasm-demo/Cargo.toml /app/wasm-demo/Cargo.toml
 COPY ./webbvueetauri/src-tauri/Cargo.toml /app/webbvueetauri/src-tauri/Cargo.toml
 
 # 创建占位文件以确保目录结构正确
@@ -68,6 +69,7 @@ RUN mkdir -p /app/local-agent/src && echo 'fn main() {}' > /app/local-agent/src/
 RUN mkdir -p /app/my_type/src && echo 'fn main() {}' > /app/my_type/src/lib.rs
 RUN mkdir -p /app/webbvueetauri/src/src-wasm/src && echo 'fn main() {}' > /app/webbvueetauri/src/src-wasm/src/lib.rs
 RUN mkdir -p /app/webbvueetauri/src-tauri/src && echo 'fn main() {}' > /app/webbvueetauri/src-tauri/src/lib.rs
+RUN mkdir -p /app/wasm-demo/src && echo 'fn main() {}' > /app/wasm-demo/src/lib.rs
 
 # 构建依赖，利用缓存
 RUN cargo build --release --bin lx_dayly_service || true
