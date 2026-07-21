@@ -97,6 +97,7 @@ class ScaleAwareApp extends StatelessWidget {
               child: Directionality(
                 textDirection: TextDirection.ltr,
                 child: GetMaterialApp(
+                    key: ValueKey('${settingsController.uiStyle.value}_${settingsController.themeMode.value}'),
                     translations: Messages(),
                     locale: settingsController.locale.value,
                     fallbackLocale: const Locale('zh', 'CN'),
