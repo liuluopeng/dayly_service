@@ -187,23 +187,23 @@ class _ContactsPageState extends State<ContactsPage> {
     final isWp10 = Get.find<SettingsController>().uiStyle.value == UiStyle.wp10;
 
     if (isWp10) {
-      // WP10 磁贴风格 — 图标在左上，文字在下，纯黑背景
+      // WP10 磁贴 — 大图标 + 底部文字
       return GestureDetector(
         onTap: onTap,
         child: Container(
           color: const Color(0xFF1A1A1A),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 0, 0),
-                child: Icon(icon, size: 24, color: Colors.white70),
+              Center(
+                child: Opacity(
+                  opacity: 0.25,
+                  child: Icon(icon, size: 64, color: Colors.white),
+                ),
               ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              Positioned(
+                left: 10, right: 10, bottom: 8,
                 child: Text(title,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
                   maxLines: 2, overflow: TextOverflow.ellipsis,
                 ),
               ),
