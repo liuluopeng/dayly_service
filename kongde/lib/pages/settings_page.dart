@@ -15,6 +15,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  void _restartApp() => (context as Element).reassemble();
   final appConfig = config.AppConfig.instance;
 
   @override
@@ -43,8 +44,12 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
             _buildSection(
-              title: 'settings.appearance'.tr,
+              title: 'settings.theme'.tr,
               children: [_buildThemeModeSelector(settingsController)],
+            ),
+            _buildSection(
+              title: 'settings.uiStyle'.tr,
+              children: [_buildUiStyleSelector(settingsController)],
             ),
             _buildSection(
               title: 'settings.player'.tr,
@@ -89,6 +94,13 @@ class _SettingsPageState extends State<SettingsPage> {
       RadioListTile<AppThemeMode>(title: Text('settings.light'.tr), subtitle: Text('settings.lightDesc'.tr), value: AppThemeMode.light, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) controller.setThemeMode(v); }),
       RadioListTile<AppThemeMode>(title: Text('settings.dark'.tr), subtitle: Text('settings.darkDesc'.tr), value: AppThemeMode.dark, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) controller.setThemeMode(v); }),
       RadioListTile<AppThemeMode>(title: Text('settings.system'.tr), subtitle: Text('settings.systemDesc'.tr), value: AppThemeMode.system, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) controller.setThemeMode(v); }),
+    ]));
+  }
+
+  Widget _buildUiStyleSelector(SettingsController controller) {
+    return Obx(() => Column(children: [
+      RadioListTile<UiStyle>(title: Text('settings.uiMaterial'.tr), subtitle: Text('settings.uiMaterialDesc'.tr), value: UiStyle.material, groupValue: controller.uiStyle.value, onChanged: (v) { if (v != null) { controller.setUiStyle(v); _restartApp(); }}),
+      RadioListTile<UiStyle>(title: Text('settings.uiWp10'.tr), subtitle: Text('settings.uiWp10Desc'.tr), value: UiStyle.wp10, groupValue: controller.uiStyle.value, onChanged: (v) { if (v != null) { controller.setUiStyle(v); _restartApp(); }}),
     ]));
   }
 

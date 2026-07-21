@@ -11,6 +11,7 @@ import 'package:kongde/pages/collins_dict_page.dart';
 import 'package:kongde/config/app_config.dart';
 import 'package:logger/logger.dart';
 import 'package:kongde/controllers/settings_controller.dart';
+import 'package:kongde/theme/wp10_theme.dart';
 import 'package:kongde/locales/messages.dart';
 import 'package:kongde/services/navigation_service.dart';
 
@@ -31,8 +32,8 @@ final logger = Logger(
   ),
 );
 
-final _lightTheme = ThemeData(colorSchemeSeed: Colors.blueGrey);
-final _darkTheme = ThemeData(colorSchemeSeed: Colors.blueGrey, brightness: Brightness.dark);
+final _matLight = ThemeData(colorSchemeSeed: Colors.blueGrey);
+final _matDark = ThemeData(colorSchemeSeed: Colors.blueGrey, brightness: Brightness.dark);
 
 late AudioPlayerHandler _audioHandler;
 StreamSubscription? _rustLoggerSubscription;
@@ -103,18 +104,22 @@ class ScaleAwareApp extends StatelessWidget {
                         ? const MainTabPage()
                         : const SetupPage(),
                     debugShowCheckedModeBanner: false,
-                theme: _lightTheme.copyWith(
-                  textTheme: _lightTheme.textTheme.apply(fontFamily: 'LXGWWenKaiMono'),
-                  iconTheme: _lightTheme.iconTheme.copyWith(size: (_lightTheme.iconTheme.size ?? 24) * scale),
-                  appBarTheme: _lightTheme.appBarTheme.copyWith(toolbarHeight: kToolbarHeight * scale),
-                  buttonTheme: _lightTheme.buttonTheme.copyWith(minWidth: 88 * scale, height: 36 * scale),
-                ),
-                darkTheme: _darkTheme.copyWith(
-                  textTheme: _darkTheme.textTheme.apply(fontFamily: 'LXGWWenKaiMono'),
-                  iconTheme: _darkTheme.iconTheme.copyWith(size: (_darkTheme.iconTheme.size ?? 24) * scale),
-                  appBarTheme: _darkTheme.appBarTheme.copyWith(toolbarHeight: kToolbarHeight * scale),
-                  buttonTheme: _darkTheme.buttonTheme.copyWith(minWidth: 88 * scale, height: 36 * scale),
-                ),
+                theme: settingsController.uiStyle.value == UiStyle.wp10
+                  ? wp10Theme(dark: false)
+                  : _matLight.copyWith(
+                    textTheme: _matLight.textTheme.apply(fontFamily: 'LXGWWenKaiMono'),
+                    iconTheme: _matLight.iconTheme.copyWith(size: (_matLight.iconTheme.size ?? 24) * scale),
+                    appBarTheme: _matLight.appBarTheme.copyWith(toolbarHeight: kToolbarHeight * scale),
+                    buttonTheme: _matLight.buttonTheme.copyWith(minWidth: 88 * scale, height: 36 * scale),
+                  ),
+                darkTheme: settingsController.uiStyle.value == UiStyle.wp10
+                  ? wp10Theme(dark: true)
+                  : _matDark.copyWith(
+                    textTheme: _matDark.textTheme.apply(fontFamily: 'LXGWWenKaiMono'),
+                    iconTheme: _matDark.iconTheme.copyWith(size: (_matDark.iconTheme.size ?? 24) * scale),
+                    appBarTheme: _matDark.appBarTheme.copyWith(toolbarHeight: kToolbarHeight * scale),
+                    buttonTheme: _matDark.buttonTheme.copyWith(minWidth: 88 * scale, height: 36 * scale),
+                  ),
                 themeMode: settingsController.appThemeMode,
                 onGenerateRoute: (settings) {
                   if (settings.name == '/collins_dict') {

@@ -7,6 +7,7 @@ import 'package:kongde/utils.dart';
 enum BackgroundType { solid, blur, defaultColor }
 
 enum AppThemeMode { light, dark, system }
+enum UiStyle { material, wp10 }
 
 class SettingsController extends GetxController {
   static const String _backgroundTypeKey = 'background_type';
@@ -18,6 +19,7 @@ class SettingsController extends GetxController {
   final Rx<AppThemeMode> themeMode = AppThemeMode.system.obs;
   final Rx<double> scaleFactor = 1.0.obs;
   final Rx<Locale> locale = const Locale('zh', 'CN').obs;
+  final Rx<UiStyle> uiStyle = UiStyle.material.obs;
 
   SqliteStorage get _store => SqliteStorage();
 
@@ -40,6 +42,7 @@ class SettingsController extends GetxController {
     final localeCode = await _store.getString(_localeKey) ?? 'zh_CN';
     final parts = localeCode.split('_');
     locale.value = Locale(parts[0], parts.length > 1 ? parts[1] : '');
+    await _loadUiStyle();
   }
 
   /// 从后端加载设置并应用（登录后调用）
@@ -132,12 +135,19 @@ class SettingsController extends GetxController {
 
   ThemeMode get appThemeMode {
     switch (themeMode.value) {
-      case AppThemeMode.light:
-        return ThemeMode.light;
-      case AppThemeMode.dark:
-        return ThemeMode.dark;
-      case AppThemeMode.system:
-        return ThemeMode.system;
+      case AppThemeMode.light: return ThemeMode.light;
+      case AppThemeMode.dark: return ThemeMode.dark;
+      case AppThemeMode.system: return ThemeMode.system;
     }
+  }
+
+  Future<void> setUiStyle(UiStyle style) async {
+    await _store.setString('ui_style', style.name);
+    uiStyle.value = style;
+  }
+
+  Future<void> _loadUiStyle() async {
+    final saved = await _store.getString('ui_style');
+    if (saved == 'wp10') uiStyle.value = UiStyle.wp10;
   }
 }
