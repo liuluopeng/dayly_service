@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use common::api::{
     client::ApiClient,
     ggtt::{search_ggtt_code, SearchRequest},
@@ -8,17 +9,12 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{Document, HtmlElement, HtmlInputElement, Storage};
 
-static mut CLIENT: Option<ApiClient> = None;
 const TOKEN_KEY: &str = "wasm_demo_token";
 
-fn get_client() -> &'static mut ApiClient {
-    unsafe {
-        if CLIENT.is_none() {
-            CLIENT = Some(ApiClient::new("http://localhost:23001"));
-        }
-        CLIENT.as_mut().unwrap()
-    }
+thread_local! {
+    static CLIENT: RefCell<Option<ApiClient>> = const { RefCell::new(None) };
 }
+
 
 fn log(msg: &str) {
     web_sys::console::log_1(&msg.into());
@@ -127,10 +123,10 @@ pub fn start() {
     on_click("wubi-btn", || spawn_local(async {
         disable_btn("wubi-btn", true);
         set_html("wubi-result", "");
-        let client = get_client();
-        log(&format!("使用的 token: {:?}", unsafe { CLIENT.as_ref().and_then(|c| c.token().map(|s| &s[..20])) }));
         let req = SearchRequest { search: input("wubi-input") };
-        match search_ggtt_code(client, req).await {
+        let client = get_client();
+        log(&format!("token: {:?}", client.token().map(|s| &s[..20.min(s.len())])));
+        match search_ggtt_code(&client, req).await {
             Ok(resp) => {
                 if let Some(d) = resp.data {
                     let mut svgs = String::new();
@@ -164,13 +160,24 @@ pub fn start() {
     });
 }
 
+fn get_client() -> ApiClient {
+    let mut c = ApiClient::new("http://localhost:23001");
+    CLIENT.with(|rc| {
+        if let Some(t) = rc.borrow().as_ref().and_then(|c| c.token()) {
+            c.set_token(t);
+        }
+    });
+    c
+}
+
 fn set_token_inner(token: &str) {
-    unsafe {
-        if let Some(client) = CLIENT.as_mut() {
+    CLIENT.with(|c| {
+        let mut b = c.borrow_mut();
+        if let Some(client) = b.as_mut() {
             if token.is_empty() { client.clear_token(); }
             else { client.set_token(token); }
         }
-    }
+    });
 }
 
 #[wasm_bindgen]
@@ -178,7 +185,7 @@ pub fn set_token(token: &str) { set_token_inner(token); }
 
 async fn login_impl(user: &str, pass: &str) -> Result<String, String> {
     let client = get_client();
-    match user_login(client, user, pass).await {
+    match user_login(&client, user, pass).await {
         Ok(resp) => resp.data.map(|d| d.token).ok_or("无数据".into()),
         Err(e) => Err(format!("{}", e)),
     }
