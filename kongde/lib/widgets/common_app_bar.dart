@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kongde/controllers/settings_controller.dart';
 import 'package:kongde/pages/play_online_music_page.dart';
 import 'package:kongde/widgets/appbar_mini_window.dart';
 
@@ -76,9 +77,10 @@ class LabeledIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWp10 = Get.find<SettingsController>().uiStyle.value == UiStyle.wp10;
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: isWp10 ? BorderRadius.zero : BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: FittedBox(
