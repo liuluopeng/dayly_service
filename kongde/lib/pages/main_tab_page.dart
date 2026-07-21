@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:kongde/controllers/settings_controller.dart';
 import 'package:kongde/controllers/tab_bar_controller.dart';
 import 'package:kongde/pages/home_page.dart';
 import 'package:kongde/pages/menu.dart';
@@ -94,6 +95,38 @@ class _MainTabPageState extends State<MainTabPage> {
   }
 
   Widget _buildPortraitLayout() {
+    final isWp10 = Get.find<SettingsController>().uiStyle.value == UiStyle.wp10;
+
+    if (isWp10) {
+      // WP10 Pivot 风格
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Pivot 导航栏（水平滑动）
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  children: [
+                    _buildPivot('nav.home'.tr, 0),
+                    _buildPivot('nav.menu'.tr, 1),
+                    _buildPivot('nav.profile'.tr, 2),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Obx(() => _pages[_tabBarController.currentIndex.value]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Material 风格
     return Scaffold(
       body: SafeArea(
         child: Obx(() {
@@ -137,6 +170,27 @@ class _MainTabPageState extends State<MainTabPage> {
           ],
         );
       }),
+    );
+  }
+
+  Widget _buildPivot(String label, int index) {
+    final selected = _tabBarController.currentIndex.value == index;
+    return GestureDetector(
+      onTap: () => _tabBarController.changeTab(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          border: selected
+              ? const Border(bottom: BorderSide(color: Colors.white, width: 2))
+              : null,
+        ),
+        child: Text(label,
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.white54,
+            fontSize: 16, fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
     );
   }
 
