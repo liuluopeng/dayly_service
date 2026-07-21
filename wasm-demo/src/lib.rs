@@ -20,8 +20,13 @@ fn get_client() -> &'static mut ApiClient {
     }
 }
 
+fn log(msg: &str) {
+    web_sys::console::log_1(&msg.into());
+}
+
 fn storage() -> Option<Storage> {
-    web_sys::window().unwrap().local_storage().ok()?
+    let w = web_sys::window()?;
+    w.local_storage().ok()?
 }
 
 fn save_token(token: &str) {
@@ -93,8 +98,12 @@ pub fn start() {
     console_error_panic_hook::set_once();
 
     // 恢复已保存的 token
-    if let Some(token) = load_token() {
-        set_token_inner(&token);
+    match load_token() {
+        Some(token) => {
+            log("token 已从 localStorage 恢复");
+            set_token_inner(&token);
+        }
+        None => log("token 不存在"),
     }
     route();
 
@@ -140,7 +149,10 @@ pub fn start() {
                     ));
                 } else { set_text("wubi-result", "无结果"); }
             }
-            Err(e) => set_text("wubi-result", &format!("失败: {}", e)),
+            Err(e) => {
+                log(&format!("GGTT 查询失败: {}", e));
+                set_text("wubi-result", &format!("失败: {}", e));
+            },
         }
         disable_btn("wubi-btn", false);
     }));
