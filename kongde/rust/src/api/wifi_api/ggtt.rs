@@ -1,6 +1,6 @@
 use flutter_rust_bridge::frb;
 
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::{get_client_clone, init_client, set_client_token}};
+use crate::api::wifi_api::init::{get_client_clone, init_client, set_client_token};
 
 pub use common::api::{
     base::ApiError,
@@ -34,7 +34,7 @@ pub async fn search_ggtt_code_for_dart(search: String) -> Result<GgttCode, ApiEr
     match search_ggtt_code(&client, req).await {
         Ok(res) => {
             if let Some(ggtt_code) = res.data {
-                log_to_dart(format!("GGTT 查询成功: {}", search));
+                tracing::info!(search = %search, "GGTT 查询成功");
                 Ok(ggtt_code)
             } else {
                 Err(ApiError::Internal("No data found in response".to_string()))

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:kongde/config/app_config.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
+import 'package:kongde/utils.dart';
 
 class ImageGalleryPage extends StatefulWidget {
   const ImageGalleryPage({super.key});
@@ -81,6 +82,7 @@ class _ImageGalleryPageState extends State<ImageGalleryPage> {
         });
       }
     } catch (e) {
+      LOGGER.w('[ImageGallery] _loadFolders failed: $e');
       setState(() {
         _errorMessage = 'common.loadFailedWith'.trParams({'error': '$e'});
         _isLoading = false;
@@ -143,6 +145,7 @@ class _ImageGalleryPageState extends State<ImageGalleryPage> {
         });
       }
     } catch (e) {
+      LOGGER.w('[ImageGallery] _loadImages failed: $e');
       setState(() {
         _errorMessage = 'common.loadFailedWith'.trParams({'error': '$e'});
         _isLoading = false;

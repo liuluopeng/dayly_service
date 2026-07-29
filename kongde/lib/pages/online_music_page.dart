@@ -7,6 +7,7 @@ import 'package:kongde/services/audio_player_handler.dart';
 import 'package:get/get.dart';
 import 'package:kongde/pages/play_online_music_page.dart';
 import 'package:kongde/src/rust/api/wifi_api/song.dart';
+import 'package:kongde/utils.dart';
 
 class OnlineMusicPage extends StatefulWidget {
   const OnlineMusicPage({super.key});
@@ -130,7 +131,7 @@ class _OnlineMusicPageState extends State<OnlineMusicPage> {
         );
       }
     } catch (e) {
-      print('播放歌曲失败: $e');
+      LOGGER.w('[OnlineMusic] _playSong failed: $e');
       // 不在列表页面显示错误，因为用户已经在播放页面
     } finally {
       // 确保 _isLoading 为 false

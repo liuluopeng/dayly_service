@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:kongde/pages/universal_video_player_page.dart';
 import 'package:kongde/config/app_config.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
+import 'package:kongde/utils.dart';
 
 class VideoLibraryPage extends StatefulWidget {
   const VideoLibraryPage({super.key});
@@ -82,6 +83,7 @@ class _VideoLibraryPageState extends State<VideoLibraryPage> {
         });
       }
     } catch (e) {
+      LOGGER.w('[VideoLibrary] _loadVideos failed: $e');
       setState(() {
         _errorMessage = 'common.loadFailedWith'.trParams({'error': '$e'});
         _isLoading = false;

@@ -51,7 +51,7 @@ class _GenreMoviesPageState extends State<GenreMoviesPage> {
         _movies = response.data;
         _currentPage = page;
         _isLoading = false;
-        _hasMore = (page + 1) * _pageSize < response.total;
+        _hasMore = (page + 1) * _pageSize < (response.total is BigInt ? (response.total as BigInt).toInt() : response.total as int);
       });
     } catch (_) { setState(() { _isLoading = false; }); }
   }
@@ -66,7 +66,7 @@ class _GenreMoviesPageState extends State<GenreMoviesPage> {
         _movies.addAll(response.data);
         _currentPage = nextPage;
         _isLoadingMore = false;
-        _hasMore = (nextPage + 1) * _pageSize < response.total;
+        _hasMore = (nextPage + 1) * _pageSize < (response.total as dynamic).toInt();
       });
     } catch (_) { setState(() { _isLoadingMore = false; }); }
   }

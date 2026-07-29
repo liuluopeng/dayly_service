@@ -1,5 +1,3 @@
-use crate::api::logger_bridge::log_to_dart;
-
 #[derive(Debug, Clone)]
 pub struct ColorInfo {
     pub background_color: Option<u32>,

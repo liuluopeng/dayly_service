@@ -1,6 +1,6 @@
 use flutter_rust_bridge::frb;
 
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::get_client_clone};
+use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::api::{
     base::ApiError,
@@ -58,7 +58,7 @@ pub async fn list_files_for_dart(path: String, page: Option<u32>, page_size: Opt
                     last_modified: e.last_modified,
                 })
                 .collect();
-            log_to_dart(format!("列出目录 {}: {} 项 (共 {} 项)", path, count, total));
+            tracing::info!(path = %path, count, total, "列出目录");
             Ok(DirListingForDart {
                 path: listing.path,
                 entries,
@@ -74,7 +74,7 @@ pub async fn get_file_info_for_dart(path: String) -> Result<FileInfoForDart, Api
 
     match get_file_info(&client, &path).await {
         Ok(info) => {
-            log_to_dart(format!("文件信息: {} ({})", info.name, info.content_type));
+            tracing::info!(name = %info.name, content_type = %info.content_type, "文件信息");
             Ok(FileInfoForDart {
                 name: info.name,
                 path: info.path,

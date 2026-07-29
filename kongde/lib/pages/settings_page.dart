@@ -6,6 +6,7 @@ import 'package:kongde/config/app_config.dart' as config;
 import 'package:kongde/widgets/common_app_bar.dart';
 import 'package:kongde/widgets/language_switcher.dart';
 import 'package:kongde/pages/setup_page.dart';
+import 'package:kongde/utils.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -86,17 +87,17 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildThemeModeSelector(SettingsController controller) {
     return Obx(() => Column(children: [
-      RadioListTile<AppThemeMode>(title: Text('settings.light'.tr), subtitle: Text('settings.lightDesc'.tr), value: AppThemeMode.light, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) controller.setThemeMode(v); }),
-      RadioListTile<AppThemeMode>(title: Text('settings.dark'.tr), subtitle: Text('settings.darkDesc'.tr), value: AppThemeMode.dark, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) controller.setThemeMode(v); }),
-      RadioListTile<AppThemeMode>(title: Text('settings.system'.tr), subtitle: Text('settings.systemDesc'.tr), value: AppThemeMode.system, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) controller.setThemeMode(v); }),
+      RadioListTile<AppThemeMode>(title: Text('settings.light'.tr), subtitle: Text('settings.lightDesc'.tr), value: AppThemeMode.light, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) { LOGGER.i('Theme mode changed to: light'); controller.setThemeMode(v); } }),
+      RadioListTile<AppThemeMode>(title: Text('settings.dark'.tr), subtitle: Text('settings.darkDesc'.tr), value: AppThemeMode.dark, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) { LOGGER.i('Theme mode changed to: dark'); controller.setThemeMode(v); } }),
+      RadioListTile<AppThemeMode>(title: Text('settings.system'.tr), subtitle: Text('settings.systemDesc'.tr), value: AppThemeMode.system, groupValue: controller.themeMode.value, onChanged: (v) { if (v != null) { LOGGER.i('Theme mode changed to: system'); controller.setThemeMode(v); } }),
     ]));
   }
 
   Widget _buildBackgroundTypeSelector(SettingsController controller) {
     return Obx(() => Column(children: [
-      RadioListTile<BackgroundType>(title: Text('settings.solidBg'.tr), subtitle: Text('settings.solidBgDesc'.tr), value: BackgroundType.solid, groupValue: controller.backgroundType.value, onChanged: (v) { if (v != null) controller.setBackgroundType(v); }),
-      RadioListTile<BackgroundType>(title: Text('settings.blurBg'.tr), subtitle: Text('settings.blurBgDesc'.tr), value: BackgroundType.blur, groupValue: controller.backgroundType.value, onChanged: (v) { if (v != null) controller.setBackgroundType(v); }),
-      RadioListTile<BackgroundType>(title: Text('settings.defaultColor'.tr), subtitle: Text('settings.defaultColorDesc'.tr), value: BackgroundType.defaultColor, groupValue: controller.backgroundType.value, onChanged: (v) { if (v != null) controller.setBackgroundType(v); }),
+      RadioListTile<BackgroundType>(title: Text('settings.solidBg'.tr), subtitle: Text('settings.solidBgDesc'.tr), value: BackgroundType.solid, groupValue: controller.backgroundType.value, onChanged: (v) { if (v != null) { LOGGER.i('Background type changed to: solid'); controller.setBackgroundType(v); } }),
+      RadioListTile<BackgroundType>(title: Text('settings.blurBg'.tr), subtitle: Text('settings.blurBgDesc'.tr), value: BackgroundType.blur, groupValue: controller.backgroundType.value, onChanged: (v) { if (v != null) { LOGGER.i('Background type changed to: blur'); controller.setBackgroundType(v); } }),
+      RadioListTile<BackgroundType>(title: Text('settings.defaultColor'.tr), subtitle: Text('settings.defaultColorDesc'.tr), value: BackgroundType.defaultColor, groupValue: controller.backgroundType.value, onChanged: (v) { if (v != null) { LOGGER.i('Background type changed to: defaultColor'); controller.setBackgroundType(v); } }),
     ]));
   }
 
@@ -118,7 +119,17 @@ class _SettingsPageState extends State<SettingsPage> {
             IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _confirmDelete(i)),
         ]),
         selected: isActive,
-        onTap: () async { await appConfig.switchServer(i); setState(() {}); },
+        onTap: () async {
+          LOGGER.i('Switching to server [$i]: ${server.name}');
+          try {
+            await appConfig.switchServer(i);
+            LOGGER.i('Switched to server [$i]: ${server.name}');
+          } catch (e) {
+            LOGGER.w('Failed to switch to server [$i] ${server.name}: $e');
+            rethrow;
+          }
+          setState(() {});
+        },
       ));
     }
     items.add(ListTile(leading: const Icon(Icons.add_circle_outline), title: Text('settings.addServer'.tr), onTap: _showAddServerDialog));
@@ -130,7 +141,14 @@ class _SettingsPageState extends State<SettingsPage> {
       title: 'settings.addServer'.tr,
       name: '', host: '', port: '23000', username: '', password: '',
       onConfirm: (name, host, port, username, password) async {
-        await appConfig.addServer(name, host, port, username: username, password: password);
+        LOGGER.i('Adding server: name=$name, host=$host, port=$port, username=$username');
+        try {
+          await appConfig.addServer(name, host, port, username: username, password: password);
+          LOGGER.i('Server added successfully: $name');
+        } catch (e) {
+          LOGGER.w('Failed to add server $name: $e');
+          rethrow;
+        }
         setState(() {});
       },
     );
@@ -143,7 +161,14 @@ class _SettingsPageState extends State<SettingsPage> {
       name: server.name, host: server.host, port: server.port.toString(),
       username: server.username, password: server.password,
       onConfirm: (name, host, port, username, password) async {
-        await appConfig.updateServer(index, name, host, port, username: username, password: password);
+        LOGGER.i('Updating server [$index]: name=$name, host=$host, port=$port, username=$username');
+        try {
+          await appConfig.updateServer(index, name, host, port, username: username, password: password);
+          LOGGER.i('Server [$index] updated successfully: $name');
+        } catch (e) {
+          LOGGER.w('Failed to update server [$index] $name: $e');
+          rethrow;
+        }
         setState(() {});
       },
     );
@@ -196,7 +221,17 @@ class _SettingsPageState extends State<SettingsPage> {
       content: Text('settings.confirmDelete'.trParams({'name': name})),
       actions: [
         TextButton(onPressed: () => Get.back(), child: Text('common.cancel'.tr)),
-        FilledButton(onPressed: () async { await appConfig.removeServer(index); Get.back(); setState(() {}); }, style: FilledButton.styleFrom(backgroundColor: Colors.red), child: Text('common.delete'.tr)),
+        FilledButton(onPressed: () async {
+          LOGGER.i('Deleting server [$index]: $name');
+          try {
+            await appConfig.removeServer(index);
+            LOGGER.i('Server [$index] ($name) deleted successfully');
+          } catch (e) {
+            LOGGER.w('Failed to delete server [$index] $name: $e');
+            rethrow;
+          }
+          Get.back(); setState(() {});
+        }, style: FilledButton.styleFrom(backgroundColor: Colors.red), child: Text('common.delete'.tr)),
       ],
     ));
   }
@@ -208,8 +243,15 @@ class _SettingsPageState extends State<SettingsPage> {
       actions: [
         TextButton(onPressed: () => Get.back(), child: Text('common.cancel'.tr)),
         FilledButton(onPressed: () async {
-          final store = SqliteStorage();
-          await store.clear();
+          LOGGER.w('User confirmed data reset');
+          try {
+            final store = SqliteStorage();
+            await store.clear();
+            LOGGER.i('Data reset completed successfully');
+          } catch (e) {
+            LOGGER.w('Data reset failed: $e');
+            rethrow;
+          }
           Get.back();
           Get.offAll(() => const SetupPage());
         }, style: FilledButton.styleFrom(backgroundColor: Colors.orange), child: Text('settings.confirmResetBtn'.tr)),

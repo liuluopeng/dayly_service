@@ -1,7 +1,7 @@
 use flutter_rust_bridge::frb;
 use uuid::Uuid;
 
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::get_client_clone};
+use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::api::{
     base::{ApiError, ApiResponse, PaginatedResponse},
@@ -31,7 +31,7 @@ pub async fn get_all_songs_for_dart(
     page: u32,
     page_size: u32,
 ) -> Result<SongPaginatedResponseForDart, ApiError> {
-    log_to_dart(format!("song 启动 page {} page_size {}", page, page_size));
+    tracing::info!(page, page_size, "song 启动");
 
     let client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
     match get_all_songs(&client, Some(page), Some(page_size)).await {
@@ -51,7 +51,7 @@ pub async fn get_all_songs_for_dart(
                         cover_url: song.cover_url,
                     })
                     .collect();
-                log_to_dart(format!("歌曲列表: page={}, 共 {} 首", page, total));
+                tracing::info!(page, total, "歌曲列表");
                 Ok(SongPaginatedResponseForDart {
                     data,
                     total: songs.total,

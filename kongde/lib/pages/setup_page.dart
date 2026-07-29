@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kongde/config/app_config.dart';
 import 'package:kongde/pages/main_tab_page.dart';
+import 'package:kongde/utils.dart';
 
 class SetupPage extends StatefulWidget {
   const SetupPage({super.key});
@@ -31,15 +32,28 @@ class _SetupPageState extends State<SetupPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await AppConfig.instance.addServer(
-      _nameController.text.trim(),
-      _hostController.text.trim(),
-      int.parse(_portController.text.trim()),
-      username: _usernameController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
-    if (mounted) {
-      Get.offAll(() => const MainTabPage());
+    final name = _nameController.text.trim();
+    final host = _hostController.text.trim();
+    final port = int.parse(_portController.text.trim());
+    final username = _usernameController.text.trim();
+
+    LOGGER.i('Submitting server config: name=$name, host=$host, port=$port, username=$username');
+
+    try {
+      await AppConfig.instance.addServer(
+        name,
+        host,
+        port,
+        username: username,
+        password: _passwordController.text.trim(),
+      );
+      LOGGER.i('Server config submitted successfully, navigating to MainTabPage');
+      if (mounted) {
+        Get.offAll(() => const MainTabPage());
+      }
+    } catch (e) {
+      LOGGER.w('Failed to submit server config: $e');
+      rethrow;
     }
   }
 

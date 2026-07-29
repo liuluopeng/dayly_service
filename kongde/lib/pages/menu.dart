@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kongde/pages/wubi_query_page.dart';
@@ -31,33 +32,27 @@ class _ContactsPageState extends State<ContactsPage> {
       builder: (context, constraints) {
         final screenWidth = constraints.maxWidth;
 
-        // 计算理想的列数和间距，确保平滑过渡
         int crossAxisCount;
         double mainAxisSpacing;
         double crossAxisSpacing;
         double padding;
 
-        // 使用更智能的算法计算布局参数
         if (screenWidth > 900) {
-          // 桌面大屏：根据宽度动态调整列数
           crossAxisCount = (screenWidth / 150).floor().clamp(5, 8);
           mainAxisSpacing = 12.0;
           crossAxisSpacing = 12.0;
           padding = 12.0;
         } else if (screenWidth > 600) {
-          // 桌面小屏或平板
           crossAxisCount = (screenWidth / 160).floor().clamp(4, 6);
           mainAxisSpacing = 14.0;
           crossAxisSpacing = 14.0;
           padding = 14.0;
         } else if (screenWidth > 400) {
-          // 大屏手机
           crossAxisCount = 4;
           mainAxisSpacing = 16.0;
           crossAxisSpacing = 16.0;
           padding = 16.0;
         } else {
-          // 小屏手机
           crossAxisCount = 3;
           mainAxisSpacing = 18.0;
           crossAxisSpacing = 16.0;
@@ -101,7 +96,6 @@ class _ContactsPageState extends State<ContactsPage> {
                       'onTap': () => Get.to(() => MelatoninMoviesPage()),
                       'borderRadius': 0.0,
                     },
-
                     {
                       'icon': Icons.qr_code_scanner,
                       'title': 'menu.scan'.tr,
@@ -181,6 +175,37 @@ class _ContactsPageState extends State<ContactsPage> {
     required GestureTapCallback? onTap,
     double borderRadius = 12,
   }) {
+    if (kIsWeb) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius + 8),
+        hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(borderRadius),
+              ),
+              child: Icon(icon, size: 30, color: Colors.blue),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Column(

@@ -1,4 +1,3 @@
-use crate::api::logger_bridge::log_to_dart;
 use common::read_metadata::{AudioMetadata, read_metadata};
 use std::path::Path;
 use std::time::SystemTime;

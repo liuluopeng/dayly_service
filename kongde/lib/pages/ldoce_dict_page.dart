@@ -7,6 +7,7 @@ import 'package:kongde/src/rust/api/wifi_api/dict.dart';
 import 'package:kongde/src/rust/frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
+import 'package:kongde/utils.dart';
 
 class LdoceDictPage extends StatefulWidget {
   const LdoceDictPage({super.key});
@@ -31,21 +32,21 @@ class _LdoceDictPageState extends State<LdoceDictPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
-            debugPrint('WebView loading: $progress%');
+            LOGGER.i('WebView loading: $progress%');
           },
           onPageStarted: (String url) {
-            debugPrint('Page started loading: $url');
+            LOGGER.i('Page started loading: $url');
           },
           onPageFinished: (String url) {
-            debugPrint('Page finished loading: $url');
+            LOGGER.i('Page finished loading: $url');
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint(
+            LOGGER.w(
               'WebView resource error: ${error.description} - ${error.errorCode} - URL: ${error.url}',
             );
           },
           onNavigationRequest: (NavigationRequest request) {
-            debugPrint('Navigation request: ${request.url}');
+            LOGGER.i('Navigation request: ${request.url}');
             return NavigationDecision.navigate;
           },
         ),
@@ -59,7 +60,7 @@ class _LdoceDictPageState extends State<LdoceDictPage> {
     try {
       await Future.wait([_loadTopWords(), _loadRecentHistory()]);
     } catch (e) {
-      debugPrint('加载字典数据失败: $e');
+      LOGGER.w('[LdoceDict] 加载字典数据失败: $e');
     }
   }
 
@@ -70,7 +71,7 @@ class _LdoceDictPageState extends State<LdoceDictPage> {
         _topWords = words;
       });
     } catch (e) {
-      debugPrint('加载高频单词失败: $e');
+      LOGGER.w('[LdoceDict] 加载高频单词失败: $e');
     }
   }
 
@@ -83,7 +84,7 @@ class _LdoceDictPageState extends State<LdoceDictPage> {
         _recentHistory = history;
       });
     } catch (e) {
-      debugPrint('加载最近查询失败: $e');
+      LOGGER.w('[LdoceDict] 加载最近查询失败: $e');
     }
   }
 

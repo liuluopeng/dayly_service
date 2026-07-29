@@ -5,8 +5,10 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() {
+    let crate_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    std::env::set_current_dir(crate_dir).ok();
     // .env 在 sifu_axuum/ 下，cargo run 从 workspace root 启动时优先找它
-    dotenv::from_filename(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".env")).ok();
+    dotenv::from_filename(crate_dir.join(".env")).ok();
     dotenv::dotenv().ok();
     let config = lx_dayly_service::config::env::PgConfig::parse();
     let uri = format!(

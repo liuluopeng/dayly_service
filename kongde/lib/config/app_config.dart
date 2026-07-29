@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kongde/services/sqlite_storage.dart';
+import 'package:kongde/utils.dart';
 import 'package:kongde/src/rust/api/wifi_api/init.dart';
 import 'package:kongde/src/rust/api/wifi_api/user.dart';
 
@@ -89,19 +90,25 @@ class AppConfig extends GetxController {
     _activeIndex = await store.getInt(_activeIndexKey) ?? 0;
     if (_activeIndex >= this.servers.length) _activeIndex = 0;
 
+    LOGGER.i("[config] 加载了 ${this.servers.length} 个服务器, 当前索引=$_activeIndex");
+
     if (this.servers.isNotEmpty) {
       await initClient(port: activeServer.port);
       await setClientBaseUrl(baseUrl: activeServer.url);
+      LOGGER.i("[config] 切换到服务器 ${activeServer.name} (${activeServer.url})");
       if (activeServer.token.isNotEmpty) {
         await setClientToken(token: activeServer.token);
+        LOGGER.i("[config] 使用已保存的 token 登录");
       } else if (activeServer.hasCredentials) {
+        LOGGER.i("[config] 尝试自动登录...");
         try {
           final res = await userLoginForDart(username: activeServer.username, password: activeServer.password);
           activeServer.token = res.token;
           await _saveServers();
           await setClientToken(token: res.token);
+          LOGGER.i("[config] 自动登录成功");
         } catch (e) {
-          debugPrint('自动登录失败: $e');
+          LOGGER.w("[config] 自动登录失败: $e");
         }
       }
     }
@@ -114,6 +121,7 @@ class AppConfig extends GetxController {
   }
 
   Future<void> addServer(String name, String host, int port, {String username = '', String password = ''}) async {
+    LOGGER.i("[config] 添加服务器: $name ($host:$port)");
     servers.add(ServerEntry(name: name, host: host, port: port, username: username, password: password));
     _activeIndex = servers.length - 1;
     await _saveServers();
@@ -123,16 +131,19 @@ class AppConfig extends GetxController {
       try {
         final res = await userLoginForDart(username: username, password: password);
         await setToken(res.token);
+        LOGGER.i("[config] 新服务器登录成功");
       } catch (e) {
-        debugPrint('登录失败: $e');
+        LOGGER.w("[config] 新服务器登录失败: $e");
       }
     }
   }
 
   Future<void> removeServer(int index) async {
     if (servers.length <= 1) return;
+    final removed = servers[index].name;
     servers.removeAt(index);
     if (_activeIndex >= servers.length) _activeIndex = servers.length - 1;
+    LOGGER.i("[config] 移除服务器: $removed, 剩余 ${servers.length} 个");
     await _saveServers();
     await initClient(port: activeServer.port);
     await setClientBaseUrl(baseUrl: activeServer.url);
@@ -144,6 +155,7 @@ class AppConfig extends GetxController {
   Future<void> switchServer(int index) async {
     if (index < 0 || index >= servers.length) return;
     _activeIndex = index;
+    LOGGER.i("[config] 切换到服务器: ${activeServer.name}");
     await _saveServers();
     await initClient(port: activeServer.port);
     await setClientBaseUrl(baseUrl: activeServer.url);
@@ -153,8 +165,9 @@ class AppConfig extends GetxController {
       try {
         final res = await userLoginForDart(username: activeServer.username, password: activeServer.password);
         await setToken(res.token);
+        LOGGER.i("[config] 切换服务器后自动登录成功");
       } catch (e) {
-        debugPrint('自动登录失败: $e');
+        LOGGER.w("[config] 切换服务器后自动登录失败: $e");
         await clearClientToken();
       }
     } else {

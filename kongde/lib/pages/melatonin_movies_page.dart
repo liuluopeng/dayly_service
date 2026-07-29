@@ -4,6 +4,7 @@ import 'package:kongde/config/app_config.dart';
 import 'package:kongde/pages/melatonin_detail_page.dart';
 import 'package:kongde/src/rust/api/wifi_api/melatonin.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
+import 'package:kongde/utils.dart';
 
 class MelatoninMoviesPage extends StatefulWidget {
   const MelatoninMoviesPage({super.key});
@@ -102,6 +103,7 @@ class _MelatoninMoviesPageState extends State<MelatoninMoviesPage>
         _hasMore = (nextPage + 1) * _pageSize < total;
       });
     } catch (e) {
+      LOGGER.w('[MelatoninMovies] _loadMore failed: $e');
       setState(() {
         _isLoadingMore = false;
       });

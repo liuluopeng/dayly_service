@@ -1,6 +1,6 @@
 use flutter_rust_bridge::frb;
 
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::get_client_clone};
+use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::api::{
     base::{ApiError, ApiResponse},
@@ -40,7 +40,7 @@ pub async fn user_login_for_dart(
                 {
                     eprintln!("Failed to set client token: {}", e);
                 }
-                log_to_dart(format!("登录成功: {}", username));
+                tracing::info!(username = %username, "登录成功");
 
                 Ok(login_response)
             } else {

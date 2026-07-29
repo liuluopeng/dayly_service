@@ -45,7 +45,11 @@ pub async fn user_login(
     if let Some(user) = user {
         // 优先用 bcrypt hash 验证，fallback 到明文比较（过渡期兼容）
         let password_ok = if let Some(ref hash) = user.hash {
-            bcrypt::verify(&payload.password, hash).unwrap_or(false)
+            let password = payload.password.clone();
+            let hash = hash.clone();
+            tokio::task::spawn_blocking(move || bcrypt::verify(&password, &hash).unwrap_or(false))
+                .await
+                .unwrap_or(false)
         } else {
             user.password == payload.password
         };

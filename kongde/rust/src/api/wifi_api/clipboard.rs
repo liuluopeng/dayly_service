@@ -1,6 +1,6 @@
 use flutter_rust_bridge::frb;
 
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::get_client_clone};
+use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::api::{
     base::ApiError,
@@ -12,12 +12,12 @@ pub async fn get_clipboard_history_for_dart(
     type_filter: Option<String>,
     search: Option<String>,
 ) -> Result<Vec<ClipboardEntry>, ApiError> {
-    log_to_dart(format!(
-        "剪贴板历史: count={}, type={:?}, search={:?}",
-        count.unwrap_or(20),
-        type_filter,
-        search,
-    ));
+    tracing::info!(
+        count = count.unwrap_or(20),
+        type_filter = ?type_filter,
+        search = ?search,
+        "查询剪贴板历史"
+    );
     let client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
     match get_clipboard_history(
         &client,
@@ -28,11 +28,11 @@ pub async fn get_clipboard_history_for_dart(
     .await
     {
         Ok(entries) => {
-            log_to_dart(format!("剪贴板历史: 返回 {} 条", entries.len()));
+            tracing::info!(count = entries.len(), "剪贴板历史返回");
             Ok(entries)
         }
         Err(e) => {
-            log_to_dart(format!("剪贴板历史: 获取失败: {}", e));
+            tracing::error!(error = %e, "剪贴板历史获取失败");
             Err(ApiError::Internal(format!("{}", e)))
         }
     }

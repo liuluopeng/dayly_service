@@ -1,11 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kongde/pages/collins_dict_page.dart';
 import 'package:kongde/pages/play_online_music_page.dart';
 import 'package:kongde/widgets/notification_bar.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final _dictController = TextEditingController();
+  final _dictFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _dictController.dispose();
+    _dictFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _searchWord() {
+    final word = _dictController.text.trim();
+    if (word.isEmpty) return;
+    Get.to(() => CollinsDictPage(initialWord: word));
+    _dictController.clear();
+  }
 
   @override
   Widget build(context) {
@@ -18,8 +41,26 @@ class HomePage extends StatelessWidget {
             Expanded(
               child: Column(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    child: TextField(
+                      controller: _dictController,
+                      focusNode: _dictFocusNode,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: '查单词...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (_) => _searchWord(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Expanded(
-                    flex: 1,
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

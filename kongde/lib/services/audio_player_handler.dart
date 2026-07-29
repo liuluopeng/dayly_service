@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:kongde/src/rust/api/wifi_api/song.dart';
 import 'package:get/get.dart';
 import 'package:kongde/widgets/appbar_mini_window.dart';
+import 'package:kongde/utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -74,7 +75,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
       // 直接执行网络操作，不使用 isolate，因为 AudioPlayer 不能在 isolate 之间传递
       // 使用 AudioSource.uri 来设置音频源，这样可以更好地处理网络音频
-      final audioSource = AudioSource.uri(Uri.parse(url), headers: headers);
+      final uri = url.startsWith('http://') || url.startsWith('https://')
+          ? Uri.parse(url)
+          : Uri.file(url);
+      final audioSource = AudioSource.uri(uri, headers: headers);
 
       // 停止当前播放并重置播放器
       await _player.stop();
@@ -83,7 +87,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       // 开始播放
       await _player.play();
     } catch (e) {
-      print('播放单个音频失败: $e');
+      LOGGER.i('播放单个音频失败: $e');
     }
   }
 
@@ -96,12 +100,12 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   ) async {
     try {
       if (songs.isEmpty) {
-        print('歌曲列表为空');
+        LOGGER.i('歌曲列表为空');
         return;
       }
 
       if (index < 0 || index >= songs.length) {
-        print('索引超出范围');
+        LOGGER.i('索引超出范围');
         return;
       }
 
@@ -141,7 +145,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         );
 
         _playlist.add(mediaItem);
-        audioSources.add(AudioSource.uri(Uri.parse(url)));
+        final uri = url.startsWith('http://') || url.startsWith('https://')
+            ? Uri.parse(url)
+            : Uri.file(url);
+        audioSources.add(AudioSource.uri(uri));
       }
 
       // 确保监听器已设置
@@ -172,7 +179,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       // 开始播放
       await _player.play();
     } catch (e) {
-      print('从播放列表播放失败: $e');
+      LOGGER.i('从播放列表播放失败: $e');
     }
   }
 
@@ -476,29 +483,29 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     String? coverUrl,
   }) async {
     try {
-      print('开始获取音频数据: $songId');
+      LOGGER.i('开始获取音频数据: $songId');
 
       final songUuid = UuidValue(songId);
 
       final audioData = await getSongFileForDart(songId: songUuid);
 
-      print('获取到音频数据长度: ${audioData.length}');
+      LOGGER.i('获取到音频数据长度: ${audioData.length}');
 
       if (audioData.isEmpty) {
-        print('音频数据为空');
+        LOGGER.i('音频数据为空');
         return;
       }
 
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/${songId}_temp.mp3');
-      print('创建临时文件: ${tempFile.path}');
+      LOGGER.i('创建临时文件: ${tempFile.path}');
 
       await tempFile.writeAsBytes(audioData);
-      print('音频数据写入完成');
-      print('临时文件大小: ${await tempFile.length()}');
+      LOGGER.i('音频数据写入完成');
+      LOGGER.i('临时文件大小: ${await tempFile.length()}');
 
       if (!await tempFile.exists() || await tempFile.length() == 0) {
-        print('临时文件不存在或为空');
+        LOGGER.i('临时文件不存在或为空');
         return;
       }
 
@@ -528,39 +535,39 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       queue.add(_playlist);
 
       await _player.stop();
-      print('开始设置音频源');
+      LOGGER.i('开始设置音频源');
 
       // 使用临时文件路径播放
-      print('临时文件URI: ${tempFile.uri}');
-      print('临时文件是否存在: ${await tempFile.exists()}');
-      print('临时文件大小: ${await tempFile.length()}');
+      LOGGER.i('临时文件URI: ${tempFile.uri}');
+      LOGGER.i('临时文件是否存在: ${await tempFile.exists()}');
+      LOGGER.i('临时文件大小: ${await tempFile.length()}');
 
       // 尝试直接使用文件路径创建Uri
       final fileUri = Uri.file(tempFile.path);
-      print('文件URI: $fileUri');
+      LOGGER.i('文件URI: $fileUri');
 
       final audioSource = AudioSource.uri(fileUri);
       await _player.setAudioSource(audioSource);
-      print('音频源设置完成');
+      LOGGER.i('音频源设置完成');
 
       // 检查播放器状态
-      print('播放器状态: ${_player.processingState}');
-      print('播放器是否准备就绪: ${_player.processingState == ProcessingState.ready}');
+      LOGGER.i('播放器状态: ${_player.processingState}');
+      LOGGER.i('播放器是否准备就绪: ${_player.processingState == ProcessingState.ready}');
 
       // 确保音量是开启的
       if (_player.volume == 0) {
         await _player.setVolume(1.0);
-        print('音量被设置为 1.0');
+        LOGGER.i('音量被设置为 1.0');
       }
 
       await _player.play();
-      print('开始播放');
-      print('播放状态: ${_player.playing}');
-      print('播放器位置: ${_player.position}');
-      print('播放器时长: ${_player.duration}');
-      print('播放器音量: ${_player.volume}');
-      print('播放器语速: ${_player.speed}');
-      print('播放器处理状态: ${_player.processingState}');
+      LOGGER.i('开始播放');
+      LOGGER.i('播放状态: ${_player.playing}');
+      LOGGER.i('播放器位置: ${_player.position}');
+      LOGGER.i('播放器时长: ${_player.duration}');
+      LOGGER.i('播放器音量: ${_player.volume}');
+      LOGGER.i('播放器语速: ${_player.speed}');
+      LOGGER.i('播放器处理状态: ${_player.processingState}');
 
       // 播放完成后删除临时文件
       // 注意：不要在每次调用时都添加新的监听器
@@ -571,14 +578,14 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         try {
           if (tempFile.existsSync()) {
             tempFile.deleteSync();
-            print('临时文件已删除');
+            LOGGER.i('临时文件已删除');
           }
         } catch (e) {
-          print('删除临时文件失败: $e');
+          LOGGER.i('删除临时文件失败: $e');
         }
       });
     } catch (e) {
-      print('播放在线歌曲失败: $e');
+      LOGGER.i('播放在线歌曲失败: $e');
       // 确保即使发生错误也能继续执行
     }
   }
@@ -589,12 +596,12 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   ) async {
     try {
       if (songs.isEmpty) {
-        print('歌曲列表为空');
+        LOGGER.i('歌曲列表为空');
         return;
       }
 
       if (index < 0 || index >= songs.length) {
-        print('索引超出范围');
+        LOGGER.i('索引超出范围');
         return;
       }
 
@@ -631,7 +638,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       }
 
       if (_playlist.isEmpty) {
-        print('没有成功加载任何歌曲');
+        LOGGER.i('没有成功加载任何歌曲');
         return;
       }
 
@@ -646,20 +653,20 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       // 下载并播放当前索引的歌曲
       await _downloadAndPlayCurrentOnlineSong();
     } catch (e) {
-      print('播放在线播放列表失败: $e');
+      LOGGER.i('播放在线播放列表失败: $e');
     }
   }
 
   Future<void> _downloadAndPlayCurrentOnlineSong() async {
     try {
       if (_onlineSongs == null || _onlineSongs!.isEmpty) {
-        print('在线歌曲列表或 songsClient 未初始化');
+        LOGGER.i('在线歌曲列表或 songsClient 未初始化');
         return;
       }
 
       if (_currentOnlineSongIndex < 0 ||
           _currentOnlineSongIndex >= _onlineSongs!.length) {
-        print('索引超出范围');
+        LOGGER.i('索引超出范围');
         return;
       }
 
@@ -668,20 +675,20 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       final title = currentSong['title'] as String? ?? 'audio.unknownSong'.tr;
 
       if (songId == null) {
-        print('歌曲 ID 为空');
+        LOGGER.i('歌曲 ID 为空');
         return;
       }
 
-      print('开始下载歌曲: $title');
+      LOGGER.i('开始下载歌曲: $title');
 
       // 尝试通过 getAudioFile 获取音频数据
       final songUuid = UuidValue(songId);
       final audioData = await getSongFileForDart(songId: songUuid);
 
-      print('获取到音频数据长度: ${audioData.length}');
+      LOGGER.i('获取到音频数据长度: ${audioData.length}');
 
       if (audioData.isEmpty) {
-        print('音频数据为空');
+        LOGGER.i('音频数据为空');
         return;
       }
 
@@ -690,7 +697,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       final tempFile = File('${tempDir.path}/${songId}_temp.mp3');
       await tempFile.writeAsBytes(audioData);
       final fileUri = Uri.file(tempFile.path);
-      print('创建临时文件: ${tempFile.path}，大小: ${await tempFile.length()}');
+      LOGGER.i('创建临时文件: ${tempFile.path}，大小: ${await tempFile.length()}');
 
       // 更新 mediaItem 和主颜色
       final currentMediaItem = _playlist[_currentOnlineSongIndex];
@@ -721,17 +728,17 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       // 确保音量是开启的
       if (_player.volume == 0) {
         await _player.setVolume(1.0);
-        print('音量被设置为 1.0');
+        LOGGER.i('音量被设置为 1.0');
       }
 
       await _player.play();
-      print('开始播放: $title');
-      print('播放状态: ${_player.playing}');
-      print('播放器位置: ${_player.position}');
-      print('播放器音量: ${_player.volume}');
-      print('播放器处理状态: ${_player.processingState}');
+      LOGGER.i('开始播放: $title');
+      LOGGER.i('播放状态: ${_player.playing}');
+      LOGGER.i('播放器位置: ${_player.position}');
+      LOGGER.i('播放器音量: ${_player.volume}');
+      LOGGER.i('播放器处理状态: ${_player.processingState}');
     } catch (e) {
-      print('下载并播放在线歌曲失败: $e');
+      LOGGER.i('下载并播放在线歌曲失败: $e');
     }
   }
 }

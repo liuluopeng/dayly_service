@@ -1,4 +1,3 @@
-use crate::api::logger_bridge::log_to_dart;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use std::path::Path;
 use std::sync::OnceLock;
@@ -43,7 +42,7 @@ pub fn init_db(db_path: String) -> Result<bool, String> {
 
     let _ = POOL.set(pool);
     run_migrations()?;
-    log_to_dart(format!("SQLite 已初始化: {} (新: {})", db_path, is_new));
+    tracing::info!(db_path = %db_path, is_new, "SQLite 已初始化");
     Ok(is_new)
 }
 
@@ -155,7 +154,7 @@ fn run_migrations() -> Result<(), String> {
         ).fetch_optional(p).await.ok().flatten().unwrap_or(0);
 
         if version < CURRENT_SCHEMA_VERSION {
-            log_to_dart(format!("迁移 schema: v{} -> v{}", version, CURRENT_SCHEMA_VERSION));
+            tracing::info!(from_version = version, to_version = CURRENT_SCHEMA_VERSION, "迁移 schema");
 
             if version < 1 {
                 sqlx::query(
@@ -284,7 +283,7 @@ pub fn import_local_songs(paths: Vec<String>, covers_dir: String) -> Result<Vec<
         imported += 1;
     }
 
-    log_to_dart(format!("导入完成: {}/{} 首, {} 封面", imported, total, with_cover));
+    tracing::info!(imported, total, with_cover, "导入完成");
     get_local_songs()
 }
 

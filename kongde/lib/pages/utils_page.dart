@@ -263,7 +263,6 @@ class _UtilsPageState extends State<UtilsPage> {
         const SizedBox(height: 12),
         ...children,
       ],
-      ),
     );
   }
 }

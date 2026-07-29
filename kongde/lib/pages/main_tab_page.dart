@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -16,8 +17,6 @@ class MainTabPage extends StatefulWidget {
 
 class _MainTabPageState extends State<MainTabPage> {
   late final TabBarController _tabBarController;
-  DateTime? _lastBackPressed;
-  Timer? _exitTimer;
 
   final List<Widget> _pages = [HomePage(), ContactsPage(), ProfilePage()];
 
@@ -29,118 +28,29 @@ class _MainTabPageState extends State<MainTabPage> {
 
   @override
   void dispose() {
-    _exitTimer?.cancel();
     super.dispose();
-  }
-
-  void _onPopInvokedWithResult(bool didPop, dynamic result) {
-    if (didPop) return;
-
-    final currentIndex = _tabBarController.currentIndex.value;
-
-    if (currentIndex != 0) {
-      _tabBarController.changeTab(currentIndex - 1);
-    } else {
-      _handleBackPress();
-    }
-  }
-
-  void _handleBackPress() {
-    final now = DateTime.now();
-
-    if (_lastBackPressed == null ||
-        now.difference(_lastBackPressed!) > const Duration(seconds: 1)) {
-      _lastBackPressed = now;
-      _showExitToast();
-
-      _exitTimer?.cancel();
-      _exitTimer = Timer(const Duration(seconds: 2), () {
-        _lastBackPressed = null;
-      });
-    } else {
-      SystemNavigator.pop();
-    }
-  }
-
-  void _showExitToast() {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text('app.exitHint'.tr),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: _onPopInvokedWithResult,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isLandscape = constraints.maxWidth > constraints.maxHeight;
-          final isDesktop = constraints.maxWidth > 600;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (kIsWeb) {
+          return _buildWebLayout();
+        }
+        final isLandscape = constraints.maxWidth > constraints.maxHeight;
+        final isDesktop = constraints.maxWidth > 600;
 
-          if (isLandscape || isDesktop) {
-            return _buildLandscapeLayout();
-          } else {
-            return _buildPortraitLayout();
-          }
-        },
-      ),
+        if (isLandscape || isDesktop) {
+          return _buildLandscapeLayout();
+        } else {
+          return _buildPortraitLayout();
+        }
+      },
     );
   }
 
-  Widget _buildPortraitLayout() {
-    return Scaffold(
-      body: SafeArea(
-        child: Obx(() {
-          return _pages[_tabBarController.currentIndex.value];
-        }),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Drawer Header'),
-            ),
-            ListTile(
-              title: const Text('Item 1'),
-              onTap: () {
-                Get.back();
-              },
-            ),
-            ListTile(
-              title: const Text('Item 2'),
-              onTap: () {
-                Get.back();
-              },
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Obx(() {
-        return BottomNavigationBar(
-          currentIndex: _tabBarController.currentIndex.value,
-          onTap: (index) {
-            _tabBarController.changeTab(index);
-          },
-          type: BottomNavigationBarType.fixed,
-          items: [
-            BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'nav.home'.tr),
-            BottomNavigationBarItem(icon: Icon(Icons.view_module), label: 'nav.menu'.tr),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'nav.profile'.tr),
-          ],
-        );
-      }),
-    );
-  }
-
-  Widget _buildLandscapeLayout() {
+  Widget _buildWebLayout() {
     return Scaffold(
       body: Row(
         children: [
@@ -150,19 +60,25 @@ class _MainTabPageState extends State<MainTabPage> {
               _tabBarController.changeTab(index);
             },
             labelType: NavigationRailLabelType.all,
+            minWidth: 72,
+            groupAlignment: 0.0,
+            leading: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Icon(Icons.apps, size: 28, color: Theme.of(context).colorScheme.primary),
+            ),
             destinations: [
               NavigationRailDestination(
-                icon: Icon(Icons.chat),
+                icon: Icon(Icons.chat_outlined),
                 selectedIcon: Icon(Icons.chat),
                 label: Text('nav.home'.tr),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.contacts),
-                selectedIcon: Icon(Icons.contacts),
+                icon: Icon(Icons.view_module_outlined),
+                selectedIcon: Icon(Icons.view_module),
                 label: Text('nav.menu'.tr),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.person),
+                icon: Icon(Icons.person_outlined),
                 selectedIcon: Icon(Icons.person),
                 label: Text('nav.profile'.tr),
               ),
@@ -175,6 +91,89 @@ class _MainTabPageState extends State<MainTabPage> {
             }),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPortraitLayout() {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final currentIndex = _tabBarController.currentIndex.value;
+        if (currentIndex != 0) {
+          _tabBarController.changeTab(currentIndex - 1);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Obx(() {
+            return _pages[_tabBarController.currentIndex.value];
+          }),
+        ),
+        bottomNavigationBar: Obx(() {
+          return BottomNavigationBar(
+            currentIndex: _tabBarController.currentIndex.value,
+            onTap: (index) {
+              _tabBarController.changeTab(index);
+            },
+            type: BottomNavigationBarType.fixed,
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'nav.home'.tr),
+              BottomNavigationBarItem(icon: Icon(Icons.view_module), label: 'nav.menu'.tr),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'nav.profile'.tr),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildLandscapeLayout() {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final currentIndex = _tabBarController.currentIndex.value;
+        if (currentIndex != 0) {
+          _tabBarController.changeTab(currentIndex - 1);
+        }
+      },
+      child: Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _tabBarController.currentIndex.value,
+              onDestinationSelected: (index) {
+                _tabBarController.changeTab(index);
+              },
+              labelType: NavigationRailLabelType.all,
+              destinations: [
+                NavigationRailDestination(
+                  icon: Icon(Icons.chat),
+                  selectedIcon: Icon(Icons.chat),
+                  label: Text('nav.home'.tr),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.contacts),
+                  selectedIcon: Icon(Icons.contacts),
+                  label: Text('nav.menu'.tr),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.person),
+                  selectedIcon: Icon(Icons.person),
+                  label: Text('nav.profile'.tr),
+                ),
+              ],
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            Expanded(
+              child: Obx(() {
+                return _pages[_tabBarController.currentIndex.value];
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }

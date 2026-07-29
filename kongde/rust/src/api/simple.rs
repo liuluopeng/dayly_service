@@ -1,15 +1,11 @@
-use crate::api::logger_bridge::log_to_dart;
-
 #[flutter_rust_bridge::frb(sync)]
 pub fn greet(name: String) -> String {
-    log_to_dart(format!("给dart的日志 greet called with name: {}", name));
-
+    tracing::info!(name = %name, "greet called");
     format!("我是RUST Hello, {name}!")
 }
 #[flutter_rust_bridge::frb(sync)]
 pub fn greet2(name: String) -> String {
-    log_to_dart(format!("给dart的日志 greet called with name: {}", name));
-
+    tracing::info!(name = %name, "greet2 called");
     format!("我是RUST Hello, {name}!")
 }
 #[flutter_rust_bridge::frb(init)]

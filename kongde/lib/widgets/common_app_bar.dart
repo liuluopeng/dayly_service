@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kongde/pages/play_online_music_page.dart';
@@ -34,7 +35,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Obx(() => AppBar(
       title: titleWidget ?? (title != null ? Text(title!) : null),
       leading: leading,
-      automaticallyImplyLeading: automaticallyImplyLeading,
+      automaticallyImplyLeading: kIsWeb ? false : automaticallyImplyLeading,
       backgroundColor: backgroundColor,
       iconTheme: iconTheme,
       bottom: AppBarMiniWindow.isVisible.value
@@ -47,11 +48,13 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         LabeledIconButton(
           icon: Icons.terminal,
           label: 'appBar.log'.tr,
+          tooltip: 'Toggle debug log',
           onPressed: AppBarMiniWindow.toggle,
         ),
         LabeledIconButton(
           icon: Icons.music_note,
           label: 'appBar.music'.tr,
+          tooltip: 'Open music player',
           onPressed: () {
             Get.to(() => const PlayOnlineMusicPage());
             AppBarMiniWindow.show('跳转到音乐播放器');
@@ -66,19 +69,22 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 class LabeledIconButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? tooltip;
   final VoidCallback onPressed;
 
   const LabeledIconButton({
     required this.icon,
     required this.label,
+    this.tooltip,
     required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final widget = InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8),
+      hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.08),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
@@ -95,5 +101,10 @@ class LabeledIconButton extends StatelessWidget {
         ),
       ),
     );
+
+    if (kIsWeb && tooltip != null) {
+      return Tooltip(message: tooltip!, child: widget);
+    }
+    return widget;
   }
 }

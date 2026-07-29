@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kongde/main.dart';
+import 'package:kongde/utils.dart';
 import 'dart:io';
 
 class AlbumArtWidget extends StatefulWidget {
@@ -21,7 +21,7 @@ class _AlbumArtWidgetState extends State<AlbumArtWidget> {
 
     if (artUri != _lastArtUri) {
       _lastArtUri = artUri;
-      logger.i('artUri: $artUri');
+      LOGGER.i('artUri: $artUri');
     }
 
     if (artUri != null) {
@@ -38,7 +38,7 @@ class _AlbumArtWidgetState extends State<AlbumArtWidget> {
             fit: BoxFit.cover,
             gaplessPlayback: true,
             errorBuilder: (context, error, stackTrace) {
-              logger.i('Image.memory error: $error');
+              LOGGER.i('Image.memory error: $error');
               return _buildPlaceholder();
             },
           );
@@ -50,7 +50,7 @@ class _AlbumArtWidgetState extends State<AlbumArtWidget> {
             fit: BoxFit.cover,
             gaplessPlayback: true,
             errorBuilder: (context, error, stackTrace) {
-              logger.i('Image.file error: $error');
+              LOGGER.i('Image.file error: $error');
               return _buildPlaceholder();
             },
           );
@@ -62,7 +62,7 @@ class _AlbumArtWidgetState extends State<AlbumArtWidget> {
             fit: BoxFit.cover,
             gaplessPlayback: true,
             errorBuilder: (context, error, stackTrace) {
-              logger.i('Image.network error: $error');
+              LOGGER.i('Image.network error: $error');
               return _buildPlaceholder();
             },
           );

@@ -7,6 +7,7 @@ import 'package:kongde/config/app_config.dart';
 import 'package:kongde/src/rust/frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
+import 'package:kongde/utils.dart';
 
 class CollinsDictPage extends StatefulWidget {
   final String? initialWord;
@@ -33,21 +34,21 @@ class _CollinsDictPageState extends State<CollinsDictPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
-            debugPrint('WebView loading: $progress%');
+            LOGGER.i('WebView loading: $progress%');
           },
           onPageStarted: (String url) {
-            debugPrint('Page started loading: $url');
+            LOGGER.i('Page started loading: $url');
           },
           onPageFinished: (String url) {
-            debugPrint('Page finished loading: $url');
+            LOGGER.i('Page finished loading: $url');
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint(
+            LOGGER.w(
               'WebView resource error: ${error.description} - ${error.errorCode} - URL: ${error.url}',
             );
           },
           onNavigationRequest: (NavigationRequest request) {
-            debugPrint('Navigation request: ${request.url}');
+            LOGGER.i('Navigation request: ${request.url}');
             return NavigationDecision.navigate;
           },
         ),
@@ -68,7 +69,7 @@ class _CollinsDictPageState extends State<CollinsDictPage> {
     try {
       await Future.wait([_loadTopWords(), _loadRecentHistory()]);
     } catch (e) {
-      debugPrint('加载字典数据失败: $e');
+      LOGGER.w('[CollinsDict] 加载字典数据失败: $e');
     }
   }
 
@@ -79,7 +80,7 @@ class _CollinsDictPageState extends State<CollinsDictPage> {
         _topWords = words;
       });
     } catch (e) {
-      debugPrint('加载高频单词失败: $e');
+      LOGGER.w('[CollinsDict] 加载高频单词失败: $e');
     }
   }
 
@@ -92,7 +93,7 @@ class _CollinsDictPageState extends State<CollinsDictPage> {
         _recentHistory = history;
       });
     } catch (e) {
-      debugPrint('加载最近查询失败: $e');
+      LOGGER.w('[CollinsDict] 加载最近查询失败: $e');
     }
   }
 

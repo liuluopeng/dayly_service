@@ -10,8 +10,10 @@ use clap::Parser;
 use redis::aio::ConnectionManager;
 use sqlx::PgPool;
 use tokio::sync::broadcast;
+use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
+use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::trace::TraceLayer;
 use tracing::{Span, info_span};
 
@@ -99,6 +101,7 @@ pub fn create_app(
         .nest("/api/clipboard", crate::controller::clipboard::clipboard_routes())
         .merge(crate::controller::songs::songs_cover_route())
         .merge(crate::controller::songs::songs_file_route())
+        .route("/", get(root_index))
         .route("/hello", get(crate::handlers::hello_world))
         .route("/hi", get(|| async { "Hello, World!" }))
         .nest_service("/cover/", ServeDir::new("cover/").precompressed_gzip())
@@ -118,6 +121,49 @@ pub fn create_app(
             ServeDir::new("static/dist/")
                 .append_index_html_on_directories(true)
                 .precompressed_gzip(),
+        )
+        .route("/vue", get(|| async { Redirect::permanent("/vue/") }))
+        .nest_service(
+            "/vue/",
+            ServeDir::new("static/vue/")
+                .append_index_html_on_directories(true)
+                .precompressed_gzip(),
+        )
+        .route("/wasm", get(|| async { Redirect::permanent("/wasm/") }))
+        .nest_service(
+            "/wasm/",
+            ServiceBuilder::new()
+                .layer(SetResponseHeaderLayer::overriding(
+                    HeaderName::from_static("cross-origin-opener-policy"),
+                    HeaderValue::from_static("same-origin"),
+                ))
+                .layer(SetResponseHeaderLayer::overriding(
+                    HeaderName::from_static("cross-origin-embedder-policy"),
+                    HeaderValue::from_static("credentialless"),
+                ))
+                .service(
+                    ServeDir::new("static/wasm/")
+                        .append_index_html_on_directories(true)
+                        .precompressed_gzip(),
+                ),
+        )
+        .route("/flutter", get(|| async { Redirect::permanent("/flutter/") }))
+        .nest_service(
+            "/flutter/",
+            ServiceBuilder::new()
+                .layer(SetResponseHeaderLayer::overriding(
+                    HeaderName::from_static("cross-origin-opener-policy"),
+                    HeaderValue::from_static("same-origin"),
+                ))
+                .layer(SetResponseHeaderLayer::overriding(
+                    HeaderName::from_static("cross-origin-embedder-policy"),
+                    HeaderValue::from_static("credentialless"),
+                ))
+                .service(
+                    ServeDir::new("static/flutter/")
+                        .append_index_html_on_directories(true)
+                        .precompressed_gzip(),
+                ),
         )
         .layer(cors.clone())
         .layer(Extension(pg_pool))
@@ -154,6 +200,30 @@ pub fn create_app(
     router
 }
 
+pub async fn root_index() -> axum::response::Html<&'static str> {
+    axum::response::Html(r#"<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="utf-8"><title>Dayly Service</title>
+<style>
+body{font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#1e1e1e;color:#ccc}
+.card{background:#2d2d2d;border-radius:12px;padding:48px;text-align:center}
+h1{margin:0 0 32px;color:#fff}
+.links{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.links a{display:block;padding:16px 32px;border-radius:8px;text-decoration:none;color:#fff;font-size:18px;transition:transform .15s,opacity .15s}
+.links a:hover{transform:translateY(-2px);opacity:.9}
+.vue{background:#4fc08d}
+.wasm{background:#654ff0}
+.flutter{background:#02569b}
+</style></head>
+<body><div class="card">
+<h1>Dayly Service</h1>
+<div class="links">
+<a class="vue" href="/vue/">Vue 前端</a>
+<a class="wasm" href="/wasm/">WASM 演示</a>
+<a class="flutter" href="/flutter/">Flutter Web</a>
+</div></div></body></html>"#)
+}
+
 pub async fn http_logging_middleware(
     req: Request<Body>,
     next: axum_middleware::Next,
@@ -183,18 +253,26 @@ pub async fn http_logging_middleware(
     );
 
     let start_time = std::time::Instant::now();
-    let response = next.run(req).await;
+    let mut response = next.run(req).await;
     let duration = start_time.elapsed();
     let status = response.status();
-
     let status_code = status.as_u16();
-    tracing::info!(
-        "HTTP 响应: method={}, path={}, status={}, duration={:?}",
-        method,
-        path,
-        status_code,
-        duration
-    );
+
+    if status_code >= 400 {
+        let (parts, body) = response.into_parts();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap_or_default();
+        let body_str = std::str::from_utf8(&body_bytes).unwrap_or("<non-utf8>");
+        tracing::error!(
+            "HTTP 错误: method={}, path={}, status={}, duration={:?}, body={}",
+            method, path, status_code, duration, body_str
+        );
+        response = Response::from_parts(parts, axum::body::Body::from(body_bytes));
+    } else {
+        tracing::info!(
+            "HTTP 响应: method={}, path={}, status={}, duration={:?}",
+            method, path, status_code, duration
+        );
+    }
 
     response
 }

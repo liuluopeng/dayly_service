@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
-import 'package:kongde/main.dart';
+import 'package:kongde/utils.dart';
 import 'package:kongde/models/media_state.dart';
 import 'package:kongde/services/audio_player_handler.dart';
+import 'package:kongde/services/macos_audio_player.dart';
 import 'package:kongde/controllers/settings_controller.dart';
 import 'package:flutter_audio_visualizer/flutter_audio_visualizer.dart';
 import 'package:kongde/widgets/seek_bar.dart';
@@ -39,6 +42,7 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
   StreamSubscription? _audioSessionSubscription;
   StreamSubscription? _fftDataSubscription;
   StreamSubscription? _playbackStateSubscription;
+  StreamSubscription? _simulatedPlayingSubscription;
   Timer? _fftUpdateTimer;
   List<double> _pendingFftData = [];
   late final SettingsController _settingsController;
@@ -67,7 +71,7 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
     _colorSubscription = Get.find<AudioPlayerHandler>().mainColors.listen((
       colors,
     ) {
-      logger.i('收到颜色更新: $colors');
+      LOGGER.i('收到颜色更新: $colors');
       if (mounted) {
         setState(() {
           _mainColors = colors;
@@ -77,6 +81,8 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
   }
 
   Future<void> _setupVisualizer() async {
+    if (kIsWeb) return;
+
     if (Platform.isAndroid) {
       _audioSessionSubscription = Get.find<AudioPlayerHandler>()
           .player
@@ -87,15 +93,52 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
               _initializeVisualizer();
             }
           });
-    } else if (Platform.isIOS || Platform.isMacOS) {
+      _fftDataSubscription = FlutterAudioVisualizer.fftDataStream.listen((data) {
+        if (mounted) {
+          _pendingFftData = data;
+          _fftUpdateTimer?.cancel();
+          _fftUpdateTimer = Timer(const Duration(milliseconds: 16), () {
+            if (mounted) {
+              _fftDataNotifier.value = _pendingFftData;
+            }
+          });
+        }
+      });
+    } else if (Platform.isIOS) {
       Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
         if (mounted && mediaItem != null) {
           _initializeVisualizer();
         }
       });
+      _fftDataSubscription = FlutterAudioVisualizer.fftDataStream.listen((data) {
+        if (mounted) {
+          _pendingFftData = data;
+          _fftUpdateTimer?.cancel();
+          _fftUpdateTimer = Timer(const Duration(milliseconds: 16), () {
+            if (mounted) {
+              _fftDataNotifier.value = _pendingFftData;
+            }
+          });
+        }
+      });
+    } else if (Platform.isMacOS) {
+      _setupMacOSRealSpectrum();
     }
+  }
 
-    _fftDataSubscription = FlutterAudioVisualizer.fftDataStream.listen((data) {
+  String? _currentMacOSAnalysisPath;
+
+  /// macOS: 用 MacOSAudioPlayer 静音播放同一文件，获取真实频谱
+  void _setupMacOSRealSpectrum() {
+    if (mounted) {
+      setState(() {
+        _visualizerInitialized = true;
+      });
+    }
+    // 先设置 FFT 数据监听
+    _fftDataSubscription?.cancel();
+    _fftDataSubscription = MacOSAudioPlayer.fftStream.listen((data) {
+      LOGGER.i('[频谱] 收到FFT数据: ${data.length} 个值');
       if (mounted) {
         _pendingFftData = data;
         _fftUpdateTimer?.cancel();
@@ -106,6 +149,36 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
         });
       }
     });
+
+    // 监听歌曲变化，启动 MacOSAudioPlayer 静音播放获取频谱
+    _simulatedPlayingSubscription = Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
+      if (mounted && mediaItem != null && mediaItem.id.isNotEmpty) {
+        _startMacOSAnalysis(mediaItem.id);
+      }
+    });
+  }
+
+  Future<void> _startMacOSAnalysis(String filePath) async {
+    if (!MacOSAudioPlayer.isSupported) return;
+
+    // 处理文件路径
+    String path = filePath;
+    if (path.startsWith('file://')) {
+      path = Uri.parse(path).toFilePath();
+    }
+    if (path.startsWith('http://') || path.startsWith('https://')) return;
+    if (path.startsWith('asset:///')) return;
+
+    // 防止重复启动同一文件的分析
+    if (path == _currentMacOSAnalysisPath) return;
+    _currentMacOSAnalysisPath = path;
+
+    try {
+      LOGGER.i('[macOS] 启动频谱分析: $path');
+      await MacOSAudioPlayer.play(path);
+    } catch (e) {
+      LOGGER.w('macOS 频谱分析启动失败: $e');
+    }
   }
 
   Future<void> _initializeVisualizer() async {
@@ -121,7 +194,7 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
             });
           }
         }
-      } else if (Platform.isIOS || Platform.isMacOS) {
+      } else if (Platform.isIOS) {
         final mediaItem = Get.find<AudioPlayerHandler>().mediaItem.value;
         if (mediaItem != null && mediaItem.id.isNotEmpty) {
           try {
@@ -144,12 +217,12 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
               }
             }
           } catch (e) {
-            print('初始化频谱失败: $e');
+            LOGGER.w('初始化频谱失败: $e');
           }
         }
       }
     } catch (e) {
-      print('初始化频谱异常: $e');
+      LOGGER.w('初始化频谱异常: $e');
     }
   }
 
@@ -159,12 +232,15 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
     _audioSessionSubscription?.cancel();
     _fftDataSubscription?.cancel();
     _playbackStateSubscription?.cancel();
+    _simulatedPlayingSubscription?.cancel();
     _fftUpdateTimer?.cancel();
+    _currentMacOSAnalysisPath = null;
     _fftDataNotifier.dispose();
     try {
       FlutterAudioVisualizer.stop();
+      MacOSAudioPlayer.stop();
     } catch (e) {
-      print('停止频谱失败: $e');
+      LOGGER.w('停止频谱失败: $e');
     }
     super.dispose();
   }

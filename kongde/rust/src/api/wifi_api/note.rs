@@ -1,4 +1,4 @@
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::get_client_clone};
+use crate::api::wifi_api::init::get_client_clone;
 use chrono;
 use flutter_rust_bridge::frb;
 use serde_json;
@@ -57,11 +57,11 @@ pub async fn get_note_for_dart(id: String) -> Result<NoteSummary, ApiError> {
 
 pub async fn list_notes_for_dart(page: i32, page_size: i32) -> Result<Vec<NoteSummary>, ApiError> {
     let client = get_client_clone().map_err(|e| {
-        log_to_dart(format!("list_notes_for_dart error {:?}", e));
+        tracing::error!(error = %e, "list_notes 获取客户端失败");
         ApiError::Internal(e.to_string())
     })?;
 
-    log_to_dart(format!("note 启动 page {} page_size {} base_url: {}", page, page_size, client.base_url()));
+    tracing::info!(page, page_size, base_url = %client.base_url(), "note 启动");
 
     match list_notes(&client, Some(page as u32), Some(page_size as u32)).await {
         Ok(notes) => {
@@ -72,7 +72,7 @@ pub async fn list_notes_for_dart(page: i32, page_size: i32) -> Result<Vec<NoteSu
             }
         }
         Err(err) => {
-            log_to_dart(format!("list_notes_for_dart error {:?}", err));
+            tracing::error!(error = ?err, "list_notes 失败");
             Err(err)
         }
     }

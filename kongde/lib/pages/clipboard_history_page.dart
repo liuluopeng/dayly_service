@@ -5,6 +5,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:kongde/config/app_config.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 import 'package:kongde/src/rust/api/wifi_api/clipboard.dart';
+import 'package:kongde/utils.dart';
 
 class ClipboardHistoryPage extends StatefulWidget {
   const ClipboardHistoryPage({super.key});
@@ -71,7 +72,8 @@ class _ClipboardHistoryPageState extends State<ClipboardHistoryPage> {
       final d = DateTime.parse(ts);
       return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} '
           '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
+    } catch (e) {
+      LOGGER.w('[ClipboardHistory] _formatTime failed: $e');
       return ts;
     }
   }

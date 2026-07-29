@@ -1,7 +1,7 @@
 use flutter_rust_bridge::frb;
 use uuid::Uuid;
 
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::get_client_clone};
+use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::api::{
     base::{ApiError, PaginatedResponse},
@@ -80,7 +80,7 @@ pub async fn get_melatonin_movies_for_dart(
                         video_urls: movie.video_urls,
                     })
                     .collect();
-                log_to_dart(format!("melatonin 电影列表: page={}, 共 {} 部", page, total));
+                tracing::info!(page, total, "melatonin 电影列表");
                 Ok(PaginatedResponseForDart {
                     data,
                     total: melatonin_movies.total,
@@ -125,7 +125,7 @@ pub async fn get_movies_by_actor_for_dart(
                         video_urls: movie.video_urls,
                     })
                     .collect();
-                log_to_dart(format!("演员 {} 的电影: {} 部", actor_clone, total));
+                tracing::info!(actor = %actor_clone, total, "演员的电影");
                 Ok(PaginatedResponseForDart {
                     data,
                     total: melatonin_movies.total,
@@ -162,7 +162,7 @@ pub async fn get_movies_by_genre_for_dart(
                     cover_path: movie.cover_path, video_paths: movie.video_paths,
                     cover_url: movie.cover_url, video_urls: movie.video_urls,
                 }).collect();
-                log_to_dart(format!("类型 {} 的电影: {} 部", genre_clone, total));
+                tracing::info!(genre = %genre_clone, total, "类型的电影");
                 Ok(PaginatedResponseForDart {
                     data, total: melatonin_movies.total,
                     page: melatonin_movies.page, page_size: melatonin_movies.page_size,
@@ -179,7 +179,7 @@ pub async fn get_melatonin_movie_by_id_for_dart(id: Uuid) -> Result<MelatoninMov
     match get_melatonin_movie_by_id(&client, &id).await {
         Ok(melatonin_movie) => {
             if let Some(melatonin_movie) = melatonin_movie.data {
-                log_to_dart(format!("melatonin 电影详情: {}", melatonin_movie.title));
+                tracing::info!(title = %melatonin_movie.title, "melatonin 电影详情");
                 let nfo_str = serde_json::to_string(&melatonin_movie.nfo_json).unwrap_or_default();
                 Ok(MelatoninMovieDetailForDart {
                     id: melatonin_movie.id,

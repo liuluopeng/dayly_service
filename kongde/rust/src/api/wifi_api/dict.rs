@@ -2,7 +2,7 @@ use chrono::Local;
 use flutter_rust_bridge::frb;
 use uuid::Uuid;
 
-use crate::api::{logger_bridge::log_to_dart, wifi_api::init::{get_client_clone, init_client}};
+use crate::api::wifi_api::init::{get_client_clone, init_client};
 
 pub use common::{
     api::{
@@ -22,7 +22,7 @@ pub async fn search_xianzaihanyu_for_dart(word: String) -> Result<String, ApiErr
     match search_xiandaihanyu(&client, &word).await {
         Ok(res) => {
             if let Some(html) = res.data {
-                log_to_dart(format!("现代汉语查询成功: {}", word));
+                tracing::info!(word = %word, "现代汉语查询成功");
                 Ok(html)
             } else {
                 Err(ApiError::Internal("No data found in response".to_string()))
@@ -37,7 +37,7 @@ pub async fn search_collins_for_dart(word: String) -> Result<String, ApiError> {
     match search_collins(&client, &word).await {
         Ok(res) => {
             if let Some(html) = res.data {
-                log_to_dart(format!("Collins 查询成功: {}", word));
+                tracing::info!(word = %word, "Collins 查询成功");
                 Ok(html)
             } else {
                 Err(ApiError::Internal("No data found in response".to_string()))
@@ -69,7 +69,7 @@ pub async fn search_ldoce_for_dart(word: String) -> Result<String, ApiError> {
     match search_ldoce(&client, &word).await {
         Ok(res) => {
             if let Some(html) = res.data {
-                log_to_dart(format!("LDOCE 查询成功: {}", word));
+                tracing::info!(word = %word, "LDOCE 查询成功");
                 Ok(html)
             } else {
                 Err(ApiError::Internal("No data found in response".to_string()))
@@ -133,7 +133,7 @@ pub async fn get_recent_history_for_dart(limit: i64) -> Result<Vec<WordHistory>,
     match get_recent_history(&client, limit).await {
         Ok(res) => {
             if let Some(data) = res.data {
-                log_to_dart(format!("查询历史成功: {} 条", data.len()));
+                tracing::info!(count = data.len(), "查询历史成功");
                 Ok(data)
             } else {
                 Err(ApiError::Internal("No data found in response".to_string()))
@@ -148,7 +148,7 @@ pub async fn get_top_words_for_dart() -> Result<Vec<Word>, ApiError> {
     match get_top_words(&client).await {
         Ok(res) => {
             if let Some(data) = res.data {
-                log_to_dart(format!("高频词汇成功: {} 个", data.len()));
+                tracing::info!(count = data.len(), "高频词汇成功");
                 Ok(data)
             } else {
                 Err(ApiError::Internal("No data found in response".to_string()))

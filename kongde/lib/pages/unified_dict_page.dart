@@ -6,6 +6,7 @@ import 'package:kongde/src/rust/api/wifi_api/dict.dart';
 import 'package:kongde/src/rust/frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
+import 'package:kongde/utils.dart';
 
 class UnifiedDictPage extends StatefulWidget {
   const UnifiedDictPage({super.key});
@@ -58,7 +59,9 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
       _topWords = await getTopWordsForDart();
       _recentHistory = await getRecentHistoryForDart(limit: PlatformInt64Util.from(20));
       if (mounted) setState(() {});
-    } catch (_) {}
+    } catch (e) {
+      LOGGER.w('[UnifiedDict] _loadStats failed: $e');
+    }
   }
 
   Future<void> _searchAll() async {

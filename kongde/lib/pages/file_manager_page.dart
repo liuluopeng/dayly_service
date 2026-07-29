@@ -8,6 +8,7 @@ import 'package:kongde/pages/universal_video_player_page.dart';
 import 'package:kongde/pages/image_viewer_page.dart';
 import 'package:kongde/pages/pdf_viewer_page.dart';
 import 'package:kongde/pages/epub_reader_page.dart';
+import 'package:kongde/utils.dart';
 
 class FileManagerPage extends StatefulWidget {
   const FileManagerPage({super.key});
@@ -96,6 +97,7 @@ class _FileManagerPageState extends State<FileManagerPage> {
       final body = await response.transform(utf8.decoder).join();
       if (mounted) setState(() => _textContent = body);
     } catch (e) {
+      LOGGER.w('[FileManager] _loadText failed: $e');
       if (mounted) setState(() => _textContent = 'fileManager.cannotLoad'.trParams({'error': '$e'}));
     }
   }
@@ -413,6 +415,7 @@ class _GridThumbState extends State<_GridThumb> {
       final url = await getFileUrlForDart(path: widget.path);
       if (mounted) setState(() { _url = url; _loading = false; });
     } catch (e) {
+      LOGGER.w('[FileManager] _GridThumb._loadUrl failed: $e');
       if (mounted) setState(() => _loading = false);
     }
   }

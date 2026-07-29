@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 // ignore_for_file: invalid_use_of_internal_member
 import 'package:kongde/src/rust/frb_generated.dart';
+import 'package:kongde/utils.dart';
 
 /// SQLite 本地 KV 存储 — 全部逻辑在 Rust，Dart 只做 thin wrapper
 class SqliteStorage {
@@ -29,15 +30,15 @@ class SqliteStorage {
 
   Future<bool> setString(String key, String value) async {
     try { await RustLib.instance.api.crateApiDbKvSet(key: key, value: value); return true; }
-    catch (_) { return false; }
+    catch (e) { LOGGER.w("[kv] setString($key) 失败: $e"); return false; }
   }
 
   Future<int?> getInt(String key) async =>
     (await RustLib.instance.api.crateApiDbKvGetInt(key: key))?.toInt();
 
   Future<bool> setInt(String key, int value) async {
-    try { await RustLib.instance.api.crateApiDbKvSetInt(key: key, value: value); return true; }
-    catch (_) { return false; }
+    try { await RustLib.instance.api.crateApiDbKvSetInt(key: key, value: value as dynamic); return true; }
+    catch (e) { LOGGER.w("[kv] setInt($key) 失败: $e"); return false; }
   }
 
   Future<double?> getDouble(String key) async =>
@@ -45,7 +46,7 @@ class SqliteStorage {
 
   Future<bool> setDouble(String key, double value) async {
     try { await RustLib.instance.api.crateApiDbKvSetDouble(key: key, value: value); return true; }
-    catch (_) { return false; }
+    catch (e) { LOGGER.w("[kv] setDouble($key) 失败: $e"); return false; }
   }
 
   Future<bool> setJson(String key, dynamic value) async =>
@@ -54,7 +55,7 @@ class SqliteStorage {
   Future<T?> getJson<T>(String key, T Function(Map<String, dynamic>) fromJson) async {
     final val = await getString(key);
     if (val == null) return null;
-    try { return fromJson(jsonDecode(val) as Map<String, dynamic>); } catch (_) { return null; }
+    try { return fromJson(jsonDecode(val) as Map<String, dynamic>); } catch (e) { LOGGER.w("[kv] getJson($key) 解析失败: $e"); return null; }
   }
 
   Future<List<T>?> getJsonList<T>(String key, T Function(Map<String, dynamic>) fromJson) async {
@@ -63,7 +64,7 @@ class SqliteStorage {
     try {
       final list = jsonDecode(val) as List<dynamic>;
       return list.map((e) => fromJson(e as Map<String, dynamic>)).toList();
-    } catch (_) { return null; }
+    } catch (e) { LOGGER.w("[kv] getJsonList($key) 解析失败: $e"); return null; }
   }
 
   Future<bool> setJsonList(String key, List<dynamic> value) async =>

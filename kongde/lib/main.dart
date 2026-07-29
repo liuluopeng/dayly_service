@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -13,12 +14,15 @@ import 'package:logger/logger.dart';
 import 'package:kongde/controllers/settings_controller.dart';
 import 'package:kongde/locales/messages.dart';
 import 'package:kongde/services/navigation_service.dart';
+import 'package:kongde/services/open_file_service.dart';
 
 import 'package:kongde/src/rust/api/simple.dart';
 import 'package:kongde/src/rust/api/logger_bridge.dart';
 import 'package:kongde/src/rust/frb_generated.dart';
 import 'package:kongde/utils.dart';
 import 'package:kongde/widgets/appbar_mini_window.dart';
+
+const _windowChannel = MethodChannel('com.kongde/window');
 
 final logger = Logger(
   printer: PrettyPrinter(
@@ -46,11 +50,59 @@ class PlayPauseIntent extends Intent {
   const PlayPauseIntent();
 }
 
-class ScaleAwareApp extends StatelessWidget {
+class ScaleAwareApp extends StatefulWidget {
   final SettingsController settingsController;
 
   const ScaleAwareApp({Key? key, required this.settingsController})
     : super(key: key);
+
+  @override
+  State<ScaleAwareApp> createState() => _ScaleAwareAppState();
+}
+
+class _ScaleAwareAppState extends State<ScaleAwareApp> {
+  bool _metaPressed = false;
+  bool _ctrlPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_handleKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKey);
+    super.dispose();
+  }
+
+  bool _handleKey(KeyEvent event) {
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.metaLeft || key == LogicalKeyboardKey.metaRight) {
+      _metaPressed = event is KeyDownEvent;
+    }
+    if (key == LogicalKeyboardKey.controlLeft || key == LogicalKeyboardKey.controlRight) {
+      _ctrlPressed = event is KeyDownEvent;
+    }
+    if (event is KeyDownEvent && key == LogicalKeyboardKey.keyS && _metaPressed && _ctrlPressed) {
+      _toggleWindow();
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _toggleWindow() async {
+    try {
+      final visible = await _windowChannel.invokeMethod<bool>('isVisible') ?? true;
+      if (visible) {
+        await _windowChannel.invokeMethod('hide');
+      } else {
+        await _windowChannel.invokeMethod('show');
+      }
+    } catch (e) {
+      LOGGER.w("[window] toggle 失败: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,16 +119,15 @@ class ScaleAwareApp extends StatelessWidget {
           ScaleIntent: CallbackAction<ScaleIntent>(
             onInvoke: (intent) {
               if (intent.increase) {
-                settingsController.increaseScale();
+                widget.settingsController.increaseScale();
               } else {
-                settingsController.decreaseScale();
+                widget.settingsController.decreaseScale();
               }
               return null;
             },
           ),
           PlayPauseIntent: CallbackAction<PlayPauseIntent>(
             onInvoke: (intent) {
-              // 切换播放/暂停状态
               final audioHandler = Get.find<AudioPlayerHandler>();
               if (audioHandler.player.playing) {
                 audioHandler.pause();
@@ -90,14 +141,14 @@ class ScaleAwareApp extends StatelessWidget {
         child: FocusScope(
           autofocus: true,
           child: Obx(() {
-            final scale = settingsController.scaleFactor.value;
+            final scale = widget.settingsController.scaleFactor.value;
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(textScaleFactor: scale),
               child: Directionality(
                 textDirection: TextDirection.ltr,
                 child: GetMaterialApp(
                     translations: Messages(),
-                    locale: settingsController.locale.value,
+                    locale: widget.settingsController.locale.value,
                     fallbackLocale: const Locale('zh', 'CN'),
                     home: AppConfig.instance.isConfigured
                         ? const MainTabPage()
@@ -115,7 +166,7 @@ class ScaleAwareApp extends StatelessWidget {
                   appBarTheme: _darkTheme.appBarTheme.copyWith(toolbarHeight: kToolbarHeight * scale),
                   buttonTheme: _darkTheme.buttonTheme.copyWith(minWidth: 88 * scale, height: 36 * scale),
                 ),
-                themeMode: settingsController.appThemeMode,
+                themeMode: widget.settingsController.appThemeMode,
                 onGenerateRoute: (settings) {
                   if (settings.name == '/collins_dict') {
                     final word = settings.arguments as String?;
@@ -137,24 +188,22 @@ class ScaleAwareApp extends StatelessWidget {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
-
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    systemNavigationBarColor: Colors.black,
-    statusBarColor: Colors.transparent,
-  ));
+  if (!kIsWeb) {
+    MediaKit.ensureInitialized();
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.black,
+      statusBarColor: Colors.transparent,
+    ));
+  }
 
   await RustLib.init();
 
   await AppConfig.instance.loadFromPreferences();
-  // initClient 和 setClientToken 已在 loadFromPreferences 中处理
 
   _rustLoggerSubscription = initRustLogger().listen((msg) {
     Future.microtask(() {
       LOGGER.i("[rs]: $msg");
     });
-
-    // 在appbar上的监控小窗执行
     AppBarMiniWindow.show("[rs]: $msg");
   });
 
@@ -162,10 +211,7 @@ Future<void> main() async {
 
   _audioHandler = await AudioService.init(
     builder: () => AudioPlayerHandler(),
-    config: AudioServiceConfig(
-      // androidNotificationChannelId: 'com.mycompany.myapp.channel.audio',
-      // androidNotificationChannelName: 'Music playback',
-    ),
+    config: AudioServiceConfig(),
   );
   Get.put(_audioHandler);
 
@@ -173,9 +219,9 @@ Future<void> main() async {
   Get.put(settingsController);
 
   NavigationService.init();
+  OpenFileService.init();
 
   runApp(ScaleAwareApp(settingsController: settingsController));
 
-  // 从服务器同步设置（不阻塞启动）
   settingsController.loadFromServer();
 }

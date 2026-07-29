@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
-import 'package:kongde/main.dart';
+import 'package:kongde/utils.dart';
 import 'package:kongde/models/media_state.dart';
 import 'package:kongde/services/audio_player_handler.dart';
 import 'package:kongde/controllers/settings_controller.dart';
@@ -43,8 +45,12 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
   StreamSubscription? _audioSessionSubscription;
   StreamSubscription? _fftDataSubscription;
   StreamSubscription? _playbackStateSubscription;
+  StreamSubscription? _simulatedPlayingSubscription;
   Timer? _fftUpdateTimer;
+  Timer? _simulatedSpectrumTimer;
   List<double> _pendingFftData = [];
+  bool _isPlaying = false;
+  final _random = math.Random();
   late final SettingsController _settingsController;
 
   // 歌词相关
@@ -115,7 +121,7 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
     _colorSubscription = Get.find<AudioPlayerHandler>().mainColors.listen((
       colors,
     ) {
-      logger.i('收到颜色更新: $colors');
+      LOGGER.i('收到颜色更新: $colors');
       if (mounted) {
         setState(() {
           _mainColors = colors;
@@ -125,6 +131,8 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
   }
 
   Future<void> _setupVisualizer() async {
+    if (kIsWeb) return;
+
     if (Platform.isAndroid) {
       _audioSessionSubscription = Get.find<AudioPlayerHandler>()
           .player
@@ -135,25 +143,76 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
               _initializeVisualizer();
             }
           });
-    } else if (Platform.isIOS || Platform.isMacOS) {
+      _fftDataSubscription = FlutterAudioVisualizer.fftDataStream.listen((data) {
+        if (mounted) {
+          _pendingFftData = data;
+          _fftUpdateTimer?.cancel();
+          _fftUpdateTimer = Timer(const Duration(milliseconds: 16), () {
+            if (mounted) {
+              _fftDataNotifier.value = _pendingFftData;
+            }
+          });
+        }
+      });
+    } else if (Platform.isIOS) {
       Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
         if (mounted && mediaItem != null) {
           _initializeVisualizer();
         }
       });
+      _fftDataSubscription = FlutterAudioVisualizer.fftDataStream.listen((data) {
+        if (mounted) {
+          _pendingFftData = data;
+          _fftUpdateTimer?.cancel();
+          _fftUpdateTimer = Timer(const Duration(milliseconds: 16), () {
+            if (mounted) {
+              _fftDataNotifier.value = _pendingFftData;
+            }
+          });
+        }
+      });
+    } else if (Platform.isMacOS) {
+      _setupSimulatedSpectrum();
     }
+  }
 
-    _fftDataSubscription = FlutterAudioVisualizer.fftDataStream.listen((data) {
-      if (mounted) {
-        _pendingFftData = data;
-        _fftUpdateTimer?.cancel();
-        _fftUpdateTimer = Timer(const Duration(milliseconds: 16), () {
-          if (mounted) {
-            _fftDataNotifier.value = _pendingFftData;
-          }
-        });
+  void _setupSimulatedSpectrum() {
+    if (mounted) {
+      setState(() {
+        _visualizerInitialized = true;
+      });
+    }
+    _simulatedPlayingSubscription = Get.find<AudioPlayerHandler>().playingState.listen((playing) {
+      _isPlaying = playing;
+      if (playing) {
+        _startSimulatedSpectrum();
+      } else {
+        _stopSimulatedSpectrum();
+        _fftDataNotifier.value = List.filled(64, 0.0);
       }
     });
+  }
+
+  void _startSimulatedSpectrum() {
+    _simulatedSpectrumTimer?.cancel();
+    _simulatedSpectrumTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (!_isPlaying || !mounted) {
+        _simulatedSpectrumTimer?.cancel();
+        return;
+      }
+      final data = List<double>.generate(64, (i) {
+        final base = math.sin(i * 0.15 + DateTime.now().millisecondsSinceEpoch * 0.003) * 30 + 40;
+        final noise = _random.nextDouble() * 20;
+        final decay = 1.0 - (i / 64) * 0.5;
+        return (base + noise) * decay;
+      });
+      _fftDataNotifier.value = data;
+    });
+  }
+
+  void _stopSimulatedSpectrum() {
+    _simulatedSpectrumTimer?.cancel();
+    _simulatedSpectrumTimer = null;
   }
 
   Future<void> _initializeVisualizer() async {
@@ -169,7 +228,7 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
             });
           }
         }
-      } else if (Platform.isIOS || Platform.isMacOS) {
+      } else if (Platform.isIOS) {
         final mediaItem = Get.find<AudioPlayerHandler>().mediaItem.value;
         if (mediaItem != null && mediaItem.id.isNotEmpty) {
           try {
@@ -192,12 +251,12 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
               }
             }
           } catch (e) {
-            print('初始化频谱失败: $e');
+            LOGGER.w('初始化频谱失败: $e');
           }
         }
       }
     } catch (e) {
-      print('初始化频谱异常: $e');
+      LOGGER.w('初始化频谱异常: $e');
     }
   }
 
@@ -207,12 +266,14 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
     _audioSessionSubscription?.cancel();
     _fftDataSubscription?.cancel();
     _playbackStateSubscription?.cancel();
+    _simulatedPlayingSubscription?.cancel();
     _fftUpdateTimer?.cancel();
+    _simulatedSpectrumTimer?.cancel();
     _fftDataNotifier.dispose();
     try {
       FlutterAudioVisualizer.stop();
     } catch (e) {
-      print('停止频谱失败: $e');
+      LOGGER.w('停止频谱失败: $e');
     }
     super.dispose();
   }
