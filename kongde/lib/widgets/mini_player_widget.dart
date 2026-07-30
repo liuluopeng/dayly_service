@@ -67,7 +67,6 @@ class _MiniPlayerWidgetState extends State<MiniPlayerWidget> {
       stream: Get.find<AudioPlayerHandler>().mediaItem,
       builder: (context, mediaSnapshot) {
         final mediaItem = mediaSnapshot.data;
-        if (mediaItem == null) return const SizedBox.shrink();
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -75,7 +74,64 @@ class _MiniPlayerWidgetState extends State<MiniPlayerWidget> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Row(
+          child: mediaItem == null
+              ? _buildPlaceholder(context)
+              : _buildPlayerContent(context, mediaItem),
+        );
+      },
+    );
+  }
+
+  Widget _buildPlaceholder(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.music_note,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            '暂无播放歌曲',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Tooltip(
+          message: _getPlayModeTooltip(),
+          child: IconButton(
+            icon: Icon(_getPlayModeIcon(), size: 20),
+            onPressed: _togglePlayMode,
+          ),
+        ),
+        IconButton(
+          icon: Icon(Icons.skip_previous, size: 28, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          onPressed: null,
+        ),
+        IconButton(
+          icon: Icon(Icons.play_circle_filled, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          onPressed: null,
+        ),
+        IconButton(
+          icon: Icon(Icons.skip_next, size: 28, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          onPressed: null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlayerContent(BuildContext context, MediaItem mediaItem) {
+    return Row(
             children: [
               // 封面
               ClipRRect(
@@ -149,9 +205,6 @@ class _MiniPlayerWidgetState extends State<MiniPlayerWidget> {
                 onPressed: Get.find<AudioPlayerHandler>().skipToNext,
               ),
             ],
-          ),
-        );
-      },
     );
   }
 }
