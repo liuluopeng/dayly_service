@@ -4,6 +4,7 @@ import 'package:kongde/pages/collins_dict_page.dart';
 import 'package:kongde/pages/play_online_music_page.dart';
 import 'package:kongde/widgets/notification_bar.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
+import 'package:kongde/widgets/mini_player_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -58,6 +59,12 @@ class _HomePageState extends State<HomePage> {
                       textInputAction: TextInputAction.search,
                       onSubmitted: (_) => _searchWord(),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  // 迷你播放器
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: MiniPlayerWidget(),
                   ),
                   const SizedBox(height: 16),
                   Expanded(
