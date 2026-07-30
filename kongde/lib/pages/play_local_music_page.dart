@@ -57,14 +57,17 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
   }
 
   void _setupPlaybackStateListener() {
-    _playbackStateSubscription = Get.find<AudioPlayerHandler>().playbackState
-        .map((state) => state.processingState)
-        .distinct()
-        .listen((processingState) {
-          if (mounted) {
-            AppBarMiniWindow.show('播放状态: ${processingState.name}');
-          }
-        });
+    _playbackStateSubscription = Get.find<AudioPlayerHandler>().player.playingStream.listen((playing) {
+      if (mounted && Platform.isMacOS && MacOSAudioPlayer.isSupported) {
+        if (playing) {
+          MacOSAudioPlayer.resume();
+        } else {
+          MacOSAudioPlayer.pause();
+          // 暂停时清零频谱
+          _fftDataNotifier.value = List.filled(64, 0.0);
+        }
+      }
+    });
   }
 
   void _setupColorListener() {
@@ -480,6 +483,10 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
                 position: mediaState?.position ?? Duration.zero,
                 onChangeEnd: (newPosition) {
                   Get.find<AudioPlayerHandler>().seek(newPosition);
+                  // 同步 seek MacOSAudioPlayer
+                  if (Platform.isMacOS && MacOSAudioPlayer.isSupported) {
+                    MacOSAudioPlayer.seek(newPosition.inMilliseconds);
+                  }
                 },
                 activeColor: seekBarActiveColor,
                 inactiveColor: seekBarInactiveColor,

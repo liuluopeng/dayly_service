@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:get/get.dart';
 import 'package:kongde/services/audio_player_handler.dart';
-import 'package:flutter/foundation.dart';
+
+enum PlayMode {
+  sequential,  // 顺序播放
+  shuffle,     // 随机播放
+  loop,        // 单曲循环
+}
 
 class PlaybackControls extends StatefulWidget {
   final bool isPlaying;
@@ -22,16 +27,57 @@ class PlaybackControls extends StatefulWidget {
 
 class _PlaybackControlsState extends State<PlaybackControls> {
   bool _showVolumeSlider = false;
+  PlayMode _playMode = PlayMode.sequential;
+
+  void _togglePlayMode() {
+    setState(() {
+      switch (_playMode) {
+        case PlayMode.sequential:
+          _playMode = PlayMode.shuffle;
+          Get.find<AudioPlayerHandler>().player.setShuffleModeEnabled(true);
+          Get.find<AudioPlayerHandler>().player.setLoopMode(LoopMode.off);
+          break;
+        case PlayMode.shuffle:
+          _playMode = PlayMode.loop;
+          Get.find<AudioPlayerHandler>().player.setShuffleModeEnabled(false);
+          Get.find<AudioPlayerHandler>().player.setLoopMode(LoopMode.one);
+          break;
+        case PlayMode.loop:
+          _playMode = PlayMode.sequential;
+          Get.find<AudioPlayerHandler>().player.setShuffleModeEnabled(false);
+          Get.find<AudioPlayerHandler>().player.setLoopMode(LoopMode.off);
+          break;
+      }
+    });
+  }
+
+  IconData _getPlayModeIcon() {
+    switch (_playMode) {
+      case PlayMode.sequential:
+        return Icons.repeat;
+      case PlayMode.shuffle:
+        return Icons.shuffle;
+      case PlayMode.loop:
+        return Icons.repeat_one;
+    }
+  }
+
+  String _getPlayModeTooltip() {
+    switch (_playMode) {
+      case PlayMode.sequential:
+        return '顺序播放';
+      case PlayMode.shuffle:
+        return '随机播放';
+      case PlayMode.loop:
+        return '单曲循环';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<MediaItem?>(
       stream: Get.find<AudioPlayerHandler>().mediaItem,
       builder: (context, mediaSnapshot) {
-        final mediaItem = mediaSnapshot.data;
-        final extras = mediaItem?.extras ?? {};
-        final musicId = extras['musicId'] as int?;
-
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -67,6 +113,15 @@ class _PlaybackControlsState extends State<PlaybackControls> {
                   48,
                 ),
                 const SizedBox(width: 8),
+                Tooltip(
+                  message: _getPlayModeTooltip(),
+                  child: _button(
+                    _getPlayModeIcon(),
+                    _togglePlayMode,
+                    widget.iconColor,
+                    48,
+                  ),
+                ),
                 _VolumeControlButton(
                   iconColor: widget.iconColor,
                   showSlider: _showVolumeSlider,
