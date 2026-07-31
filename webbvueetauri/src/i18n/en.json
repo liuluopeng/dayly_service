@@ -678,6 +678,7 @@
     "audioUnsupported": "Web Audio is not supported in this browser",
     "sampleLoadFailed": "Failed to load sample: {file}",
     "keyHint": "Layout: white keys 1-0 Q-P A-L Z-M, black keys Shift+corresponding white key. Multiple keys supported.",
-    "keyRefTitle": "Key reference"
+    "keyRefTitle": "Key reference",
+    "doHint": "Green marks do (C, the base note of each octave; keys 1/8/T/L/Z)"
   }
 }

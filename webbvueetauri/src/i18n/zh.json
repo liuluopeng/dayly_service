@@ -676,6 +676,7 @@
     "audioUnsupported": "当前浏览器不支持 Web Audio",
     "sampleLoadFailed": "采样加载失败: {file}",
     "keyHint": "键盘布局：白键 1-0 Q-P A-L Z-M，黑键 Shift+对应白键。支持同时按下多个键。",
-    "keyRefTitle": "键位参考"
+    "keyRefTitle": "键位参考",
+    "doHint": "绿色标记的是 do（C 音，每个八度的基准音，键盘 1/8/T/L/Z 键）"
   }
 }

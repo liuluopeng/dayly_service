@@ -195,13 +195,19 @@ interface RefKey {
   key: string;
   note: string;
   black?: boolean;
+  isDo?: boolean;
+}
+
+// do（C 音）标记：白键 C2-C7 都是每个八度的基准音 do
+function isDo(note: string): boolean {
+  return note.startsWith('C');
 }
 
 const refRows: RefKey[][] = [
-  WHITE_NOTES.slice(0, 10).map(n => ({ key: n.key, note: n.note })),
-  WHITE_NOTES.slice(10, 20).map(n => ({ key: n.key, note: n.note })),
-  WHITE_NOTES.slice(20, 29).map(n => ({ key: n.key, note: n.note })),
-  WHITE_NOTES.slice(29).map(n => ({ key: n.key, note: n.note })),
+  WHITE_NOTES.slice(0, 10).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
+  WHITE_NOTES.slice(10, 20).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
+  WHITE_NOTES.slice(20, 29).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
+  WHITE_NOTES.slice(29).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
 ];
 
 // 黑键参考：每行对应八度的黑键（Shift + 白键）
@@ -263,10 +269,13 @@ onUnmounted(() => {
           <div
             v-for="k in row"
             :key="k.key"
-            class="flex-1 min-w-0 rounded bg-gradient-to-b from-white to-gray-300 border border-gray-400 px-0.5 py-1 text-center cursor-default"
+            class="flex-1 min-w-0 rounded px-0.5 py-1 text-center cursor-default border"
+            :class="k.isDo
+              ? 'bg-gradient-to-b from-emerald-300 to-emerald-500 border-emerald-600'
+              : 'bg-gradient-to-b from-white to-gray-300 border-gray-400'"
           >
-            <div class="text-[11px] md:text-sm font-bold text-gray-700 leading-tight">{{ k.key }}</div>
-            <div class="text-[9px] md:text-[11px] text-blue-600 leading-tight">{{ k.note }}</div>
+            <div class="text-[11px] md:text-sm font-bold leading-tight" :class="k.isDo ? 'text-emerald-950' : 'text-gray-700'">{{ k.key }}</div>
+            <div class="text-[9px] md:text-[11px] leading-tight" :class="k.isDo ? 'text-emerald-900 font-bold' : 'text-blue-600'">{{ k.isDo ? k.note + ' do' : k.note }}</div>
           </div>
         </div>
         <!-- 黑键参考行 -->
@@ -309,6 +318,11 @@ onUnmounted(() => {
             @pointerleave="releaseNote(note)"
             @contextmenu.prevent
           >
+            <!-- do 标记：每个八度的 C 键 -->
+            <span v-if="isDo(note)"
+              class="absolute top-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] md:text-[11px] font-bold select-none shadow">
+              do
+            </span>
             <span class="absolute bottom-1 left-0 right-0 text-center text-[10px] md:text-xs text-gray-500 select-none">
               {{ WHITE_NOTES.find(n => n.note === note)?.key }}
             </span>
@@ -344,6 +358,9 @@ onUnmounted(() => {
 
     <div class="mt-4 text-white/40 text-xs">
       {{ t('piano.keyHint') }}
+    </div>
+    <div class="mt-1 text-emerald-400/80 text-xs">
+      {{ t('piano.doHint') }}
     </div>
   </div>
 </template>
