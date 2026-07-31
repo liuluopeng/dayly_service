@@ -104,6 +104,12 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
       description: t('menu.tetris.desc')
     },
     {
+      path: '/piano',
+      title: t('menu.piano.title'),
+      icon: '🎹',
+      description: t('menu.piano.desc')
+    },
+    {
       path: '/notes',
       title: t('menu.notes.title'),
       icon: '📚',
