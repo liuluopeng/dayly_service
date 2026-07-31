@@ -686,6 +686,8 @@
     "synthPreparing": " (preparing…)",
     "timbreLearn": "Learned",
     "timbreLearnHint": "Analysis-resynthesis: STFT params extracted from samples",
-    "learnFailed": "Timbre analysis failed"
+    "learnFailed": "Timbre analysis failed",
+    "timbreBell": "Glockenspiel",
+    "timbreBellHint": "Inharmonic partials + exponential decay (closed-form synthesis)"
   }
 }

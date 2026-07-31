@@ -198,3 +198,6 @@ export const synth_piano_bright = wasm.synth_piano_bright as (freq: number, dura
 // === 音色分析-再合成（从采样学习参数） ===
 export const analyze_piano_samples = wasm.analyze_piano_samples as (samples: Float32Array, freq: number, sample_rate: number) => Float32Array;
 export const synth_analyzed_note = wasm.synth_analyzed_note as (params: Float32Array, freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;
+
+// === 钟琴音色（闭式表达式合成） ===
+export const synth_bell_note = wasm.synth_bell_note as (freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { synth_piano_note, analyze_piano_samples, synth_analyzed_note } from '../types/wasm-typed';
+import { synth_piano_note, synth_bell_note, analyze_piano_samples, synth_analyzed_note } from '../types/wasm-typed';
 
 const { t } = useI18n();
 
@@ -139,6 +139,10 @@ function playNote(note: string) {
     playLearnedNote(note);
     return;
   }
+  if (timbre.value === 'bell') {
+    playBellNote(note);
+    return;
+  }
   const ctx = getAudioCtx();
   if (!ctx) return;
   if (ctx.state === 'suspended') ctx.resume();
@@ -156,7 +160,7 @@ function playNote(note: string) {
 
 // ─── Wasm 合成音色（Karplus-Strong，96kHz HiRes） ───
 
-type Timbre = 'mp3' | 'wasm' | 'learn';
+type Timbre = 'mp3' | 'wasm' | 'learn' | 'bell';
 
 const timbre = ref<Timbre>('wasm');
 const SYNTH_SAMPLE_RATE = 96000;
@@ -229,6 +233,9 @@ function setTimbre(t: Timbre) {
   }
   if (t === 'learn') {
     learnIfNeeded();
+  }
+  if (t === 'bell') {
+    setTimeout(prewarmBell, 0);
   }
 }
 
@@ -326,6 +333,52 @@ function playLearnedNote(note: string) {
   source.start();
 }
 
+// ─── 钟琴音色（闭式表达式，不谐和泛音 + 指数衰减） ───
+
+const bellCache = new Map<string, AudioBuffer>();
+
+function getBellBuffer(note: string): AudioBuffer | null {
+  const ctx = getAudioCtx();
+  if (!ctx) return null;
+  let buf = bellCache.get(note);
+  if (!buf) {
+    const samples = synth_bell_note(noteToFreq(note), 2500, SYNTH_SAMPLE_RATE, noteSeed(note));
+    if (samples.length === 0) return null;
+    buf = ctx.createBuffer(1, samples.length, SYNTH_SAMPLE_RATE);
+    buf.copyToChannel(samples, 0);
+    bellCache.set(note, buf);
+  }
+  return buf;
+}
+
+function playBellNote(note: string) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const buf = getBellBuffer(note);
+  if (!buf) return;
+  const source = ctx.createBufferSource();
+  source.buffer = buf;
+  source.connect(ctx.destination);
+  source.start();
+}
+
+// 后台分片预生成全部键（只生成缓存，不发声，避免阻塞 UI）
+function prewarmBell() {
+  const allNotes: string[] = [...whiteNotes];
+  Object.keys(BLACK_NOTES).forEach(n => allNotes.push(n));
+  let i = 0;
+  const BATCH = 6;
+  const tick = () => {
+    for (let j = 0; j < BATCH && i < allNotes.length; j++, i++) {
+      getBellBuffer(allNotes[i]);
+    }
+    if (i < allNotes.length) {
+      setTimeout(tick, 30);
+    }
+  };
+  setTimeout(tick, 0);
+}
+
 // 后台分片预生成全部键（只生成缓存，不发声，避免阻塞 UI）
 function prewarmLearned() {
   if (!learnReady.value) return;
@@ -364,6 +417,23 @@ function releaseNote(note: string) {
 // 物理键 → 实际按下的音符：keyup 时按记录释放，
 // 避免 Shift 状态在按下/抬起之间变化导致误释放（键一直亮）
 const pressedByKey = new Map<string, string>();
+
+// 指针按下：捕获指针，保证 pointerup 一定回到本键（多指/滑奏时不被误释放）
+function onKeyPointerDown(e: PointerEvent, note: string) {
+  try {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  } catch { /* 忽略捕获失败 */ }
+  pressNote(note);
+}
+
+function onKeyPointerUp(note: string) {
+  releaseNote(note);
+}
+
+function onKeyPointerLeave(note: string) {
+  // 无捕获时的兜底（鼠标拖出琴键未释放）
+  releaseNote(note);
+}
 
 function onKeyDown(e: KeyboardEvent) {
   if (e.repeat) return;
@@ -529,6 +599,20 @@ onUnmounted(() => {
       <span v-if="timbre === 'learn' && learnReady" class="text-[11px] text-emerald-400/80">{{ t('piano.timbreLearnHint') }}</span>
     </div>
 
+    <!-- 钟琴音色按钮 -->
+    <div class="w-full bg-black/40 rounded-xl px-4 py-2.5 mb-3 border border-white/10 flex flex-wrap items-center justify-center gap-3">
+      <button
+        class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+        :class="timbre === 'bell'
+          ? 'bg-amber-500 text-black'
+          : 'bg-white/10 text-white/70 hover:bg-white/20'"
+        @click="setTimbre('bell')"
+      >
+        {{ t('piano.timbreBell') }}
+      </button>
+      <span v-if="timbre === 'bell'" class="text-[11px] text-emerald-400/80">{{ t('piano.timbreBellHint') }}</span>
+    </div>
+
     <!-- 键位参考图 -->
     <div class="w-full bg-black/40 rounded-xl p-4 mb-4 border border-white/10">
       <div class="text-white/70 text-xs mb-2 flex items-center gap-2">
@@ -586,9 +670,9 @@ onUnmounted(() => {
             :class="isActive(note)
               ? 'bg-gradient-to-b from-amber-200 to-amber-400 shadow-inner'
               : 'bg-gradient-to-b from-white via-white to-gray-300 hover:from-gray-100 shadow-[inset_0_-6px_8px_rgba(0,0,0,0.12)]'"
-            @pointerdown="pressNote(note)"
-            @pointerup="releaseNote(note)"
-            @pointerleave="releaseNote(note)"
+            @pointerdown="onKeyPointerDown($event, note)"
+            @pointerup="onKeyPointerUp(note)"
+            @pointerleave="onKeyPointerLeave(note)"
             @contextmenu.prevent
           >
             <!-- do 标记：只标注中央 C（C4，T 键） -->
@@ -622,9 +706,9 @@ onUnmounted(() => {
             :class="isActive(note)
               ? 'bg-gradient-to-b from-amber-500 to-amber-800 shadow-[0_0_14px_rgba(245,158,11,0.7)]'
               : 'bg-gradient-to-b from-[#3a3a3a] via-black to-[#1a1a1a] border-x border-black/70 border-b-4 border-b-[#111] shadow-[inset_0_-3px_5px_rgba(255,255,255,0.12),0_3px_6px_rgba(0,0,0,0.7)]'"
-            @pointerdown="pressNote(note)"
-            @pointerup="releaseNote(note)"
-            @pointerleave="releaseNote(note)"
+            @pointerdown="onKeyPointerDown($event, note)"
+            @pointerup="onKeyPointerUp(note)"
+            @pointerleave="onKeyPointerLeave(note)"
           >
             <span class="absolute bottom-1 left-0 right-0 text-center text-[9px] md:text-[11px] text-white/70 select-none">
               ⇧{{ blackHint(note) }}

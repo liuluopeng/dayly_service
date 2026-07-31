@@ -130,7 +130,8 @@ pub fn analyze_piano_samples(samples: &[f32], freq: f32, sample_rate: u32) -> Ve
         }
         rms[f] = (s / FRAME as f32).sqrt();
 
-        // 逐谐波峰值提取（Hann 窗幅度校正：幅值 = mag * 4 / N）
+        // 逐谐波峰值提取：抛物线插值精确定位（对数幅度域），
+        // 避免谐波落在 bin 之间时振幅被低估
         for k in 0..H {
             let nk = (k + 1) as f32;
             let fk = nk * freq * (1.0 + b * nk * nk).sqrt();
@@ -138,12 +139,28 @@ pub fn analyze_piano_samples(samples: &[f32], freq: f32, sample_rate: u32) -> Ve
             let lo = bin.saturating_sub(3);
             let hi = (bin + 4).min(FRAME - 1);
             let mut best = 0.0f32;
+            let mut best_bin = lo;
             for i in lo..hi {
                 if mag[i] > best {
                     best = mag[i];
+                    best_bin = i;
                 }
             }
-            amps[k][f] = best * 4.0 / FRAME as f32;
+            if best_bin > 0 && best_bin + 1 < FRAME && mag[best_bin] > 1e-6 {
+                let y0 = mag[best_bin - 1].max(1e-12).ln();
+                let y1 = mag[best_bin].max(1e-12).ln();
+                let y2 = mag[best_bin + 1].max(1e-12).ln();
+                let denom = y0 - 2.0 * y1 + y2;
+                let p = if denom.abs() > 1e-9 {
+                    0.5 * (y0 - y2) / denom
+                } else {
+                    0.0
+                };
+                let amp = y1 - 0.25 * (y0 - y2) * p;
+                amps[k][f] = amp.exp() * 4.0 / FRAME as f32;
+            } else {
+                amps[k][f] = best * 4.0 / FRAME as f32;
+            }
         }
 
         // 锤击瞬态噪声频谱（前 3 帧，屏蔽谐波邻域后的残差能量）

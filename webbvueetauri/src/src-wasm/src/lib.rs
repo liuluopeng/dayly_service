@@ -92,5 +92,5 @@ pub use utils::image_convert::{
     convert_image_wasm, convert_image_with_size_wasm, crop_image_wasm, detect_image_format,
     resize_image_wasm,
 };
-pub use utils::synth::{synth_piano_bright, synth_piano_note};
+pub use utils::synth::{synth_bell_note, synth_piano_bright, synth_piano_note};
 pub use utils::synth_analyze::{analyze_piano_samples, synth_analyzed_note};

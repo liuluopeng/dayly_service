@@ -237,3 +237,91 @@ pub fn synth_piano_bright(freq: f32, duration_ms: u32, sample_rate: u32, seed: u
 
     out
 }
+
+/// 钟琴/铁琴（Glockenspiel）音色 —— 最容易用函数模拟的乐器
+///
+/// 原理：金属棒受击产生不谐和泛音（频率比 1:2.76:5.40:8.93...），
+/// 每个泛音独立指数衰减，纯闭式表达式：
+///   y(t) = Σ Aₙ · sin(2π·f·rₙ·t + φₙ) · e^(-t/τₙ)
+///
+/// # Arguments
+/// * `freq`        - 基频（Hz）
+/// * `duration_ms` - 持续时长（毫秒）
+/// * `sample_rate` - 采样率（建议 96000）
+/// * `seed`        - 随机种子（相位与微失谐）
+#[wasm_bindgen]
+pub fn synth_bell_note(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f32> {
+    if !freq.is_finite() || freq <= 0.0 || sample_rate < 8000 || duration_ms == 0 {
+        return Vec::new();
+    }
+
+    let n = ((duration_ms as f64 * sample_rate as f64) / 1000.0) as usize;
+    let sr = sample_rate as f32;
+    let mut out = vec![0f32; n];
+
+    // 金属棒泛音比（glockenspiel 理论值）+ 振幅 + 相对衰减时长
+    const PARTIALS: [(f32, f32, f32); 6] = [
+        (1.0, 1.0, 1.0),      // 基频：余音最长
+        (2.76, 0.55, 0.28),   // 第一泛音
+        (5.40, 0.30, 0.12),   // 第二泛音
+        (8.93, 0.18, 0.06),   // 第三泛音
+        (13.34, 0.10, 0.035), // 第四泛音
+        (18.76, 0.06, 0.02),  // 第五泛音
+    ];
+
+    // 每泛音固定相位 + 轻微失谐（±0.1%，金属棒微差，形成自然拍频）
+    let mut rng = Rng(seed | 1);
+    let mut phases = [0f32; 6];
+    let mut detunes = [0f32; 6];
+    for p in phases.iter_mut() {
+        *p = rng.next() * std::f32::consts::PI;
+    }
+    for d in detunes.iter_mut() {
+        *d = 0.0008 + rng.next().abs() * 0.0012;
+    }
+
+    let tau_base = 1.6f32; // 基频衰减时间常数（秒）
+    let t_end = duration_ms as f32 / 1000.0;
+    let mut amplitudes = [0f32; 6];
+    let mut freqs = [0f32; 6];
+    let mut taus = [0f32; 6];
+    for i in 0..6 {
+        let (r, a, rel) = PARTIALS[i];
+        freqs[i] = freq * r * (1.0 + detunes[i]);
+        amplitudes[i] = a;
+        taus[i] = (tau_base * rel).max(0.01);
+    }
+
+    // 打击瞬态：~6ms 金属接触噪声
+    let strike_len = ((sr * 0.006) as usize).min(n);
+
+    for i in 0..n {
+        let t = i as f32 / sr;
+        let mut v = 0.0f32;
+        for k in 0..6 {
+            if t > t_end {
+                break;
+            }
+            let env = (-t / taus[k]).exp();
+            v += amplitudes[k] * (std::f32::consts::TAU * freqs[k] * t + phases[k]).sin() * env;
+        }
+        if i < strike_len {
+            let env = 1.0 - i as f32 / strike_len as f32;
+            v += rng.next() * 0.25 * env * env;
+        }
+        // 起音（1.5ms 防爆音）
+        let attack = ((t * 650.0).min(1.0)) as f32;
+        out[i] = v * attack;
+    }
+
+    // 归一化
+    let peak = out.iter().fold(0f32, |a, &b| a.max(b.abs()));
+    if peak > 0.0001 {
+        let scale = (1.0 / peak).min(1.0) * 0.9;
+        for x in out.iter_mut() {
+            *x *= scale;
+        }
+    }
+
+    out
+}
