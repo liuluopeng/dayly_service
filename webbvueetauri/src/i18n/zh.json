@@ -703,6 +703,15 @@
       "sol": "sol",
       "la": "la",
       "si": "si"
-    }
+    },
+    "practiceTitle": "视唱练习",
+    "teachJoy": "欢乐颂",
+    "practiceNew": "新练习",
+    "practiceAgain": "再来一条",
+    "practiceEasy": "入门(1-5音)",
+    "practiceMedium": "进阶(全音阶)",
+    "practiceHard": "挑战(含节奏)",
+    "practiceDone": "完成 {n} 条 ✓",
+    "practiceHint": "看简谱直接按键（不试音）——视唱练耳：看到 3 就按 U，看到 5 就按 O。按对自动前进"
   }
 }

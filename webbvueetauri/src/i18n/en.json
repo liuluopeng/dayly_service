@@ -705,6 +705,15 @@
       "sol": "sol",
       "la": "la",
       "si": "si"
-    }
+    },
+    "practiceTitle": "Sight-singing practice",
+    "teachJoy": "Ode to Joy",
+    "practiceNew": "New exercise",
+    "practiceAgain": "Another one",
+    "practiceEasy": "Easy (1-5)",
+    "practiceMedium": "Medium (full scale)",
+    "practiceHard": "Hard (with rhythm)",
+    "practiceDone": "{n} done ✓",
+    "practiceHint": "Press keys directly from the score (no trial) — sight reading: see 3 press U, see 5 press O. Advance when correct"
   }
 }

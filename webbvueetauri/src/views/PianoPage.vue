@@ -503,6 +503,10 @@ const JOY_MELODY: [number, number][] = [
 
 const JOY_BEAT = 0.42; // 四分音符时长（秒）
 
+// 当前练习旋律（欢乐颂或随机视唱练习），教学逻辑共用
+const activeMelody = ref<[number, number][]>(JOY_MELODY);
+const melodyTitle = ref('joy');
+
 const teachIndex = ref(-1);
 const teachPlaying = ref(false);
 const teachFollow = ref(false);
@@ -525,15 +529,16 @@ function stopTeaching() {
 
 function scheduleNextTeach() {
   teachIndex.value++;
-  if (teachIndex.value >= JOY_MELODY.length) {
+  if (teachIndex.value >= activeMelody.value.length) {
     // 曲终
+    if (melodyTitle.value === 'practice') practiceCount.value++;
     teachPlaying.value = false;
     teachFollow.value = false;
     teachIndex.value = -1;
     teachHighlight.value = null;
     return;
   }
-  const [degree, dur] = JOY_MELODY[teachIndex.value];
+  const [degree, dur] = activeMelody.value[teachIndex.value];
   if (degree === 0) {
     // 休止：仅推进
     teachTimers.push(window.setTimeout(scheduleNextTeach, JOY_BEAT * 1000));
@@ -567,14 +572,15 @@ function startFollow() {
 
 function advanceFollow() {
   teachIndex.value++;
-  if (teachIndex.value >= JOY_MELODY.length) {
+  if (teachIndex.value >= activeMelody.value.length) {
+    if (melodyTitle.value === 'practice') practiceCount.value++;
     teachPlaying.value = false;
     teachFollow.value = false;
     teachIndex.value = -1;
     teachHighlight.value = null;
     return;
   }
-  const [degree] = JOY_MELODY[teachIndex.value];
+  const [degree] = activeMelody.value[teachIndex.value];
   if (degree === 0) {
     teachHighlight.value = null;
     teachTimers.push(window.setTimeout(advanceFollow, JOY_BEAT * 1000));
@@ -586,7 +592,7 @@ function advanceFollow() {
 // 跟弹检测：按对当前音才推进
 function onFollowKey(note: string) {
   if (!teachFollow.value || teachIndex.value < 0) return;
-  const [degree] = JOY_MELODY[teachIndex.value];
+  const [degree] = activeMelody.value[teachIndex.value];
   if (degree === 0) return;
   if (note === JOY_DEGREE_TO_NOTE[degree - 1]) {
     pressNoteFromKeyboard(note);
@@ -597,15 +603,68 @@ function onFollowKey(note: string) {
 }
 
 function teachCurrentLabel(): string {
-  if (teachIndex.value < 0 || teachIndex.value >= JOY_MELODY.length) return '';
-  const [degree] = JOY_MELODY[teachIndex.value];
+  if (teachIndex.value < 0 || teachIndex.value >= activeMelody.value.length) return '';
+  const [degree] = activeMelody.value[teachIndex.value];
   if (degree === 0) return t('piano.teachRest');
   return `${t(`piano.solfege.${['do','re','mi','fa','sol','la','si'][degree - 1]}`)} (${degree}) · ${JOY_DEGREE_TO_KEY[degree - 1]} 键`;
 }
 
 function teachProgress(): string {
   if (teachIndex.value < 0) return '';
-  return `${Math.min(teachIndex.value + 1, JOY_MELODY.length)}/${JOY_MELODY.length}`;
+  return `${Math.min(teachIndex.value + 1, activeMelody.value.length)}/${activeMelody.value.length}`;
+}
+
+// ─── 视唱练习（随机旋律，看谱即弹） ───
+
+type PracticeLevel = 'easy' | 'medium' | 'hard';
+
+const practiceLevel = ref<PracticeLevel>('easy');
+const practiceLength = ref(8);
+const practiceCount = ref(0); // 已完成的练习数（显示鼓励）
+
+function practiceDegreeRange(): [number, number] {
+  switch (practiceLevel.value) {
+    case 'easy': return [1, 5];   // do-sol 五音
+    case 'medium': return [1, 7]; // 全音阶
+    case 'hard': return [1, 7];   // 全音阶 + 节奏/休止
+  }
+}
+
+// 随机游走生成"像旋律"的音级序列（相邻音高小步移动）
+function generatePracticeMelody(): [number, number][] {
+  const [lo, hi] = practiceDegreeRange();
+  const steps = [-2, -1, 0, 1, 2];
+  let cur = Math.floor((lo + hi) / 2); // 从中间开始
+  const melody: [number, number][] = [];
+  for (let i = 0; i < practiceLength.value; i++) {
+    let step = steps[Math.floor(Math.random() * steps.length)];
+    let next = cur + step;
+    if (next < lo) next = lo + (lo - next);
+    if (next > hi) next = hi - (next - hi);
+    cur = Math.max(lo, Math.min(hi, next));
+    let dur: number = 1;
+    if (practiceLevel.value === 'hard' && Math.random() < 0.15) {
+      dur = 2; // 二分音符
+    }
+    melody.push([cur, dur]);
+    // hard 模式偶尔休止
+    if (practiceLevel.value === 'hard' && Math.random() < 0.08 && melody.length < practiceLength.value) {
+      melody.push([0, 1]);
+    }
+  }
+  return melody;
+}
+
+function newPractice() {
+  activeMelody.value = generatePracticeMelody();
+  melodyTitle.value = 'practice';
+  startFollow();
+}
+
+function startJoy() {
+  activeMelody.value = JOY_MELODY;
+  melodyTitle.value = 'joy';
+  startDemo();
 }
 
 // ─── 键位参考图数据 ───
@@ -853,23 +912,47 @@ onUnmounted(() => {
       {{ t('piano.doHint') }}
     </div>
 
-    <!-- 欢乐颂教学 -->
+    <!-- 欢乐颂 / 视唱练习教学 -->
     <div class="mt-6 w-full bg-black/40 rounded-xl p-4 border border-white/10">
       <div class="flex flex-wrap items-center gap-2 mb-3">
-        <h2 class="text-white font-bold mr-2">🎵 {{ t('piano.teachTitle') }}</h2>
+        <h2 class="text-white font-bold mr-2">🎵 {{ melodyTitle === 'joy' ? t('piano.teachTitle') : t('piano.practiceTitle') }}</h2>
         <button
           class="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-          :class="teachPlaying && !teachFollow ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'"
-          @click="startDemo()"
+          :class="melodyTitle === 'joy' && !teachFollow ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+          @click="startJoy()"
         >
-          {{ t('piano.teachDemo') }}
+          {{ t('piano.teachJoy') }}
         </button>
         <button
           class="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-          :class="teachFollow ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'"
-          @click="startFollow()"
+          :class="melodyTitle === 'practice' ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+          @click="newPractice()"
         >
-          {{ t('piano.teachFollow') }}
+          {{ t('piano.practiceNew') }}
+        </button>
+        <select
+          v-model="practiceLevel"
+          class="bg-white/10 text-white text-xs rounded px-2 py-1 outline-none"
+        >
+          <option value="easy" class="text-black">{{ t('piano.practiceEasy') }}</option>
+          <option value="medium" class="text-black">{{ t('piano.practiceMedium') }}</option>
+          <option value="hard" class="text-black">{{ t('piano.practiceHard') }}</option>
+        </select>
+        <select
+          :value="practiceLength"
+          @change="practiceLength = Number(($event.target as HTMLSelectElement).value)"
+          class="bg-white/10 text-white text-xs rounded px-2 py-1 outline-none"
+        >
+          <option :value="4" class="text-black">4</option>
+          <option :value="8" class="text-black">8</option>
+          <option :value="16" class="text-black">16</option>
+        </select>
+        <button
+          v-if="melodyTitle === 'practice'"
+          class="px-3 py-1 rounded-full text-xs bg-amber-500 text-black hover:bg-amber-400"
+          @click="newPractice()"
+        >
+          {{ t('piano.practiceAgain') }}
         </button>
         <button
           v-if="teachPlaying || teachFollow"
@@ -879,6 +962,9 @@ onUnmounted(() => {
           {{ t('common.stop') }}
         </button>
         <span v-if="teachProgress()" class="text-white/60 text-xs ml-2">{{ teachProgress() }}</span>
+        <span v-if="practiceCount > 0" class="text-emerald-400/80 text-xs ml-2">
+          {{ t('piano.practiceDone', { n: practiceCount }) }}
+        </span>
       </div>
 
       <div v-if="teachHighlight" class="flex items-center gap-3 mb-3">
@@ -890,13 +976,15 @@ onUnmounted(() => {
 
       <!-- 简谱 -->
       <div class="flex flex-wrap gap-x-3 gap-y-1 text-white/70 text-sm font-mono leading-6">
-        <span v-for="(m, i) in JOY_MELODY" :key="i"
+        <span v-for="(m, i) in activeMelody" :key="i"
           class="px-1 rounded"
           :class="i === teachIndex ? 'bg-amber-500 text-black font-bold' : ''">
           {{ m[0] === 0 ? '·' : m[0] }}
         </span>
       </div>
-      <div class="mt-2 text-white/40 text-[11px]">{{ t('piano.teachHint') }}</div>
+      <div class="mt-2 text-white/40 text-[11px]">
+        {{ melodyTitle === 'joy' ? t('piano.teachHint') : t('piano.practiceHint') }}
+      </div>
     </div>
   </div>
 </template>
