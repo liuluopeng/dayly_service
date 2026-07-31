@@ -19,7 +19,7 @@ pub async fn login_wasm(
 ) -> Result<JsValue, JsValue> {
     let client = get_api_client(token.as_deref());
 
-    match user_login(client, username, password).await {
+    match user_login(&client, username, password).await {
         Ok(response) => {
             console_log!("登录成功！");
             if let Some(login_response) = response.data {

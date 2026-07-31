@@ -29,10 +29,10 @@ pub async fn get_clipboard_history(
 ) -> ApiResult<Vec<ClipboardEntry>> {
     let mut path = format!("/api/clipboard/history?count={}", count.unwrap_or(20));
     if let Some(t) = type_filter {
-        path.push_str(&format!("&type={}", t));
+        path.push_str(&format!("&type={}", urlencoding::encode(t)));
     }
     if let Some(s) = search {
-        path.push_str(&format!("&search={}", s));
+        path.push_str(&format!("&search={}", urlencoding::encode(s)));
     }
 
     let response = client

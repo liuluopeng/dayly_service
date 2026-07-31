@@ -178,7 +178,7 @@ fn cmd_history(count: usize, search: Option<&str>, filter_type: Option<&str>) {
                 if let Some(ref text) = entry.text_content {
                     let preview = text.lines().next().unwrap_or(text);
                     let preview = if preview.len() > 120 {
-                        format!("{}...", &preview[..120])
+                        format!("{}...", &preview[..preview.floor_char_boundary(120)])
                     } else {
                         preview.to_string()
                     };
@@ -241,7 +241,9 @@ fn run_monitor(grpc_addr: &str) {
         std::fs::create_dir_all(&save_dir).ok()?;
 
         let now = chrono::Local::now();
-        let filename = format!("{}.png", now.format("%Y-%m-%d_%H-%M-%S"));
+        // 文件名加入内容摘要，避免同一秒内多张图片互相覆盖
+        let digest = hash_image(bytes, w, h);
+        let filename = format!("{}-{:016x}.png", now.format("%Y-%m-%d_%H-%M-%S"), digest);
         let path = save_dir.join(&filename);
 
         match image::RgbaImage::from_raw(w as u32, h as u32, bytes.to_vec()) {
@@ -340,13 +342,14 @@ fn run_monitor(grpc_addr: &str) {
                     std::thread::sleep(POLL_INTERVAL);
                     continue;
                 }
-                state.last_text_hash = hash;
 
                 let trimmed = text.trim();
                 if !trimmed.is_empty() && trimmed.len() < 100_000 {
                     let hash_hex = format!("{:016x}", hash);
                     match rt.block_on(sync_client.push_text(trimmed, &hash_hex, &now)) {
                         Ok(deduplicated) => {
+                            // 推送成功后才更新 hash，避免网络失败导致数据永久丢失
+                            state.last_text_hash = hash;
                             if !deduplicated {
                                 let preview = if trimmed.chars().count() > 80 {
                                     format!("{}...", trimmed.chars().take(80).collect::<String>())
@@ -356,8 +359,11 @@ fn run_monitor(grpc_addr: &str) {
                                 info!("📝 文本已同步: {}", preview);
                             }
                         }
-                        Err(e) => error!("gRPC 推送失败: {}", e),
+                        Err(e) => error!("gRPC 推送失败，稍后重试: {}", e),
                     }
+                } else {
+                    // 空内容或超长内容：无可推送，直接标记已消费
+                    state.last_text_hash = hash;
                 }
                 std::thread::sleep(POLL_INTERVAL);
                 continue;
@@ -373,7 +379,6 @@ fn run_monitor(grpc_addr: &str) {
                     std::thread::sleep(POLL_INTERVAL);
                     continue;
                 }
-                state.last_image_hash = hash;
 
                 info!("🖼️ 检测到新图片: {}x{}", w, h);
 
@@ -381,8 +386,11 @@ fn run_monitor(grpc_addr: &str) {
                     let hash_hex = format!("{:016x}", hash);
                     let path_str = path.to_string_lossy().to_string();
                     match rt.block_on(sync_client.push_image(&path_str, bytes.to_vec(), &hash_hex, &now)) {
-                        Ok(_) => {}
-                        Err(e) => error!("gRPC 推送图片失败: {}", e),
+                        Ok(_) => {
+                            // 推送成功后才更新 hash，网络失败时下次轮询重试
+                            state.last_image_hash = hash;
+                        }
+                        Err(e) => error!("gRPC 推送图片失败，稍后重试: {}", e),
                     }
 
                     let filename = path.file_name().unwrap().to_string_lossy().to_string();

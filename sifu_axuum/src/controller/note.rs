@@ -178,8 +178,8 @@ pub async fn list_notes(
     Extension(pool): Extension<PgPool>,
     Query(params): Query<ListQuery>,
 ) -> Result<axum::Json<ApiResponse<Vec<NoteSummary>>>, ApiError> {
-    let page = params.page.unwrap_or(1);
-    let limit = params.limit.unwrap_or(20);
+    let page = params.page.unwrap_or(1).max(1);
+    let limit = params.limit.unwrap_or(20).clamp(1, 200);
     let offset = (page - 1) * limit;
     let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
 
@@ -240,16 +240,22 @@ pub async fn search_notes(
     let query = params.query;
     let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
 
+    // 转义 LIKE 通配符，避免用户输入 % _ 匹配到无关内容
+    let escaped = query
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+
     let notes = sqlx::query_as::<_, NoteSummary>(
         r#"
         SELECT id, text, simple_text, filepath, filename, file_info, created_at, updated_at, sha256
         FROM notes
-        WHERE user_id = $1 AND (text ILIKE $2 OR simple_text ILIKE $2)
+        WHERE user_id = $1 AND (text ILIKE $2 ESCAPE '\' OR simple_text ILIKE $2 ESCAPE '\')
         LIMIT 50
         "#,
     )
     .bind(user_id)
-    .bind(format!("%{query}%"))
+    .bind(format!("%{escaped}%"))
     .fetch_all(&pool)
     .await
     .map_err(|e| {
@@ -328,9 +334,18 @@ pub async fn preview_note(
         header::CONTENT_TYPE,
         axum::http::HeaderValue::from_static(content_type),
     );
+    // 文件名可能包含 CR/LF 等非法字符，构建失败时回退为仅编码文件名
+    let content_disposition_header = axum::http::HeaderValue::from_str(&content_disposition)
+        .or_else(|_| {
+            axum::http::HeaderValue::from_str(&format!(
+                "inline; filename*=UTF-8''{}",
+                encoded_filename
+            ))
+        })
+        .unwrap_or_else(|_| axum::http::HeaderValue::from_static("inline"));
     response.headers_mut().insert(
         header::CONTENT_DISPOSITION,
-        axum::http::HeaderValue::from_str(&content_disposition).unwrap(),
+        content_disposition_header,
     );
     response.headers_mut().insert(
         axum::http::header::CACHE_CONTROL,

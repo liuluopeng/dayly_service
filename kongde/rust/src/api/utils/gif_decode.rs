@@ -120,6 +120,9 @@ pub fn decode_gif_stream(sink: StreamSink<GifFrameRgba>, path: String, max_frame
         let height = buffer.height();
         let rgba = buffer.into_raw();
 
-        let _ = sink.add(GifFrameRgba { rgba, width, height, delay_ms });
+        if sink.add(GifFrameRgba { rgba, width, height, delay_ms }).is_err() {
+            // Dart 端已取消订阅，停止解码避免浪费 CPU
+            break;
+        }
     }
 }

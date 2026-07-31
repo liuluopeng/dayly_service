@@ -337,7 +337,8 @@ fn do_qr_generate() {
         Ok((version, size)) => {
             el("qr-info").set_text_content(Some(&format!("版本: {}, 尺寸: {}x{}", version, size, size)));
         }
-        Err(_) => {}
+        // 生成失败时同样给出提示，而不是展示残留的旧信息
+        Err(e) => el("qr-info").set_text_content(Some(&format!("生成失败: {}", e))),
     }
 }
 
@@ -417,7 +418,7 @@ async fn do_clipboard_refresh() {
                 let mut html = String::from("<div style='font-size:13px'>");
                 for (i, e) in entries.iter().enumerate() {
                     let content = e.text_content.as_deref().unwrap_or("");
-                    let preview = if content.len() > 100 { format!("{}...", &content[..100]) } else { content.to_string() };
+                    let preview = if content.len() > 100 { format!("{}...", &content[..content.floor_char_boundary(100)]) } else { content.to_string() };
                     let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
                     html.push_str(&format!(
                         "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\
@@ -449,7 +450,7 @@ async fn do_notes_refresh() {
                     let mut html = String::from("<div style='font-size:13px'>");
                     for (i, note) in notes.iter().enumerate() {
                         let content = note.text.as_deref().or(note.simple_text.as_deref()).unwrap_or("");
-                        let preview = if content.len() > 80 { format!("{}...", &content[..80]) } else { content.to_string() };
+                        let preview = if content.len() > 80 { format!("{}...", &content[..content.floor_char_boundary(80)]) } else { content.to_string() };
                         let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
                         let created = note.created_at.format("%Y-%m-%d %H:%M").to_string();
                         html.push_str(&format!(
@@ -778,7 +779,7 @@ async fn do_short_notes_refresh() {
                     let mut html = String::from("<div style='font-size:13px'>");
                     for (i, note) in notes.iter().enumerate() {
                         let content = note.content.as_deref().unwrap_or("");
-                        let preview = if content.len() > 80 { format!("{}...", &content[..80]) } else { content.to_string() };
+                        let preview = if content.len() > 80 { format!("{}...", &content[..content.floor_char_boundary(80)]) } else { content.to_string() };
                         let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
                         html.push_str(&format!(
                             "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\

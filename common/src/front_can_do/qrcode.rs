@@ -28,20 +28,28 @@ pub fn generate_qr_png(text: &str, scale: u32, margin: u32) -> Result<Vec<u8>, Q
 
     let code = QrCode::new(text).map_err(|e| QrError::Encode(e.to_string()))?;
 
+    // 不带内置 quiet zone 渲染，再按 margin 参数手动扩展白色边距
     let raw_pixels = code
         .render::<Rgba<u8>>()
         .dark_color(Rgba([0, 0, 0, 255]))
         .light_color(Rgba([255, 255, 255, 255]))
-        .quiet_zone(margin > 0)
+        .quiet_zone(false)
         .module_dimensions(scale as u32, scale as u32)
         .build();
 
-    let w = raw_pixels.width();
-    let h = raw_pixels.height();
+    let inner_w = raw_pixels.width();
+    let inner_h = raw_pixels.height();
+    let pad = margin * scale;
+    let w = inner_w + pad * 2;
+    let h = inner_h + pad * 2;
     let mut rgba = Vec::with_capacity((w * h * 4) as usize);
     for y in 0..h {
         for x in 0..w {
-            let p = raw_pixels[(x, y)];
+            let p = if x >= pad && y >= pad && x < inner_w + pad && y < inner_h + pad {
+                raw_pixels[(x - pad, y - pad)]
+            } else {
+                Rgba([255, 255, 255, 255])
+            };
             rgba.extend_from_slice(&[p.0[0], p.0[1], p.0[2], p.0[3]]);
         }
     }

@@ -269,7 +269,7 @@ pub async fn list_videos(
         .await
         .map_err(|e| ApiError::Internal(format!("查询总数失败: {}", e)))?;
 
-        let offset = ((query.page - 1) * query.page_size) as i64;
+        let offset = ((query.page.max(1) - 1) * query.page_size) as i64;
         let videos = sqlx::query_as::<_, Video>(
             "SELECT id, name, path, folder_path, media_path_id, size, duration_ms, format, width, height, NULL::bytea AS preview, created_at
              FROM videos
@@ -297,7 +297,7 @@ pub async fn list_videos(
         .await
         .map_err(|e| ApiError::Internal(format!("查询总数失败: {}", e)))?;
 
-        let offset = ((query.page - 1) * query.page_size) as i64;
+        let offset = ((query.page.max(1) - 1) * query.page_size) as i64;
         let videos = sqlx::query_as::<_, Video>(
             "SELECT id, name, path, folder_path, media_path_id, size, duration_ms, format, width, height, NULL::bytea AS preview, created_at
              FROM videos
@@ -330,7 +330,7 @@ pub async fn list_videos(
         total,
         page: query.page,
         page_size: query.page_size,
-        total_pages: (total + query.page_size as i64 - 1) / query.page_size as i64,
+        total_pages: (total + query.page_size.max(1) as i64 - 1) / query.page_size.max(1) as i64,
     };
 
     Ok(ApiResponse::ok(paginated_response))

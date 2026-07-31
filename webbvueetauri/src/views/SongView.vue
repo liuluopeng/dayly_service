@@ -18,6 +18,7 @@ const isLyricsMode = computed(() => route.query.lyrics === '1');
 
 function handleLogout() {
   logout();
+  wasm.clear_api_token_wasm();
   router.push('/login');
 }
 

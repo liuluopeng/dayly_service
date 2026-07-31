@@ -51,7 +51,10 @@ function isTextEntry(entry: ClipboardEntry) {
 }
 
 function getImageUrl(entry: ClipboardEntry) {
-  return entry.image_url || "";
+  if (!entry.image_url) return "";
+  const token = localStorage.getItem("token");
+  const sep = entry.image_url.includes("?") ? "&" : "?";
+  return token ? `${entry.image_url}${sep}token=${encodeURIComponent(token)}` : entry.image_url;
 }
 
 onMounted(loadHistory);

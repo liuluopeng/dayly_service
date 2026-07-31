@@ -11,7 +11,7 @@ use crate::{api::init::get_api_client, console_log};
 pub async fn scan_images_wasm() -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match scan_images(client).await {
+    match scan_images(&client).await {
         Ok(response) => {
             console_log!("扫描图片成功！");
             match to_value(&response.data) {
@@ -30,7 +30,7 @@ pub async fn scan_images_wasm() -> Result<JsValue, JsValue> {
 pub async fn get_image_folders_wasm() -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match get_image_folders(client).await {
+    match get_image_folders(&client).await {
         Ok(response) => {
             console_log!("获取图片文件夹成功！");
             match to_value(&response.data) {
@@ -53,7 +53,7 @@ pub async fn list_images_wasm(
 ) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match list_images(client, folder.as_deref(), page, page_size).await {
+    match list_images(&client, folder.as_deref(), page, page_size).await {
         Ok(response) => {
             console_log!("获取图片列表成功！");
             match to_value(&response.data) {

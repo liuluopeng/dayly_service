@@ -1,61 +1,92 @@
 use common::api::client::ApiClient;
+use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 
-// 全局API客户端实例
-static mut API_CLIENT: Option<ApiClient> = None;
-static mut CURRENT_TOKEN: Option<String> = None;
+// 全局 API 客户端实例（单线程 WASM，用 thread_local 避免 static mut 的
+// 别名/use-after-free 问题）。所有调用方拿到的是客户端克隆，
+// 不再跨 .await 持有 &'static mut。
+thread_local! {
+    static API_CLIENT: RefCell<Option<ApiClient>> = const { RefCell::new(None) };
+    static CURRENT_TOKEN: RefCell<Option<String>> = const { RefCell::new(None) };
+}
 
-// 初始化API客户端
+fn current_token() -> Option<String> {
+    CURRENT_TOKEN.with(|t| t.borrow().clone())
+}
+
+// 初始化 API 客户端（URL/端口变化时重建；否则复用）
 pub fn init_api_client(
     token: Option<&str>,
     api_url: Option<&str>,
     api_port: Option<&str>,
-) -> &'static mut ApiClient {
-    unsafe {
-        // 从参数获取 API URL，如果没有则使用默认值
-        let api_url = api_url.unwrap_or_else(|| panic!("API URL is required"));
+) {
+    let api_url = api_url.unwrap_or("http://localhost:23001");
 
-        // 如果传入了token，保存到全局变量
-        if let Some(token) = token {
-            CURRENT_TOKEN = Some(token.to_string());
+    // 如果传入了 token，保存到全局变量
+    if let Some(token) = token {
+        CURRENT_TOKEN.with(|t| *t.borrow_mut() = Some(token.to_string()));
+    }
+
+    // 仅在 base URL 变化时重建客户端，避免 drop 掉正在使用的客户端
+    let url_changed = API_CLIENT.with(|cell| {
+        let borrow = cell.borrow();
+        match borrow.as_ref() {
+            Some(c) => c.base_url() != api_url,
+            None => true,
         }
+    });
+    if url_changed {
+        API_CLIENT.with(|cell| *cell.borrow_mut() = Some(ApiClient::new(api_url)));
+    }
 
-        // 重新创建 API 客户端（支持端口切换）
-        API_CLIENT = Some(ApiClient::new(api_url));
-
-        // 如果有保存的 token，设置到客户端
-        if let Some(ref token) = CURRENT_TOKEN {
-            if let Some(client) = &mut API_CLIENT {
-                client.set_token(token);
+    // 如果有保存的 token，设置到客户端
+    if let Some(token) = current_token() {
+        API_CLIENT.with(|cell| {
+            if let Some(client) = cell.borrow_mut().as_mut() {
+                client.set_token(&token);
             }
-        }
+        });
+    }
 
-        // 如果指定了端口，设置端口
-        if let Some(port) = api_port {
-            if let Some(port_num) = port.parse::<u16>().ok() {
-                if let Some(client) = &mut API_CLIENT {
+    // 如果指定了端口，设置端口
+    if let Some(port) = api_port {
+        if let Some(port_num) = port.parse::<u16>().ok() {
+            API_CLIENT.with(|cell| {
+                if let Some(client) = cell.borrow_mut().as_mut() {
                     client.set_port(port_num);
                 }
-            }
+            });
         }
-
-        API_CLIENT.as_mut().unwrap()
     }
 }
 
-// 获取API客户端
-pub fn get_api_client(token: Option<&str>) -> &'static mut ApiClient {
-    unsafe {
-        // 如果已经初始化了客户端，直接返回
-        if let Some(ref mut client) = API_CLIENT {
-            if let Some(token) = token {
-                client.set_token(token);
-            }
-            return API_CLIENT.as_mut().unwrap();
-        }
+// 获取 API 客户端（克隆，安全跨 await）
+pub fn get_api_client(token: Option<&str>) -> ApiClient {
+    if let Some(token) = token {
+        CURRENT_TOKEN.with(|t| *t.borrow_mut() = Some(token.to_string()));
     }
-    // 如果没有初始化，使用默认URL和端口初始化
-    init_api_client(token, Some("http://localhost:23001"), None)
+    let token = current_token();
+
+    let initialized = API_CLIENT.with(|cell| cell.borrow().is_some());
+    if !initialized {
+        init_api_client(None, Some("http://localhost:23001"), None);
+    }
+
+    let mut cloned = API_CLIENT.with(|cell| cell.borrow().as_ref().expect("客户端已初始化").clone());
+    if let Some(ref t) = token {
+        cloned.set_token(t);
+    }
+    cloned
+}
+
+// 清除保存的 token（登出时调用）
+pub fn clear_api_token() {
+    CURRENT_TOKEN.with(|t| *t.borrow_mut() = None);
+    API_CLIENT.with(|cell| {
+        if let Some(client) = cell.borrow_mut().as_mut() {
+            client.clear_token();
+        }
+    });
 }
 
 // 初始化 API 客户端（WASM 绑定）
@@ -67,21 +98,28 @@ pub fn init_api(token: Option<String>, api_url: Option<String>, port: Option<Str
 // 获取 API 基础 URL（WASM 绑定）
 #[wasm_bindgen]
 pub fn get_base_url_wasm() -> String {
-    let client = get_api_client(None);
-    client.base_url().to_string()
+    get_api_client(None).base_url().to_string()
+}
+
+// 清除 token（WASM 绑定，登出时调用）
+#[wasm_bindgen]
+pub fn clear_api_token_wasm() {
+    clear_api_token();
 }
 
 // 设置API客户端端口（WASM绑定）
 #[wasm_bindgen]
 pub fn set_api_port(port: &str) {
-    unsafe {
-        if let Some(client) = &mut API_CLIENT {
+    API_CLIENT.with(|cell| {
+        let mut borrow = cell.borrow_mut();
+        if let Some(client) = borrow.as_mut() {
             if let Ok(port_num) = port.parse::<u16>() {
                 client.set_port(port_num);
             }
-        } else {
-            // 如果客户端未初始化，先初始化再设置端口
-            init_api_client(None, Some("http://localhost:23001"), Some(port));
         }
+    });
+    if API_CLIENT.with(|cell| cell.borrow().is_none()) {
+        // 如果客户端未初始化，先初始化再设置端口
+        init_api_client(None, Some("http://localhost:23001"), Some(port));
     }
 }

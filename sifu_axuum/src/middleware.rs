@@ -94,8 +94,10 @@ where
         }
 
         let secret = parts.extensions.get::<JwtSecret>()
-            .map(|s| s.0.as_bytes().to_vec())
-            .unwrap_or_else(|| b"fallback_secret".to_vec());
+            .ok_or(AuthError::InvalidToken)?
+            .0
+            .as_bytes()
+            .to_vec();
         let keys = Keys::new(&secret);
 
         // 尝试从 Authorization header 获取 token
@@ -152,13 +154,13 @@ pub async fn auth_middleware(req: Request<Body>, next: axum::middleware::Next) -
             if let Some(redis_conn) = parts.extensions.get::<ConnectionManager>() {
                 let mut conn = redis_conn.clone();
                 let blacklist_key = format!("token:blacklist:{}", claims.jti);
-                let is_blacklisted: bool = conn
-                    .exists(&blacklist_key)
-                    .await
-                    .unwrap_or(false);
+                let blacklist_check: Result<bool, _> = conn.exists(&blacklist_key).await;
 
-                if is_blacklisted {
-                    return AuthError::InvalidToken.into_response();
+                match blacklist_check {
+                    Ok(true) => return AuthError::InvalidToken.into_response(),
+                    Ok(false) => {}
+                    // Redis 不可用时 fail-closed：无法确认 token 未被拉黑，拒绝请求
+                    Err(_) => return AuthError::InvalidToken.into_response(),
                 }
             }
 

@@ -1,6 +1,6 @@
 use flutter_rust_bridge::frb;
 
-use crate::api::wifi_api::init::{get_client_clone, init_client, set_client_token};
+use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::api::{
     base::ApiError,

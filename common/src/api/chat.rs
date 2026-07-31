@@ -42,7 +42,7 @@ pub async fn get_messages(
     after: Option<&str>,
 ) -> ApiResult<ApiResponse<Vec<ChatMessageWithUsername>>> {
     let url = match after {
-        Some(ts) => format!("/api/chat/messages?after={}", ts),
+        Some(ts) => format!("/api/chat/messages?after={}", urlencoding::encode(ts)),
         None => "/api/chat/messages".to_string(),
     };
     let response = client

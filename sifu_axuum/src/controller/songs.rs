@@ -91,6 +91,18 @@ pub async fn scan_songs(
         })));
     }
 
+    // 预先查询已入库的歌曲路径，避免重复扫描时重复插入
+    let media_path_ids: Vec<Uuid> = media_paths.iter().map(|(id, _)| *id).collect();
+    let existing_paths: std::collections::HashSet<String> = sqlx::query_scalar(
+        "SELECT path FROM songs WHERE media_path_id = ANY($1)",
+    )
+    .bind(&media_path_ids)
+    .fetch_all(&pg_pool)
+    .await
+    .map_err(|e| ApiError::Internal(format!("查询已入库歌曲失败: {}", e)))?
+    .into_iter()
+    .collect();
+
     let pg_pool_clone = pg_pool.clone();
 
     tokio::spawn(async move {
@@ -101,6 +113,7 @@ pub async fn scan_songs(
             fn scan_directory(
                 path: &Path,
                 media_path_id: Uuid,
+                existing_paths: &std::collections::HashSet<String>,
                 songs: &mut Vec<(
                     Uuid, String, String, Uuid,
                     Option<String>, Option<String>, Option<String>, Option<Vec<u8>>,
@@ -130,6 +143,11 @@ pub async fn scan_songs(
                         .to_string();
 
                     let abs_path = current_path.to_string_lossy().to_string();
+
+                    // 跳过已入库的歌曲（幂等扫描）
+                    if existing_paths.contains(&abs_path) {
+                        continue;
+                    }
 
                     let metadata_result = read_metadata::read_metadata(&abs_path);
 
@@ -192,7 +210,7 @@ pub async fn scan_songs(
                     errors.push(format!("媒体路径不存在或不是目录: {}", mp_path));
                     continue;
                 }
-                scan_directory(dir, *mp_id, &mut songs_to_insert, &mut errors);
+                scan_directory(dir, *mp_id, &existing_paths, &mut songs_to_insert, &mut errors);
             }
 
             (songs_to_insert, errors)
@@ -299,7 +317,7 @@ pub async fn get_all_songs(
     .await
     .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
 
-    let offset = (query.page - 1) * query.page_size;
+    let offset = (query.page.max(1) - 1) * query.page_size;
 
     let songs = sqlx::query_as::<_, Song>(
         "SELECT id, title, path, album, artist, cover_path, media_path_id FROM songs
@@ -332,7 +350,7 @@ pub async fn get_all_songs(
         total,
         page: query.page,
         page_size: query.page_size,
-        total_pages: (total + query.page_size as i64 - 1) / query.page_size as i64,
+        total_pages: (total + query.page_size.max(1) as i64 - 1) / query.page_size.max(1) as i64,
     };
 
     Ok(ApiResponse::ok(paginated_response))
@@ -392,11 +410,15 @@ pub async fn get_songs_by_artist(
 
 // 获取封面图片
 pub async fn get_song_cover(
+    claims: Claims,
     AxumPath(song_id): AxumPath<Uuid>,
     Extension(pg_pool): Extension<PgPool>,
 ) -> Result<Response, ApiError> {
-    let song = sqlx::query("SELECT cover_data FROM songs WHERE id = $1")
+    let song = sqlx::query(
+        "SELECT cover_data FROM songs WHERE id = $1 AND media_path_id IN (SELECT id FROM media_paths WHERE $2 = ANY(allow_list))"
+    )
         .bind(song_id)
+        .bind(&claims.username)
         .fetch_optional(&pg_pool)
         .await
         .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
@@ -420,11 +442,15 @@ pub async fn get_song_cover(
 
 // 获取歌曲文件
 pub async fn get_song_file(
+    claims: Claims,
     AxumPath(song_id): AxumPath<Uuid>,
     Extension(pg_pool): Extension<PgPool>,
 ) -> Result<Response, ApiError> {
-    let song = sqlx::query("SELECT path FROM songs WHERE id = $1")
+    let song = sqlx::query(
+        "SELECT path FROM songs WHERE id = $1 AND media_path_id IN (SELECT id FROM media_paths WHERE $2 = ANY(allow_list))"
+    )
         .bind(song_id)
+        .bind(&claims.username)
         .fetch_optional(&pg_pool)
         .await
         .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
@@ -458,11 +484,13 @@ pub async fn get_song_file(
 
 // 获取歌词(LRC)
 pub async fn get_song_lyrics(
+    claims: Claims,
     AxumPath(song_id): AxumPath<Uuid>,
     Extension(pg_pool): Extension<PgPool>,
 ) -> ApiResult<ApiResponse<LyricsResponse>> {
-    let song = sqlx::query_as::<_, Song>("SELECT * FROM songs WHERE id = $1")
+    let song = sqlx::query_as::<_, Song>("SELECT * FROM songs WHERE id = $1 AND media_path_id IN (SELECT id FROM media_paths WHERE $2 = ANY(allow_list))")
         .bind(song_id)
+        .bind(&claims.username)
         .fetch_optional(&pg_pool)
         .await
         .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
@@ -499,11 +527,13 @@ pub async fn get_song_lyrics(
 
 /// 获取 TTML 逐字歌词（从数据库 songs.ttml 列）
 pub async fn get_song_ttml(
+    claims: Claims,
     AxumPath(song_id): AxumPath<Uuid>,
     Extension(pg_pool): Extension<PgPool>,
 ) -> ApiResult<ApiResponse<String>> {
-    let row = sqlx::query("SELECT ttml FROM songs WHERE id = $1")
+    let row = sqlx::query("SELECT ttml FROM songs WHERE id = $1 AND media_path_id IN (SELECT id FROM media_paths WHERE $2 = ANY(allow_list))")
         .bind(song_id)
+        .bind(&claims.username)
         .fetch_optional(&pg_pool)
         .await
         .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
@@ -522,11 +552,13 @@ pub async fn get_song_ttml(
 
 // 获取所有类型的歌词（从数据库）
 pub async fn get_all_lyrics(
+    claims: Claims,
     AxumPath(song_id): AxumPath<Uuid>,
     Extension(pg_pool): Extension<PgPool>,
 ) -> ApiResult<ApiResponse<AllLyricsResponse>> {
-    let song = sqlx::query_as::<_, Song>("SELECT * FROM songs WHERE id = $1")
+    let song = sqlx::query_as::<_, Song>("SELECT * FROM songs WHERE id = $1 AND media_path_id IN (SELECT id FROM media_paths WHERE $2 = ANY(allow_list))")
         .bind(song_id)
+        .bind(&claims.username)
         .fetch_optional(&pg_pool)
         .await
         .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
@@ -600,11 +632,12 @@ pub async fn get_play_history(
     claims: Claims,
     Extension(mut redis_conn): Extension<ConnectionManager>,
     Extension(pg_pool): Extension<PgPool>,
+    Extension(server_config): Extension<ServerConfig>,
     Query(query): Query<PageQuery>,
 ) -> ApiResult<ApiResponse<Vec<SongWithUrl>>> {
     let key = format!("play_history:{}", claims.id);
     let limit = query.page_size as isize;
-    let offset = ((query.page - 1) * query.page_size) as isize;
+    let offset = ((query.page.max(1) - 1) * query.page_size) as isize;
 
     // ZREVRANGE 按时间倒序获取 song_id 列表
     let song_ids: Vec<String> = redis_conn
@@ -641,13 +674,13 @@ pub async fn get_play_history(
         .map(|s| (s.id, s))
         .collect();
 
-    let base_url = std::env::var("DOMAIN").unwrap_or_else(|_| "192.168.31.58".to_string());
-    let port = std::env::var("PORT").unwrap_or_else(|_| "23001".to_string());
+    let base_url = server_config.get_base_url();
+    let port = server_config.get_port();
 
     let result: Vec<SongWithUrl> = uuids
         .iter()
         .filter_map(|id| song_map.get(id).map(|song| {
-            let cover_url = format!("http://{}:{}/api/songs/cover/{}", base_url, port, song.id);
+            let cover_url = format!("{}/api/songs/cover/{}", base_url, song.id);
             SongWithUrl {
                 id: song.id,
                 title: song.title.clone(),

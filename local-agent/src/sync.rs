@@ -27,8 +27,11 @@ struct AuthInterceptor;
 impl Interceptor for AuthInterceptor {
     fn call(&mut self, mut req: tonic::Request<()>) -> Result<tonic::Request<()>, Status> {
         if let Ok(token) = std::env::var("LOCAL_AGENT_TOKEN") {
-            req.metadata_mut()
-                .insert("authorization", format!("Bearer {}", token).parse().unwrap());
+            if let Ok(value) = format!("Bearer {}", token).parse() {
+                req.metadata_mut().insert("authorization", value);
+            } else {
+                return Err(Status::unauthenticated("LOCAL_AGENT_TOKEN 包含非法字符"));
+            }
         }
         Ok(req)
     }

@@ -12,5 +12,5 @@ pub struct ChatMessage {
 
 crate::impl_display!(self, ChatMessage,
     "发送者" => self.sender_id,
-    "内容" => if self.content.len() > 80 { format!("{}...", &self.content[..80]) } else { self.content.clone() }
+    "内容" => if self.content.len() > 80 { format!("{}...", &self.content[..self.content.floor_char_boundary(80)]) } else { self.content.clone() }
 );

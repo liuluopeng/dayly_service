@@ -26,6 +26,10 @@ pub mod utils;
 ///
 /// 用法:
 /// ```
+/// use my_type::impl_display;
+///
+/// struct MyStruct { id: String, title: String, artist: Option<String> }
+///
 /// impl_display!(self, MyStruct,
 ///     "ID"     => self.id,
 ///     "标题"   => self.title,

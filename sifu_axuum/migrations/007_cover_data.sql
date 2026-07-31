@@ -1,1 +1,0 @@
-ALTER TABLE songs ADD COLUMN IF NOT EXISTS cover_data BYTEA;

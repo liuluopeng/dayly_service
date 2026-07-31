@@ -2,7 +2,7 @@ use axum::{
     Json,
     body::Body,
     extract::{Extension, Query},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
     Router,
@@ -289,11 +289,21 @@ async fn serve_file(
     Extension(pool): Extension<PgPool>,
     claims: Claims,
     Query(query): Query<FilePath>,
-    headers: HeaderMap,
+    request: axum::http::Request<axum::body::Body>,
 ) -> Response {
+    let headers = request.headers().clone();
+    let is_head = request.method() == axum::http::Method::HEAD;
+
     let roots = match get_user_directories(&claims, &pool).await {
         Ok(r) => r,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        Err(e) => {
+            return match e {
+                ApiError::BadRequest { code, message } => {
+                    (StatusCode::BAD_REQUEST, format!("{}: {}", code, message)).into_response()
+                }
+                other => (StatusCode::INTERNAL_SERVER_ERROR, other.to_string()).into_response(),
+            }
+        }
     };
 
     let full_path = match resolve_path(&roots, &query.path) {
@@ -365,7 +375,7 @@ async fn serve_file(
     }
 
     // HEAD 请求只返回头
-    if headers.get("method").map(|v| v == "HEAD").unwrap_or(false) {
+    if is_head {
         let mut resp = StatusCode::OK.into_response();
         let h = resp.headers_mut();
         h.insert(axum::http::header::CONTENT_TYPE, content_type.parse().unwrap());
@@ -408,6 +418,9 @@ fn parse_range_header(range_str: &str, file_size: u64) -> Option<(u64, u64)> {
     if !range_str.starts_with("bytes=") {
         return None;
     }
+    if file_size == 0 {
+        return None;
+    }
 
     let range_part = &range_str[6..];
     let parts: Vec<&str> = range_part.split('-').collect();
@@ -416,19 +429,29 @@ fn parse_range_header(range_str: &str, file_size: u64) -> Option<(u64, u64)> {
         return None;
     }
 
-    let start: u64 = if parts[0].is_empty() {
-        0
-    } else {
-        parts[0].parse().ok()?
-    };
+    if parts[0].is_empty() {
+        // 后缀范围: bytes=-N（最后 N 字节，RFC 7233 §2.1）
+        let suffix_len: u64 = parts[1].parse().ok()?;
+        if suffix_len == 0 {
+            return None;
+        }
+        let start = file_size.saturating_sub(suffix_len);
+        return Some((start, file_size - 1));
+    }
+
+    let start: u64 = parts[0].parse().ok()?;
+    if start >= file_size {
+        return None;
+    }
 
     let end: u64 = if parts[1].is_empty() {
         file_size - 1
     } else {
-        parts[1].parse().ok()?
+        // end 超出文件末尾时截断而不是返回 416
+        parts[1].parse::<u64>().ok()?.min(file_size - 1)
     };
 
-    if start >= file_size || end >= file_size || start > end {
+    if start > end {
         return None;
     }
 
@@ -479,36 +502,58 @@ async fn handle_range_request(
     resp
 }
 
-fn build_tree_string(path: &Path, prefix: &str, is_last: bool) -> String {
+const TREE_MAX_DEPTH: usize = 32;
+
+fn build_tree_string(path: &Path, prefix: &str, is_last: bool, depth: usize) -> String {
+    if depth > TREE_MAX_DEPTH {
+        return format!("{}{}{}\n", prefix, connector_for(is_last), "... (达到最大深度)");
+    }
     let mut result = String::new();
-    let connector = if is_last { "└── " } else { "├── " };
+    let connector = connector_for(is_last);
     let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
     result.push_str(&format!("{}{}{}\n", prefix, connector, name));
 
-    if path.is_dir() {
-        let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
-        if let Ok(entries) = fs::read_dir(path) {
-            let mut dirs: Vec<PathBuf> = Vec::new();
-            let mut files: Vec<PathBuf> = Vec::new();
-            for entry in entries.flatten() {
-                let p = entry.path();
-                if p.is_dir() {
-                    dirs.push(p);
-                } else {
-                    files.push(p);
-                }
+    // 使用 symlink_metadata 且跳过符号链接，避免符号链接环导致无限递归
+    let meta = match std::fs::symlink_metadata(path) {
+        Ok(m) => m,
+        Err(_) => return result,
+    };
+    if meta.file_type().is_symlink() || !meta.is_dir() {
+        return result;
+    }
+
+    let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+    if let Ok(entries) = fs::read_dir(path) {
+        let mut dirs: Vec<PathBuf> = Vec::new();
+        let mut files: Vec<PathBuf> = Vec::new();
+        for entry in entries.flatten() {
+            let p = entry.path();
+            let is_symlink = std::fs::symlink_metadata(&p)
+                .map(|m| m.file_type().is_symlink())
+                .unwrap_or(false);
+            if is_symlink {
+                continue;
             }
-            dirs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
-            files.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
-            let mut all = dirs;
-            all.extend(files);
-            let len = all.len();
-            for (i, child) in all.iter().enumerate() {
-                result.push_str(&build_tree_string(child, &new_prefix, i == len - 1));
+            if p.is_dir() {
+                dirs.push(p);
+            } else {
+                files.push(p);
             }
+        }
+        dirs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        files.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        let mut all = dirs;
+        all.extend(files);
+        let len = all.len();
+        for (i, child) in all.iter().enumerate() {
+            result.push_str(&build_tree_string(child, &new_prefix, i == len - 1, depth + 1));
         }
     }
     result
+}
+
+fn connector_for(is_last: bool) -> &'static str {
+    if is_last { "└── " } else { "├── " }
 }
 
 #[derive(Deserialize)]
@@ -516,10 +561,19 @@ struct TreeRequest {
     path: String,
 }
 
-async fn generate_tree(Json(params): Json<TreeRequest>) -> Result<Json<serde_json::Value>, ApiError> {
-    let target = PathBuf::from(&params.path);
-    if !target.is_dir() {
-        return Err(ApiError::Internal("路径不是目录".to_string()));
+async fn generate_tree(
+    Extension(pool): Extension<PgPool>,
+    claims: Claims,
+    Json(params): Json<TreeRequest>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    // 校验目标路径在用户授权目录内，避免任意目录写入
+    let roots = get_user_directories(&claims, &pool).await?;
+    let target = resolve_path(&roots, &params.path)?;
+
+    let symlink_meta = std::fs::symlink_metadata(&target)
+        .map_err(|e| ApiError::Internal(format!("读取目录元数据失败: {}", e)))?;
+    if symlink_meta.file_type().is_symlink() || !symlink_meta.is_dir() {
+        return Err(ApiError::bad_request(ApiError::NOT_A_DIRECTORY, "路径不是目录"));
     }
 
     let dir_name = target.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "root".to_string());
@@ -536,6 +590,12 @@ async fn generate_tree(Json(params): Json<TreeRequest>) -> Result<Json<serde_jso
         let mut files: Vec<PathBuf> = Vec::new();
         for entry in entries.flatten() {
             let p = entry.path();
+            let is_symlink = std::fs::symlink_metadata(&p)
+                .map(|m| m.file_type().is_symlink())
+                .unwrap_or(false);
+            if is_symlink {
+                continue;
+            }
             if p.is_dir() { dirs.push(p); } else { files.push(p); }
         }
         dirs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
@@ -544,12 +604,12 @@ async fn generate_tree(Json(params): Json<TreeRequest>) -> Result<Json<serde_jso
         all.extend(files);
         let len = all.len();
         for (i, child) in all.iter().enumerate() {
-            content.push_str(&build_tree_string(child, "", i == len - 1));
+            content.push_str(&build_tree_string(child, "", i == len - 1, 1));
         }
     }
 
     fs::write(&output_path, &content).map_err(|e| ApiError::Internal(format!("写入文件失败: {}", e)))?;
-    info!("生成目录树: {} -> {}", params.path, output_path.display());
+    info!("生成目录树: {} -> {}", target.display(), output_path.display());
 
     Ok(Json(serde_json::json!({
         "success": true,

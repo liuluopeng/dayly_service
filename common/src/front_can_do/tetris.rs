@@ -21,7 +21,7 @@ fn rotated(data: &[u8], w: usize, h: usize, rot: usize) -> Vec<u8> {
     for _ in 0..rot {
         let mut nr = vec![0u8; cw * ch];
         for y in 0..ch { for x in 0..cw {
-            nr[x * h + (ch - 1 - y)] = r[y * cw + x];
+            nr[x * ch + (ch - 1 - y)] = r[y * cw + x];
         }}
         std::mem::swap(&mut cw, &mut ch);
         r = nr;
@@ -123,4 +123,20 @@ mod tests {
     fn test_new() { let t = Tetris::new(); assert!(!t.over); }
     #[test]
     fn test_move() { let mut t = Tetris::new(); let px = t.px; t.move_piece("left"); assert!(t.px < px || t.over); }
+
+    #[test]
+    fn test_rotation_180() {
+        // T 块: [0,1,0] / [1,1,1] (w=3, h=2)
+        let r2 = rotated(&[0, 1, 0, 1, 1, 1], 3, 2, 2);
+        // 180°: [1,1,1] / [0,1,0] (w=3, h=2)
+        assert_eq!(r2, vec![1, 1, 1, 0, 1, 0]);
+
+        // 270°: [0,1] / [1,1] / [0,1] (w=2, h=3)
+        let r3 = rotated(&[0, 1, 0, 1, 1, 1], 3, 2, 3);
+        assert_eq!(r3, vec![0, 1, 1, 1, 0, 1]);
+
+        // L 块 180°: [0,0,1] / [1,1,1] -> [1,1,1] / [1,0,0]
+        let l2 = rotated(&[0, 0, 1, 1, 1, 1], 3, 2, 2);
+        assert_eq!(l2, vec![1, 1, 1, 1, 0, 0]);
+    }
 }

@@ -4,14 +4,17 @@ use axum::response::Html;
 use axum::Extension;
 
 use crate::graphql::AppSchema;
+use crate::middleware::Claims;
 
 pub async fn graphql_playground() -> Html<String> {
     Html(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
 }
 
 pub async fn graphql(
+    claims: Claims,
     Extension(schema): Extension<AppSchema>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
-    schema.execute(req.into_inner()).await.into()
+    let request = req.into_inner().data(claims);
+    schema.execute(request).await.into()
 }

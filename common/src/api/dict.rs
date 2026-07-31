@@ -14,7 +14,7 @@ pub async fn search_xiandaihanyu(
     client: &ApiClient,
     query: &str,
 ) -> ApiResult<ApiResponse<String>> {
-    let path = format!("/api/dict/xiandaihanyu?search={}", query);
+    let path = format!("/api/dict/xiandaihanyu?search={}", urlencoding::encode(query));
     let response = client
         .get(&path)
         .await
@@ -28,7 +28,7 @@ pub async fn search_xiandaihanyu(
 
 /// 搜索柯林斯词典
 pub async fn search_collins(client: &ApiClient, query: &str) -> ApiResult<ApiResponse<String>> {
-    let path = format!("/api/dict/collins?search={}", query);
+    let path = format!("/api/dict/collins?search={}", urlencoding::encode(query));
     let response = client
         .get(&path)
         .await
@@ -59,7 +59,7 @@ pub async fn collins_resource(
 
 /// 搜索朗文词典
 pub async fn search_ldoce(client: &ApiClient, query: &str) -> ApiResult<ApiResponse<String>> {
-    let path = format!("/api/dict/ldoce?search={}", query);
+    let path = format!("/api/dict/ldoce?search={}", urlencoding::encode(query));
     let response = client
         .get(&path)
         .await

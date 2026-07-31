@@ -46,8 +46,8 @@ services:
       PG_HOST: db
       PG_PORT: 5432
       PG_USER: dayly_db
-      PG_PASSWORD: dayly_db
-      JWT_SECRET: c_4yam-btJDKDMUkMCOmXs_68aXudzBUlTdgzFIYgjFgzGP6QYA_PK3CniF8X9oe
+      PG_PASSWORD: ${PG_PASSWORD:-dayly_db}
+      JWT_SECRET: ${JWT_SECRET:-c_4yam-btJDKDMUkMCOmXs_68aXudzBUlTdgzFIYgjFgzGP6QYA_PK3CniF8X9oe}
       ENV: production
       HOST: 0.0.0.0
       DOMAIN: 192.168.31.58

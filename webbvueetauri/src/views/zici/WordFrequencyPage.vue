@@ -17,8 +17,8 @@ const router = useRouter();
 const wordList = shallowRef<WordItem[]>([]);
 const isLoading = shallowRef(true);
 
-// Entry layout (56 bytes): 16(word) + 32(pinyin) + 4(freq) + 1(hasExp) + 3(pad)
-const ENTRY = 56;
+// Entry layout (72 bytes): 24(word) + 40(pinyin) + 4(freq) + 1(hasExp) + 3(pad)
+const ENTRY = 72;
 
 const loadWordFrequencyData = () => {
   isLoading.value = true;
@@ -32,16 +32,16 @@ const loadWordFrequencyData = () => {
   for (let i = 0; i < count; i++) {
     const off = i * ENTRY;
     let end = off;
-    while (end < off + 16 && new Uint8Array(buf, ptr + end, 1)[0] !== 0) end++;
+    while (end < off + 24 && new Uint8Array(buf, ptr + end, 1)[0] !== 0) end++;
     const word = td.decode(new Uint8Array(buf, ptr + off, end - off));
 
-    let pe = off + 16;
-    while (pe < off + 48 && new Uint8Array(buf, ptr + pe, 1)[0] !== 0) pe++;
-    const pinyin = td.decode(new Uint8Array(buf, ptr + off + 16, pe - off - 16));
+    let pe = off + 24;
+    while (pe < off + 64 && new Uint8Array(buf, ptr + pe, 1)[0] !== 0) pe++;
+    const pinyin = td.decode(new Uint8Array(buf, ptr + off + 24, pe - off - 24));
 
-    const dv = new DataView(buf, ptr + off + 48, 4);
+    const dv = new DataView(buf, ptr + off + 64, 4);
     const freq = dv.getUint32(0, true);
-    const hasExp = new Uint8Array(buf, ptr + off + 52, 1)[0] === 1;
+    const hasExp = new Uint8Array(buf, ptr + off + 68, 1)[0] === 1;
 
     items[i] = markRaw({ word, pinyin, pinyin_flat: pinyin, frequency: freq, hasExplanation: hasExp });
   }

@@ -2,7 +2,7 @@ use chrono::Local;
 use flutter_rust_bridge::frb;
 use uuid::Uuid;
 
-use crate::api::wifi_api::init::{get_client_clone, init_client};
+use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::{
     api::{

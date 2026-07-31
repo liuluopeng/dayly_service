@@ -12,7 +12,7 @@ pub async fn get_clipboard_history_wasm(
 ) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match get_clipboard_history(client, count, type_filter.as_deref(), search.as_deref()).await {
+    match get_clipboard_history(&client, count, type_filter.as_deref(), search.as_deref()).await {
         Ok(entries) => {
             console_log!("获取剪贴板历史成功！");
             match to_value(&entries) {

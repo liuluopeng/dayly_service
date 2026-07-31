@@ -191,6 +191,11 @@ function initSong() {
 async function loadSong() {
   if (!song.value) return;
 
+  if (isLoading.value) {
+    // 串行化：加载中忽略新的加载请求，避免覆盖正在使用的音频缓冲
+    return;
+  }
+
   if (sound.value) {
     sound.value.unload();
   }

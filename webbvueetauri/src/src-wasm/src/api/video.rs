@@ -11,7 +11,7 @@ use crate::{api::init::get_api_client, console_log};
 pub async fn scan_videos_wasm() -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match scan_videos(client).await {
+    match scan_videos(&client).await {
         Ok(response) => {
             console_log!("扫描视频成功！");
             match to_value(&response.data) {
@@ -34,7 +34,7 @@ pub async fn list_videos_wasm(
 ) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match list_videos(client, folder.as_deref(), page, page_size).await {
+    match list_videos(&client, folder.as_deref(), page, page_size).await {
         Ok(response) => {
             console_log!("获取视频列表成功！");
             match to_value(&response.data) {

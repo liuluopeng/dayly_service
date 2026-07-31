@@ -264,7 +264,13 @@ pub fn connect_webrtc(sink: StreamSink<String>, device_name: String) {
                     match sig {
                         SignalResponse::Answer { sdp } => {
                             log::info!("WebRTC: 收到 Answer");
-                            let answer = RTCSessionDescription::answer(sdp).unwrap();
+                            let answer = match RTCSessionDescription::answer(sdp) {
+                                Ok(a) => a,
+                                Err(e) => {
+                                    log::error!("WebRTC: Answer SDP 解析失败: {}", e);
+                                    continue;
+                                }
+                            };
                             if let Err(e) =
                                 peer_connection.set_remote_description(answer).await
                             {
@@ -332,15 +338,13 @@ pub fn connect_webrtc(sink: StreamSink<String>, device_name: String) {
 
 /// 通过 DataChannel 发送消息（JSON 字符串）
 pub async fn send_webrtc_message(msg: String) -> Result<(), String> {
-    shared_rt().block_on(async {
-        let holder = get_dc_holder().lock().await;
-        if let Some(dc) = holder.as_ref() {
-            dc.send_text(msg)
-                .await
-                .map(|_| ())
-                .map_err(|e| format!("发送失败: {}", e))
-        } else {
-            Err("DataChannel 未连接".to_string())
-        }
-    })
+    let holder = get_dc_holder().lock().await;
+    if let Some(dc) = holder.as_ref() {
+        dc.send_text(msg)
+            .await
+            .map(|_| ())
+            .map_err(|e| format!("发送失败: {}", e))
+    } else {
+        Err("DataChannel 未连接".to_string())
+    }
 }

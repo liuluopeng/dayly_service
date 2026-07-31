@@ -27,14 +27,19 @@ pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
     eprintln!("  [信息] 找到 {} 张图片", raw_mappings.len());
 
     // 4. 生成时间戳文件名，构建最终映射（统一放到 attachment/ 下）
+    //    文件名加入输入文件 stem，避免并行转换多个文件时同名覆盖
     let mut img_idx = 0usize;
     let now = chrono::Local::now();
     let ts = now.format("%Y%m%d_%H%M%S");
+    let file_stem = input
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "output".to_string());
 
     let mut mappings: Vec<(String, String, Vec<u8>, String)> = Vec::new();
     for (orig_url, _old_name, data, mime) in &raw_mappings {
         let ext = mime_to_ext(mime);
-        let local_name = format!("attachment/{}_{}.{}", ts, img_idx, ext);
+        let local_name = format!("attachment/{}_{}_{}.{}", ts, file_stem, img_idx, ext);
         mappings.push((orig_url.clone(), local_name, data.clone(), mime.clone()));
         img_idx += 1;
     }

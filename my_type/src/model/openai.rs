@@ -55,7 +55,7 @@ crate::impl_display!(self, CiteItem,
 
 crate::impl_display!(self, OpenAiMessage,
     "角色" => self.role,
-    "内容" => if self.content.len() > 80 { format!("{}...", &self.content[..80]) } else { self.content.clone() }
+    "内容" => if self.content.len() > 80 { format!("{}...", &self.content[..self.content.floor_char_boundary(80)]) } else { self.content.clone() }
 );
 
 impl OpenAiSession {

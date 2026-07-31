@@ -85,6 +85,8 @@ pub fn create_app(
         .nest("/api/chat", crate::controller::chat::chat_routes())
         // WebRTC 共享路由
         .nest("/api/webrtc", crate::controller::webrtc::webrtc_routes())
+        // 剪贴板相关路由
+        .nest("/api/clipboard", crate::controller::clipboard::clipboard_routes())
         // 添加认证中间件
         .layer(axum_middleware::from_fn(auth_middleware));
 
@@ -98,7 +100,6 @@ pub fn create_app(
         .merge(secured_routes)
         .merge(crate::controller::dict_resource_routes())
         .nest("/api/pinyin", crate::controller::pinyin::pinyin_routes())
-        .nest("/api/clipboard", crate::controller::clipboard::clipboard_routes())
         .merge(crate::controller::songs::songs_cover_route())
         .merge(crate::controller::songs::songs_file_route())
         .route("/", get(root_index))
@@ -177,10 +178,35 @@ pub fn create_app(
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|req: &Request<_>| {
+                    let uri = req.uri();
+                    let uri_str = if let Some(query) = uri.query() {
+                        if query.contains("token=") {
+                            let redacted_query = query
+                                .split('&')
+                                .map(|pair| {
+                                    if let Some((key, _)) = pair.split_once('=') {
+                                        if key == "token" {
+                                            "token=<redacted>".to_string()
+                                        } else {
+                                            pair.to_string()
+                                        }
+                                    } else {
+                                        pair.to_string()
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                                .join("&");
+                            format!("{}?{}", uri.path(), redacted_query)
+                        } else {
+                            uri.to_string()
+                        }
+                    } else {
+                        uri.to_string()
+                    };
                     info_span!(
                         "http",
                         method = %req.method(),
-                        uri = %req.uri(),
+                        uri = %uri_str,
                         status = tracing::field::Empty,
                         latency_ms = tracing::field::Empty,
                     )
@@ -231,24 +257,53 @@ pub async fn http_logging_middleware(
     let method = req.method().clone();
     let uri = req.uri().clone();
     let headers = req.headers().clone();
-    let path = uri.path();
 
     let headers_str = headers
         .iter()
         .map(|(name, value): (&HeaderName, &HeaderValue)| {
-            format!(
-                "{}: {}",
-                name.as_str(),
-                value.to_str().unwrap_or("<invalid>")
-            )
+            let value_str = if name.as_str().eq_ignore_ascii_case("authorization")
+                || name.as_str().eq_ignore_ascii_case("cookie")
+                || name.as_str().eq_ignore_ascii_case("proxy-authorization")
+            {
+                "<redacted>".to_string()
+            } else {
+                value.to_str().unwrap_or("<invalid>").to_string()
+            };
+            format!("{}: {}", name.as_str(), value_str)
         })
         .collect::<Vec<_>>()
         .join(", ");
 
+    // 脱敏 URI 中的 ?token= 查询参数
+    let uri_str = if let Some(query) = uri.query() {
+        if query.contains("token=") {
+            let redacted_query = query
+                .split('&')
+                .map(|pair| {
+                    if let Some((key, _)) = pair.split_once('=') {
+                        if key == "token" {
+                            "token=<redacted>".to_string()
+                        } else {
+                            pair.to_string()
+                        }
+                    } else {
+                        pair.to_string()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("&");
+            format!("{}?{}", uri.path(), redacted_query)
+        } else {
+            uri.to_string()
+        }
+    } else {
+        uri.to_string()
+    };
+
     tracing::info!(
         "HTTP 请求: method={}, path={}, headers=[{}]",
         method,
-        path,
+        uri_str,
         headers_str
     );
 
@@ -264,13 +319,13 @@ pub async fn http_logging_middleware(
         let body_str = std::str::from_utf8(&body_bytes).unwrap_or("<non-utf8>");
         tracing::error!(
             "HTTP 错误: method={}, path={}, status={}, duration={:?}, body={}",
-            method, path, status_code, duration, body_str
+            method, uri_str, status_code, duration, body_str
         );
         response = Response::from_parts(parts, axum::body::Body::from(body_bytes));
     } else {
         tracing::info!(
             "HTTP 响应: method={}, path={}, status={}, duration={:?}",
-            method, path, status_code, duration
+            method, uri_str, status_code, duration
         );
     }
 

@@ -78,7 +78,7 @@ async fn main() {
 
     let app = lx_dayly_service::create_app(
         pg_pool.clone(),
-        jwt_secret,
+        jwt_secret.clone(),
         server_config.clone(),
         redis_conn,
         chat_tx,
@@ -94,8 +94,8 @@ async fn main() {
 
     // gRPC 服务（tonic，独立端口）
     let hello_svc = lx_dayly_service::grpc::hello_grpc_service();
-    let clipboard_svc = lx_dayly_service::grpc::clipboard_grpc_service(pg_pool.clone());
-    let clipboard_sync_svc = lx_dayly_service::grpc::clipboard_sync_grpc_service(pg_pool.clone());
+    let clipboard_svc = lx_dayly_service::grpc::clipboard_grpc_service(pg_pool.clone(), jwt_secret.clone());
+    let clipboard_sync_svc = lx_dayly_service::grpc::clipboard_sync_grpc_service(pg_pool.clone(), jwt_secret.clone());
     let reflection_svc = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(lx_dayly_service::grpc::HELLO_DESCRIPTOR)
         .register_encoded_file_descriptor_set(lx_dayly_service::grpc::CLIPBOARD_DESCRIPTOR)

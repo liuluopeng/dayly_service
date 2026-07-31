@@ -1,3 +1,4 @@
+use crate::config::env::ServerConfig;
 use crate::middleware::Claims;
 use axum::extract::{Extension, Path, Query};
 use axum::{Json, response::Response};
@@ -26,9 +27,26 @@ pub fn set_static_dir(dir: &str) {
     STATIC_BASE.set(dir.to_string()).ok();
 }
 
-fn static_path(subdir: &str, resource: &str) -> std::path::PathBuf {
+/// 安全解析静态资源路径：拒绝绝对路径与 `..` 越界，并校验最终路径在资源目录内
+fn safe_resource_path(subdir: &str, resource: &str) -> Option<std::path::PathBuf> {
     let base = STATIC_BASE.get().map(|s| s.as_str()).unwrap_or("static");
-    std::path::Path::new(base).join(subdir).join(resource)
+    let resource_path = std::path::Path::new(resource);
+    if resource_path.is_absolute()
+        || resource_path
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::RootDir))
+    {
+        return None;
+    }
+    let base_dir = std::path::Path::new(base).join(subdir);
+    let disk_path = base_dir.join(resource_path);
+    let canonical = disk_path.canonicalize().ok()?;
+    let base_canonical = base_dir.canonicalize().ok()?;
+    if canonical.starts_with(&base_canonical) {
+        Some(canonical)
+    } else {
+        None
+    }
 }
 
 /// 初始化词典 SQLite — 按表名映射到独立 DB 文件
@@ -361,6 +379,7 @@ async fn record_word_history(pool: &PgPool, word: &str, user_id: Uuid) -> ApiRes
 pub async fn search_xiandaihanyu(
     claims: Claims,
     Extension(pool): Extension<PgPool>,
+    Extension(server_config): Extension<ServerConfig>,
     Query(query): Query<DictSearchQuery>,
 ) -> ApiResult<Response> {
     let word = query.search.trim();
@@ -369,7 +388,7 @@ pub async fn search_xiandaihanyu(
     let explanation = lookup_word("modern_chinese_words", word).await;
     let xiandaihanyu_result = explanation.map(|e| ModernChineseWord { word: word.to_string(), explanation: e });
 
-    let base_url = get_server_base_url();
+    let base_url = server_config.get_base_url();
 
     let html_content = if let Some(result) = xiandaihanyu_result {
         record_word_history(&pool, word, user_id).await?;
@@ -389,6 +408,7 @@ pub async fn search_xiandaihanyu(
 pub async fn search_collins(
     claims: Claims,
     Extension(pool): Extension<PgPool>,
+    Extension(server_config): Extension<ServerConfig>,
     Query(query): Query<DictSearchQuery>,
 ) -> ApiResult<Response> {
     let word = query.search.trim().to_lowercase();
@@ -397,7 +417,7 @@ pub async fn search_collins(
     let collins_result = lookup_word("collins_words", &word).await
         .map(|e| DictWord { word: word.clone(), explanation: e });
 
-    let base_url = get_server_base_url();
+    let base_url = server_config.get_base_url();
 
     let js_code = r#"<script>
 (function() {
@@ -441,12 +461,7 @@ pub async fn search_collins(
             head_regex
                 .replace(&record, |caps: &regex::Captures| {
                     let head_attrs = caps.get(1).map(|m| m.as_str()).unwrap_or("");
-                    format!(
-                        "<head {}>{}{}",
-                        head_attrs,
-                        js_code,
-                        &record[caps.get(0).unwrap().as_str().len()..]
-                    )
+                    format!("<head {}>{}", head_attrs, js_code)
                 })
                 .to_string()
         } else {
@@ -480,7 +495,15 @@ pub async fn collins_resource(
         resource_path.pop();
     }
 
-    let disk_path = static_path("collins_resources", &resource_path);
+    let disk_path = match safe_resource_path("collins_resources", &resource_path) {
+        Some(p) => p,
+        None => {
+            return Err(ApiError::not_found(
+                ApiError::RESOURCE_NOT_FOUND,
+                "Resource not found",
+            ))
+        }
+    };
 
     if disk_path.exists() {
         if let Ok(contents) = std::fs::read(&disk_path) {
@@ -517,6 +540,7 @@ pub async fn collins_resource(
 pub async fn search_ldoce(
     claims: Claims,
     Extension(pool): Extension<PgPool>,
+    Extension(server_config): Extension<ServerConfig>,
     Query(query): Query<DictSearchQuery>,
 ) -> ApiResult<Response> {
     let word = query.search.trim().to_lowercase();
@@ -525,7 +549,7 @@ pub async fn search_ldoce(
     let ldoce_result = lookup_word("ldoce_words", &word).await
         .map(|e| DictWord { word: word.clone(), explanation: e });
 
-    let base_url = get_server_base_url();
+    let base_url = server_config.get_base_url();
 
     let js_code = r#"<script>
 (function() {
@@ -568,12 +592,7 @@ pub async fn search_ldoce(
             head_regex
                 .replace(&record, |caps: &regex::Captures| {
                     let head_attrs = caps.get(1).map(|m| m.as_str()).unwrap_or("");
-                    format!(
-                        "<head {}>{}{}",
-                        head_attrs,
-                        js_code,
-                        &record[caps.get(0).unwrap().as_str().len()..]
-                    )
+                    format!("<head {}>{}", head_attrs, js_code)
                 })
                 .to_string()
         } else {
@@ -607,7 +626,15 @@ pub async fn ldoce_resource(
         resource_path.pop();
     }
 
-    let disk_path = static_path("ldoce_resources", &resource_path);
+    let disk_path = match safe_resource_path("ldoce_resources", &resource_path) {
+        Some(p) => p,
+        None => {
+            return Err(ApiError::not_found(
+                ApiError::RESOURCE_NOT_FOUND,
+                "Resource not found",
+            ))
+        }
+    };
 
     if disk_path.exists() {
         if let Ok(contents) = std::fs::read(&disk_path) {
@@ -649,7 +676,15 @@ pub async fn xiandaihanyu_resource(Path(resource_path): Path<String>) -> ApiResu
         resource_path.pop();
     }
 
-    let disk_path = static_path("ldoce_resources", &resource_path);
+    let disk_path = match safe_resource_path("xiandaihanyu_resources", &resource_path) {
+        Some(p) => p,
+        None => {
+            return Err(ApiError::not_found(
+                ApiError::RESOURCE_NOT_FOUND,
+                "Resource not found",
+            ))
+        }
+    };
 
     if disk_path.exists() {
         if let Ok(contents) = std::fs::read(&disk_path) {
@@ -664,12 +699,24 @@ pub async fn xiandaihanyu_resource(Path(resource_path): Path<String>) -> ApiResu
                 axum::http::HeaderValue::from_static("public, max-age=31536000"),
             );
             return Ok(response);
-        } else {
-            return Err(ApiError::not_found(ApiError::RESOURCE_NOT_FOUND, "Resource not found"));
         }
-    } else {
-        return Err(ApiError::not_found(ApiError::RESOURCE_NOT_FOUND, "Resource not found"));
     }
+
+    if let Some(data) = lookup_resource("xiandaihanyu_resources", &resource_path).await {
+        let content_type = get_content_type(&resource_path);
+        let mut response = Response::new(axum::body::Body::from(data));
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static(content_type),
+        );
+        response.headers_mut().insert(
+            axum::http::header::CACHE_CONTROL,
+            axum::http::HeaderValue::from_static("public, max-age=31536000"),
+        );
+        return Ok(response);
+    }
+
+    Err(ApiError::not_found(ApiError::RESOURCE_NOT_FOUND, "Resource not found"))
 }
 
 pub async fn get_recent_history(

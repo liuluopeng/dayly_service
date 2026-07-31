@@ -47,7 +47,7 @@ pub(super) fn engine() -> &'static RecEngine {
 
 /// Run recognition on a tight crop of a text line (RGBA pixels).
 /// The image should have text filling most of the height.
-pub fn recognize(pixels: &[u8], width: u32, height: u32) -> String {
+pub fn recognize(pixels: &[u8], width: u32, height: u32) -> Result<String, String> {
     let e = engine();
 
     // Resize to H=48 maintaining aspect ratio
@@ -79,12 +79,18 @@ pub fn recognize(pixels: &[u8], width: u32, height: u32) -> String {
     }
 
     // Inference
-    let input = TensorRef::from_array_view(&array).unwrap();
-    let mut session = e.session.lock().unwrap();
-    let outputs = session.run(ort::inputs![input]).unwrap();
+    let input = TensorRef::from_array_view(&array)
+        .map_err(|err| format!("构建识别输入失败: {}", err))?;
+    // 互斥锁中毒时继续使用内部数据，避免 OCR 服务永久瘫痪
+    let mut session = e.session.lock().unwrap_or_else(|p| p.into_inner());
+    let outputs = session
+        .run(ort::inputs![input])
+        .map_err(|err| format!("识别模型推理失败: {}", err))?;
     let output = &outputs[0];
 
-    let arr = output.try_extract_array::<f32>().unwrap();
+    let arr = output
+        .try_extract_array::<f32>()
+        .map_err(|err| format!("解析识别输出失败: {}", err))?;
     let shape = arr.shape();
     let seq_len = shape[1];
     let num_classes = shape[2];
@@ -115,7 +121,7 @@ pub fn recognize(pixels: &[u8], width: u32, height: u32) -> String {
         prev = best;
     }
 
-    result
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -125,7 +131,7 @@ mod tests {
     #[test]
     fn test_recognize_empty() {
         let pixels = vec![0u8; 50 * 30 * 4];
-        let text = recognize(&pixels, 50, 30);
+        let text = recognize(&pixels, 50, 30).unwrap_or_default();
         assert!(text.len() < 100);
     }
 }

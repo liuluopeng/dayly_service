@@ -34,9 +34,11 @@ async fn get_user_directories(pool: &PgPool, username: &str) -> Result<Vec<Strin
 
 /// 从用户的某个授权目录计算文件的 API URL
 fn build_file_url(full_path: &str, user_dirs: &[String]) -> Option<String> {
+    let full = StdPath::new(full_path);
     for dir in user_dirs {
-        let dir = dir.trim_end_matches('/');
-        if full_path.starts_with(dir) {
+        // 组件级比较，避免 /a/vedio 误匹配 /a/vedio_private
+        let base = StdPath::new(dir.trim_end_matches('/'));
+        if full.starts_with(base) {
             return Some(format!("/api/files/serve?path={}", urlencoding::encode(full_path)));
         }
     }
@@ -56,14 +58,7 @@ pub async fn scan_melatonin(
     .await
     .map_err(|e| ApiError::Internal(format!("查询媒体路径失败: {}", e)))?;
 
-    // 默认 Melatonin 目录
-    if video_paths.is_empty() {
-        let default_path = "/Volumes/six/vedio/nfo".to_string();
-        if StdPath::new(&default_path).exists() {
-            video_paths.push((Uuid::nil(), default_path));
-        }
-    }
-
+    // 不再回退到机器特定的默认目录，避免空 UUID 外键失败与越权扫描
     if video_paths.is_empty() {
         return Ok(Json(json!({
             "code": 200,
@@ -423,7 +418,7 @@ pub async fn get_melatonin_movies(
         .await
         .map_err(|e| ApiError::Internal(e.to_string()))?;
 
-    let total_pages = (total + page_size as i64 - 1) / page_size as i64;
+    let total_pages = (total + page_size.max(1) as i64 - 1) / page_size.max(1) as i64;
 
     let paginated_response = PaginatedResponse {
         data: movies,
@@ -511,7 +506,7 @@ pub async fn get_movies_by_actor(
         .map(|row| row_to_movie_list(row, &user_dirs))
         .collect();
 
-    let total_pages = (total + page_size as i64 - 1) / page_size as i64;
+    let total_pages = (total + page_size.max(1) as i64 - 1) / page_size.max(1) as i64;
 
     let paginated_response = PaginatedResponse {
         data: movies,
@@ -561,7 +556,7 @@ pub async fn get_movies_by_genre(
         .map(|row| row_to_movie_list(row, &user_dirs))
         .collect();
 
-    let total_pages = (total + page_size as i64 - 1) / page_size as i64;
+    let total_pages = (total + page_size.max(1) as i64 - 1) / page_size.max(1) as i64;
     Ok(Json(ApiResponse::ok(PaginatedResponse {
         data: movies, total, page, page_size, total_pages,
     })))
@@ -573,8 +568,12 @@ pub async fn get_bt_list(
     Path(id): Path<Uuid>,
     claims: Claims,
 ) -> ApiResult<Json<ApiResponse<Vec<serde_json::Value>>>> {
-    let row = sqlx::query("SELECT cover_path, video_paths FROM melatonin_movies WHERE id = $1")
+    let row = sqlx::query(
+        "SELECT cover_path, video_paths FROM melatonin_movies
+         WHERE id = $1 AND media_path_id IN (SELECT id FROM media_paths WHERE $2 = ANY(allow_list))",
+    )
         .bind(id)
+        .bind(&claims.username)
         .fetch_one(&pool)
         .await
         .map_err(|e| ApiError::Internal(e.to_string()))?;

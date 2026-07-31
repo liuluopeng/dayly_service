@@ -88,8 +88,10 @@ pub fn get_subject_from_mhtml(mhtml_content: &str) -> Option<String> {
 /// 解码RFC 2047编码的字符串
 fn decode_rfc2047(encoded: &str) -> String {
     // 处理多个编码段，如：=?utf-8?Q?xxx?= =?utf-8?Q?yyy?=
+    // RFC 2047：仅忽略"相邻编码词之间"的空白，普通文本中的空格必须保留
     let mut result = String::new();
     let mut chars = encoded.chars().peekable();
+    let mut just_decoded = false;
 
     while let Some(c) = chars.next() {
         if c == '=' && chars.peek() == Some(&'?') {
@@ -133,12 +135,26 @@ fn decode_rfc2047(encoded: &str) -> String {
                     _ => encoded_text,
                 };
                 result.push_str(&decoded);
+                just_decoded = true;
+            } else {
+                just_decoded = false;
             }
         } else if c == ' ' {
-            // 跳过编码段之间的空格
-            continue;
+            // 仅当"上一个字符来自编码词且下一个非空白字符开始新的编码词"时跳过
+            let next_is_encoded_word = chars
+                .clone()
+                .skip_while(|c| *c == ' ' || *c == '\t')
+                .take(2)
+                .collect::<String>()
+                == "=?";
+            if just_decoded && next_is_encoded_word {
+                continue;
+            }
+            result.push(c);
+            just_decoded = false;
         } else {
             result.push(c);
+            just_decoded = false;
         }
     }
 

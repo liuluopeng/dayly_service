@@ -19,7 +19,7 @@ pub async fn list_short_notes_wasm(
 ) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match list_short_notes(client, page, page_size).await {
+    match list_short_notes(&client, page, page_size).await {
         Ok(response) => {
             console_log!("获取短笔记列表成功！");
             match to_value(&response) {
@@ -44,7 +44,7 @@ pub async fn get_short_note_wasm(id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match get_short_note(client, uuid).await {
+    match get_short_note(&client, uuid).await {
         Ok(response) => {
             console_log!("获取短笔记成功！");
             match to_value(&response) {
@@ -69,7 +69,7 @@ pub async fn create_short_note_wasm(
 
     let req = CreateShortNoteRequest { content, view_name };
 
-    match create_short_note(client, req).await {
+    match create_short_note(&client, req).await {
         Ok(response) => {
             console_log!("创建短笔记成功！");
             match to_value(&response) {
@@ -100,7 +100,7 @@ pub async fn update_short_note_wasm(
 
     let req = UpdateShortNoteRequest { content, view_name };
 
-    match update_short_note(client, uuid, req).await {
+    match update_short_note(&client, uuid, req).await {
         Ok(response) => {
             console_log!("更新短笔记成功！");
             match to_value(&response) {
@@ -125,7 +125,7 @@ pub async fn delete_short_note_wasm(id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match delete_short_note(client, uuid).await {
+    match delete_short_note(&client, uuid).await {
         Ok(response) => {
             console_log!("删除短笔记成功！");
             match to_value(&response) {

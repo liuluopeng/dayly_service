@@ -11,7 +11,7 @@ use my_type::model::chat::ChatMessage;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use tokio::sync::broadcast;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
@@ -66,7 +66,9 @@ async fn send_message(
         created_at: message.created_at,
     };
     if let Ok(json) = serde_json::to_string(&ws_msg) {
-        let _ = chat_tx.send(json);
+        if let Err(e) = chat_tx.send(json) {
+            debug!("广播消息失败（无订阅者或通道已满）: {:?}", e);
+        }
     }
 
     Ok(ApiResponse::ok(message))

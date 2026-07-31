@@ -43,15 +43,15 @@ pub async fn user_login(
     .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
 
     if let Some(user) = user {
-        // 优先用 bcrypt hash 验证，fallback 到明文比较（过渡期兼容）
-        let password_ok = if let Some(ref hash) = user.hash {
-            let password = payload.password.clone();
-            let hash = hash.clone();
-            tokio::task::spawn_blocking(move || bcrypt::verify(&password, &hash).unwrap_or(false))
-                .await
-                .unwrap_or(false)
-        } else {
-            user.password == payload.password
+        // 仅支持 bcrypt hash 验证；无 hash 的旧账号不允许登录（避免明文比对）
+        let password_ok = match user.hash {
+            Some(hash) => {
+                let password = payload.password.clone();
+                tokio::task::spawn_blocking(move || bcrypt::verify(&password, &hash).unwrap_or(false))
+                    .await
+                    .unwrap_or(false)
+            }
+            None => false,
         };
         if password_ok {
             let uid = user.id.to_string();

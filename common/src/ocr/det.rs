@@ -215,17 +215,23 @@ fn merge_overlapping(boxes: &mut Vec<TextBox>) {
 
 /// Run detection on RGBA image, return list of text boxes.
 /// Box coordinates are in the original image space.
-pub fn detect_text_regions(pixels: &[u8], width: u32, height: u32) -> Vec<TextBox> {
+pub fn detect_text_regions(pixels: &[u8], width: u32, height: u32) -> Result<Vec<TextBox>, String> {
     let session = det_session();
     let (input_tensor, _nw, _nh, _scale) = det_preprocess(pixels, width, height);
     eprintln!("[det] input {}x{} resized to {}x{} scale={:.3}", width, height, _nw, _nh, _scale);
 
-    let input = TensorRef::from_array_view(&input_tensor).unwrap();
-    let mut sess = session.lock().unwrap();
-    let outputs = sess.run(ort::inputs![input]).unwrap();
+    let input = TensorRef::from_array_view(&input_tensor)
+        .map_err(|e| format!("构建检测输入失败: {}", e))?;
+    // 互斥锁中毒时继续使用内部数据，避免 OCR 服务永久瘫痪
+    let mut sess = session.lock().unwrap_or_else(|e| e.into_inner());
+    let outputs = sess
+        .run(ort::inputs![input])
+        .map_err(|e| format!("检测模型推理失败: {}", e))?;
     let output = &outputs[0];
 
-    let arr = output.try_extract_array::<f32>().unwrap();
+    let arr = output
+        .try_extract_array::<f32>()
+        .map_err(|e| format!("解析检测输出失败: {}", e))?;
     let shape = arr.shape(); // [1, 1, H/4, W/4]
     let oh = shape[2];
     let ow = shape[3];
@@ -269,7 +275,7 @@ pub fn detect_text_regions(pixels: &[u8], width: u32, height: u32) -> Vec<TextBo
 
     // Sort top-to-bottom, then left-to-right
     text_boxes.sort_by(|a, b| a.y.cmp(&b.y).then(a.x.cmp(&b.x)));
-    text_boxes
+    Ok(text_boxes)
 }
 
 /// Crop a rectangular region from RGBA pixels.
@@ -284,8 +290,8 @@ pub fn crop_pixels(pixels: &[u8], src_w: u32, x: u32, y: u32, w: u32, h: u32) ->
 }
 
 /// Full pipeline: detect text regions → recognize each → return concatenated text.
-pub fn detect_and_recognize(pixels: &[u8], width: u32, height: u32) -> String {
-    let boxes = detect_text_regions(pixels, width, height);
+pub fn detect_and_recognize(pixels: &[u8], width: u32, height: u32) -> Result<String, String> {
+    let boxes = detect_text_regions(pixels, width, height)?;
     if boxes.is_empty() {
         // Fallback: try recognition on the full image
         return rec::recognize(pixels, width, height);
@@ -302,11 +308,11 @@ pub fn detect_and_recognize(pixels: &[u8], width: u32, height: u32) -> String {
         if w < 4 || h < 4 { continue; }
 
         let crop = crop_pixels(pixels, width, x, y, w, h);
-        let text = rec::recognize(&crop, w, h);
+        let text = rec::recognize(&crop, w, h)?;
         if !text.is_empty() {
             results.push(text);
         }
     }
 
-    results.join("\n")
+    Ok(results.join("\n"))
 }

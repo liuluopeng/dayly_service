@@ -1,1 +1,0 @@
-ALTER TABLE melatonin_movies ADD COLUMN IF NOT EXISTS bt_list JSONB;

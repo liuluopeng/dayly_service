@@ -1,4 +1,5 @@
 use crate::config::env::OpenAiConfig;
+use crate::middleware::Claims;
 use axum::body::Body;
 use axum::{Extension, Json, Router, routing::post};
 use common::api::base::{ApiError, ApiResponse, ApiResult};
@@ -11,6 +12,18 @@ use sqlx::PgPool;
 use std::time::Duration;
 use tracing::{debug, error, info};
 use uuid::Uuid;
+
+/// 校验会话是否属于当前用户，防止向他人会话注入消息
+async fn session_belongs_to(pool: &PgPool, session_id: Uuid, user_id: Uuid) -> bool {
+    sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM openai_sessions WHERE id = $1 AND user_id = $2)",
+    )
+    .bind(session_id)
+    .bind(user_id)
+    .fetch_one(pool)
+    .await
+    .unwrap_or(false)
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OpenAiRequest {
@@ -53,6 +66,7 @@ pub struct Usage {
 }
 
 async fn chat_completion(
+    claims: Claims,
     Extension(openai_config): Extension<OpenAiConfig>,
     Extension(pool): Extension<PgPool>,
     Json(mut request): Json<OpenAiRequest>,
@@ -93,8 +107,15 @@ async fn chat_completion(
         ApiError::Internal(e.to_string())
     })?;
 
-    // 保存助手回复到会话
+    // 保存助手回复到会话（仅限自己的会话）
     if let Some(session_id) = request.session_id {
+        let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
+        if !session_belongs_to(&pool, session_id, user_id).await {
+            return Err(ApiError::not_found(
+                ApiError::SESSION_NOT_FOUND,
+                "会话不存在",
+            ));
+        }
         if let Some(choices) = response_json.get("choices") {
             if let Some(first_choice) = choices.as_array().and_then(|arr| arr.first()) {
                 if let Some(message) = first_choice.get("message") {
@@ -129,6 +150,7 @@ async fn chat_completion(
 
 // 流式传输版本
 async fn chat_completion_stream(
+    claims: Claims,
     Extension(openai_config): Extension<OpenAiConfig>,
     Extension(pool): Extension<PgPool>,
     Json(mut request): Json<OpenAiRequest>,
@@ -146,8 +168,18 @@ async fn chat_completion_stream(
     request.stream = Some(true);
 
     // 处理session_id，确保能正确获取
+    let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
     let session_id = match request.session_id {
-        Some(id) => id,
+        Some(id) => {
+            // 校验会话归属，防止向他人会话注入消息
+            if !session_belongs_to(&pool, id, user_id).await {
+                return Err(ApiError::not_found(
+                    ApiError::SESSION_NOT_FOUND,
+                    "会话不存在",
+                ));
+            }
+            id
+        }
         None => {
             debug!("No session_id in request, using default");
             Uuid::new_v4()
@@ -189,7 +221,7 @@ async fn chat_completion_stream(
 
     let body = Body::from_stream(futures::stream::try_unfold(
         (response, String::new(), pool_clone, session_id_clone),
-        |(mut response, mut full_content, pool, session_id)| async move {
+        move |(mut response, mut full_content, pool, session_id)| async move {
             match response.chunk().await {
                 Ok(Some(chunk)) => {
                     let chunk_str = String::from_utf8_lossy(&chunk);
@@ -197,8 +229,9 @@ async fn chat_completion_stream(
                     Ok(Some((chunk, (response, full_content, pool, session_id))))
                 }
                 Ok(None) => {
-                    // 流结束，保存AI回复到数据库
+                    // 流结束，保存AI回复到数据库（无 session_id 或不属于当前用户时不保存）
                     debug!("Stream ended, saving AI response to database");
+                    if session_belongs_to(&pool, session_id, user_id).await {
                     // 直接使用session_id，因为Uuid总是有效的
                     if !session_id.to_string().is_empty() {
                         debug!("Session ID: {}", session_id);
@@ -260,8 +293,9 @@ async fn chat_completion_stream(
                         } else {
                             debug!("No assistant content to save");
                         }
+                    }
                     } else {
-                        debug!("Session ID is empty");
+                        debug!("会话不存在或不属于当前用户，跳过保存");
                     }
                     Ok(None)
                 }
@@ -270,7 +304,10 @@ async fn chat_completion_stream(
         },
     ));
 
-    Ok(builder.body(body).unwrap())
+    let response = builder
+        .body(body)
+        .map_err(|e| ApiError::Internal(format!("构建响应失败: {}", e)))?;
+    Ok(response)
 }
 
 pub fn openai_routes() -> Router {

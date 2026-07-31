@@ -273,7 +273,7 @@ pub async fn list_images(
         .await
         .map_err(|e| ApiError::Internal(format!("查询总数失败: {}", e)))?;
 
-        let offset = ((query.page - 1) * query.page_size) as i64;
+        let offset = ((query.page.max(1) - 1) * query.page_size) as i64;
         let images = sqlx::query_as::<_, Image>(
             "SELECT id, name, path, folder_path, media_path_id, size, width, height, format, NULL::bytea AS thumbnail, created_at
              FROM images
@@ -301,7 +301,7 @@ pub async fn list_images(
         .await
         .map_err(|e| ApiError::Internal(format!("查询总数失败: {}", e)))?;
 
-        let offset = ((query.page - 1) * query.page_size) as i64;
+        let offset = ((query.page.max(1) - 1) * query.page_size) as i64;
         let images = sqlx::query_as::<_, Image>(
             "SELECT id, name, path, folder_path, media_path_id, size, width, height, format, NULL::bytea AS thumbnail, created_at
              FROM images
@@ -334,7 +334,7 @@ pub async fn list_images(
         total,
         page: query.page,
         page_size: query.page_size,
-        total_pages: (total + query.page_size as i64 - 1) / query.page_size as i64,
+        total_pages: (total + query.page_size.max(1) as i64 - 1) / query.page_size.max(1) as i64,
     };
 
     Ok(ApiResponse::ok(paginated_response))

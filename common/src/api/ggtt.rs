@@ -94,7 +94,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_ggtt_code() {
-        let client = ApiClient::tester_client();
+        let client = ApiClient::default();
         let req = SearchRequest {
             search: "当".to_string(),
         };

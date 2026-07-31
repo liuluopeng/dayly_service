@@ -10,7 +10,7 @@ use crate::console_log;
 pub async fn create_session(title: &str) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match common::api::openai::create_session(client, title).await {
+    match common::api::openai::create_session(&client, title).await {
         Ok(response) => {
             console_log!("创建会话成功！");
             match to_value(&response) {
@@ -29,7 +29,7 @@ pub async fn create_session(title: &str) -> Result<JsValue, JsValue> {
 pub async fn list_sessions() -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match common::api::openai::list_sessions(client).await {
+    match common::api::openai::list_sessions(&client).await {
         Ok(response) => {
             console_log!("获取会话列表成功！");
             match to_value(&response) {
@@ -49,7 +49,7 @@ pub async fn get_session(session_id: &str) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
     let session_id = Uuid::parse_str(session_id).map_err(|e| JsValue::from_str(&e.to_string()))?;
 
-    match common::api::openai::get_session(client, &session_id).await {
+    match common::api::openai::get_session(&client, &session_id).await {
         Ok(response) => {
             console_log!("获取会话详情成功！");
             match to_value(&response) {
@@ -69,7 +69,7 @@ pub async fn delete_session(session_id: &str) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
     let session_id = Uuid::parse_str(session_id).map_err(|e| JsValue::from_str(&e.to_string()))?;
 
-    match common::api::openai::delete_session(client, &session_id).await {
+    match common::api::openai::delete_session(&client, &session_id).await {
         Ok(response) => {
             console_log!("删除会话成功！");
             match to_value(&response) {
@@ -111,7 +111,7 @@ pub async fn add_message(
     };
 
     match common::api::openai::add_message(
-        client,
+        &client,
         &session_id,
         role,
         content,
@@ -139,7 +139,7 @@ pub async fn get_session_messages(session_id: &str) -> Result<JsValue, JsValue> 
     let client = get_api_client(None);
     let session_id = Uuid::parse_str(session_id).map_err(|e| JsValue::from_str(&e.to_string()))?;
 
-    match common::api::openai::get_session_messages(client, &session_id).await {
+    match common::api::openai::get_session_messages(&client, &session_id).await {
         Ok(response) => {
             console_log!("获取消息列表成功！");
             match to_value(&response) {
@@ -160,7 +160,7 @@ pub async fn chat_completion(request: &str) -> Result<JsValue, JsValue> {
     let req: ChatCompletionRequest =
         serde_json::from_str(request).map_err(|e| JsValue::from_str(&e.to_string()))?;
 
-    match common::api::openai::chat_completion(client, &req).await {
+    match common::api::openai::chat_completion(&client, &req).await {
         Ok(response) => {
             console_log!("AI 对话成功！");
             match to_value(&response) {

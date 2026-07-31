@@ -30,10 +30,15 @@ impl Snake {
         let mut rng = rand::thread_rng();
         let empty: Vec<_> = (0..H).flat_map(|y| (0..W).map(move |x| (x, y)))
             .filter(|&(x, y)| self.cells[y][x] == 0).collect();
-        if let Some(&pos) = empty.get(rng.gen_range(0..empty.len())) {
-            self.food = pos;
-            self.cells[pos.1][pos.0] = 2;
+        if empty.is_empty() {
+            // 棋盘已满，玩家获胜
+            self.over = true;
+            return;
         }
+        let idx = rng.gen_range(0..empty.len());
+        let pos = empty[idx];
+        self.food = pos;
+        self.cells[pos.1][pos.0] = 2;
     }
 
     pub fn set_dir(&mut self, dir: &str) {

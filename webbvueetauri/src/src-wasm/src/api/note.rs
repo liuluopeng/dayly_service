@@ -13,7 +13,7 @@ pub async fn list_notes_wasm(page: Option<u32>, limit: Option<u32>) -> Result<Js
 
     let client = get_api_client(None);
 
-    match list_notes(client, page, limit).await {
+    match list_notes(&client, page, limit).await {
         Ok(notes) => {
             if let Some(notes) = notes.data {
                 console_log!("获取笔记列表成功！找到 {} 条笔记", notes.len());
@@ -45,7 +45,7 @@ pub async fn get_note_wasm(uuid: &str) -> Result<JsValue, JsValue> {
 
     let client = get_api_client(None);
 
-    match get_note(client, uuid).await {
+    match get_note(&client, uuid).await {
         Ok(note) => {
             if let Some(note) = note.data {
                 console_log!("获取笔记详情成功！");
@@ -73,7 +73,7 @@ pub async fn search_notes_wasm(query: &str) -> Result<JsValue, JsValue> {
 
     let client = get_api_client(None);
 
-    match search_notes(client, query).await {
+    match search_notes(&client, query).await {
         Ok(notes) => {
             if let Some(notes) = notes.data {
                 console_log!("搜索成功！找到 {} 条笔记", notes.len());
@@ -115,7 +115,7 @@ pub async fn save_note_wasm(
     let client = get_api_client(None);
     let req = SaveNoteRequest { id, text, filename };
 
-    match save_note(client, &req).await {
+    match save_note(&client, &req).await {
         Ok(response) => {
             if let Some(response) = response.data {
                 console_log!("保存笔记成功！id={}", response.id);
@@ -144,7 +144,7 @@ pub async fn create_note_wasm(text: String, filename: Option<String>) -> Result<
     let client = get_api_client(None);
     let req = CreateNoteRequest { text, filename };
 
-    match create_note(client, &req).await {
+    match create_note(&client, &req).await {
         Ok(response) => {
             if let Some(response) = response.data {
                 console_log!("创建笔记成功！id={}", response.id);

@@ -23,7 +23,7 @@ wasm_bindgen_test_configure!(run_in_browser);
 pub async fn scan_songs_wasm() -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match scan_songs(client).await {
+    match scan_songs(&client).await {
         Ok(response) => {
             console_log!("扫描歌曲成功！");
             console_log!("响应消息: {}", response.msg);
@@ -46,7 +46,7 @@ pub async fn get_all_songs_wasm(
 ) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match get_all_songs(client, page, page_size).await {
+    match get_all_songs(&client, page, page_size).await {
         Ok(response) => {
             console_log!("获取所有歌曲成功！");
             console_log!("响应消息: {}", response);
@@ -66,7 +66,7 @@ pub async fn get_all_songs_wasm(
 pub async fn get_songs_by_album_wasm(album: &str) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match get_songs_by_album(client, album).await {
+    match get_songs_by_album(&client, album).await {
         Ok(response) => {
             console_log!("根据专辑获取歌曲成功！");
             console_log!("响应消息: {}", response.msg);
@@ -86,7 +86,7 @@ pub async fn get_songs_by_album_wasm(album: &str) -> Result<JsValue, JsValue> {
 pub async fn get_songs_by_artist_wasm(artist: &str) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match get_songs_by_artist(client, artist).await {
+    match get_songs_by_artist(&client, artist).await {
         Ok(response) => {
             console_log!("根据艺术家获取歌曲成功！");
             console_log!("响应消息: {}", response.msg);
@@ -111,7 +111,7 @@ pub async fn get_song_cover_wasm(song_id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match get_song_cover(client, &uuid).await {
+    match get_song_cover(&client, &uuid).await {
         Ok(response) => {
             console_log!("获取歌曲封面成功！");
             console_log!("响应消息: {}", response.msg);
@@ -136,7 +136,7 @@ pub async fn get_song_file_wasm(song_id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match get_song_file(client, &uuid).await {
+    match get_song_file(&client, &uuid).await {
         Ok(response) => {
             console_log!("获取歌曲文件成功！");
             console_log!("响应消息: {}", response.msg);
@@ -161,7 +161,7 @@ pub async fn get_song_lyrics_wasm(song_id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match get_song_lyrics(client, &uuid).await {
+    match get_song_lyrics(&client, &uuid).await {
         Ok(response) => {
             console_log!("获取歌词成功！");
             console_log!("响应消息: {}", response.msg);
@@ -186,7 +186,7 @@ pub async fn get_song_ttml_wasm(song_id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match get_song_ttml(client, &uuid).await {
+    match get_song_ttml(&client, &uuid).await {
         Ok(response) => {
             console_log!("获取 TTML 歌词成功！");
             match to_value(&response.data) {
@@ -210,7 +210,7 @@ pub async fn get_all_lyrics_wasm(song_id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match get_all_lyrics(client, &uuid).await {
+    match get_all_lyrics(&client, &uuid).await {
         Ok(response) => {
             console_log!("获取所有歌词成功！");
             match to_value(&response.data) {
@@ -226,9 +226,13 @@ pub async fn get_all_lyrics_wasm(song_id: &str) -> Result<JsValue, JsValue> {
 }
 
 // WASM 内存中的音频缓存，零拷贝用
+// 使用环形缓冲保留最近几次加载的数据，避免重叠加载时
+// 上一个请求返回的指针被立即释放（悬垂指针）
 thread_local! {
-    static AUDIO_BUF: RefCell<Vec<u8>> = RefCell::new(Vec::new());
+    static AUDIO_BUF: RefCell<Vec<Vec<u8>>> = RefCell::new(Vec::new());
 }
+
+const AUDIO_BUF_SLOTS: usize = 4;
 
 #[wasm_bindgen]
 pub fn get_wasm_memory() -> JsValue {
@@ -245,14 +249,18 @@ pub async fn load_song_audio_zc(song_id: &str) -> Result<JsValue, JsValue> {
         Err(e) => return Err(JsValue::from_str(&format!("无效的UUID: {}", e))),
     };
 
-    match get_song_file(client, &uuid).await {
+    match get_song_file(&client, &uuid).await {
         Ok(response) => {
             console_log!("零拷贝获取音频成功！");
             if let Some(data) = response.data {
                 let len = data.len();
                 let ptr = data.as_ptr() as usize;
                 AUDIO_BUF.with(|buf| {
-                    *buf.borrow_mut() = data;
+                    let mut b = buf.borrow_mut();
+                    b.push(data);
+                    if b.len() > AUDIO_BUF_SLOTS {
+                        b.remove(0);
+                    }
                 });
 
                 to_value(&(ptr as u32, len as u32)).map_err(|e| JsValue::from_str(&format!("{}", e)))

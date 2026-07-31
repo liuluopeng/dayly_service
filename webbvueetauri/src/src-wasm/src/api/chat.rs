@@ -8,7 +8,7 @@ use crate::console_log;
 pub async fn send_message_wasm(content: &str) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match common::api::chat::send_message(client, content).await {
+    match common::api::chat::send_message(&client, content).await {
         Ok(response) => {
             console_log!("发送消息成功！");
             match to_value(&response) {
@@ -27,7 +27,7 @@ pub async fn send_message_wasm(content: &str) -> Result<JsValue, JsValue> {
 pub async fn get_messages_wasm(after: Option<String>) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match common::api::chat::get_messages(client, after.as_deref()).await {
+    match common::api::chat::get_messages(&client, after.as_deref()).await {
         Ok(response) => {
             console_log!("获取消息成功！");
             match to_value(&response) {
@@ -46,7 +46,7 @@ pub async fn get_messages_wasm(after: Option<String>) -> Result<JsValue, JsValue
 pub async fn get_recent_contacts_wasm() -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match common::api::chat::get_recent_contacts(client).await {
+    match common::api::chat::get_recent_contacts(&client).await {
         Ok(response) => match to_value(&response) {
             Ok(js_value) => Ok(js_value),
             Err(e) => Err(JsValue::from_str(&format!("序列化失败: {}", e))),
@@ -59,7 +59,7 @@ pub async fn get_recent_contacts_wasm() -> Result<JsValue, JsValue> {
 pub async fn get_contacts_wasm() -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
-    match common::api::chat::get_contacts(client).await {
+    match common::api::chat::get_contacts(&client).await {
         Ok(response) => match to_value(&response) {
             Ok(js_value) => Ok(js_value),
             Err(e) => Err(JsValue::from_str(&format!("序列化失败: {}", e))),

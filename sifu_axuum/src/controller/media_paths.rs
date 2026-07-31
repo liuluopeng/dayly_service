@@ -84,10 +84,13 @@ pub async fn add_media_path(
     }
 
     // 数据库 trigger 会验证 path 必须是 directory 的子路径
+    // 共享路径时合并 allow_list，避免覆盖其他用户的权限
     let media_path = sqlx::query_as::<_, MediaPath>(
         "INSERT INTO media_paths (id, directory_id, media_type, path, label, allow_list)
          VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (path) DO UPDATE SET label = EXCLUDED.label, directory_id = EXCLUDED.directory_id, media_type = EXCLUDED.media_type, allow_list = EXCLUDED.allow_list
+         ON CONFLICT (path) DO UPDATE SET
+            label = CASE WHEN EXCLUDED.label = '' THEN media_paths.label ELSE EXCLUDED.label END,
+            allow_list = ARRAY(SELECT DISTINCT unnest(media_paths.allow_list || EXCLUDED.allow_list))
          RETURNING id, directory_id, media_type, path, label, allow_list, scan_when_start, scan_when_change, last_scan_time, created_at",
     )
     .bind(Uuid::now_v7())
@@ -103,7 +106,7 @@ pub async fn add_media_path(
     Ok(ApiResponse::ok(media_path))
 }
 
-// 当前用户：删除 media_path
+// 当前用户：删除 media_path（共享路径只移除自己的权限，最后一人时删除整行）
 pub async fn delete_media_path(
     claims: Claims,
     Extension(pg_pool): Extension<PgPool>,
@@ -112,17 +115,25 @@ pub async fn delete_media_path(
     let username = &claims.username;
 
     let result = sqlx::query(
-        "DELETE FROM media_paths WHERE id = $1 AND $2 = ANY(allow_list)",
+        "UPDATE media_paths
+         SET allow_list = ARRAY(SELECT unnest(allow_list) WHERE unnest != $2)
+         WHERE id = $1 AND $2 = ANY(allow_list)",
     )
     .bind(path_id)
     .bind(username)
     .execute(&pg_pool)
     .await
-    .map_err(|e| ApiError::Internal(format!("删除媒体路径失败: {}", e)))?;
+    .map_err(|e| ApiError::Internal(format!("移除媒体路径权限失败: {}", e)))?;
 
     if result.rows_affected() == 0 {
         return Err(ApiError::not_found(ApiError::MEDIA_PATH_NOT_FOUND, "媒体路径不存在"));
     }
+
+    // 无人有权限时删除整行
+    let _ = sqlx::query("DELETE FROM media_paths WHERE id = $1 AND cardinality(allow_list) = 0")
+        .bind(path_id)
+        .execute(&pg_pool)
+        .await;
 
     Ok(ApiResponse::ok(()))
 }

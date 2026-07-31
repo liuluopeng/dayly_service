@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useApiReinit } from "../composables/useApiReinit";
 import { useAuth } from "../composables/useAuth";
+import { clear_api_token_wasm } from "../types/wasm-typed";
 import LanguageSwitcher from "../components/LanguageSwitcher.vue";
 
 const { t } = useI18n();
@@ -23,6 +24,7 @@ onMounted(() => {
 
 function handleLogout() {
   logout();
+  clear_api_token_wasm();
   router.push('/login');
 }
 

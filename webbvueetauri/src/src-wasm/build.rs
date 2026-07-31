@@ -13,8 +13,8 @@ fn main() {
     let mut f = std::fs::File::create(dest).unwrap();
 
     // Build a compact Vec<u8> — the entire data blob
-    // Each entry: 16 bytes word + 32 bytes pinyin + 4 bytes frequency + 1 byte has_explanation + 3 pad = 56
-    const ENTRY_SIZE: usize = 56;
+    // Each entry: 24 bytes word + 40 bytes pinyin + 4 bytes frequency + 1 byte has_explanation + 3 pad = 72
+    const ENTRY_SIZE: usize = 72;
     let total = data.len();
     let mut blob: Vec<u8> = Vec::with_capacity(total * ENTRY_SIZE);
 
@@ -30,13 +30,18 @@ fn main() {
         let explanation = item["explanation"].as_str().unwrap_or("");
 
         let mut entry = [0u8; ENTRY_SIZE];
+        // 按字符边界截断，避免产生非法 UTF-8
         let wb = word.as_bytes();
-        entry[..wb.len().min(15)].copy_from_slice(&wb[..wb.len().min(15)]);
+        let wc = wb.len().min(24);
+        let wc = word.floor_char_boundary(wc);
+        entry[..wc].copy_from_slice(&wb[..wc]);
         let pb = pinyin.as_bytes();
-        entry[16..16 + pb.len().min(31)].copy_from_slice(&pb[..pb.len().min(31)]);
-        entry[48..52].copy_from_slice(&freq.to_le_bytes());
+        let pc = pb.len().min(40);
+        let pc = pinyin.floor_char_boundary(pc);
+        entry[24..24 + pc].copy_from_slice(&pb[..pc]);
+        entry[64..68].copy_from_slice(&freq.to_le_bytes());
         if !explanation.is_empty() {
-            entry[52] = 1;
+            entry[68] = 1;
         }
         blob.extend_from_slice(&entry);
 
@@ -53,7 +58,7 @@ fn main() {
     writeln!(f, "pub const ENTRY_SIZE: usize = {};", ENTRY_SIZE).unwrap();
 
     writeln!(f, "pub const WORDS_BLOB: &[u8] = &[").unwrap();
-    for chunk in blob.chunks(56) {
+    for chunk in blob.chunks(72) {
         write!(f, "    ").unwrap();
         for b in chunk {
             write!(f, "{},", b).unwrap();

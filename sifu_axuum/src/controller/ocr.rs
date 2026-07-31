@@ -39,6 +39,10 @@ pub async fn ocr_image(mut multipart: Multipart) -> ApiResult<Json<serde_json::V
     .map_err(|e| {
         tracing::error!("OCR 任务失败: {}", e);
         ApiError::Internal("OCR 处理失败".into())
+    })?
+    .map_err(|e| {
+        tracing::error!("OCR 识别失败: {}", e);
+        ApiError::Internal(format!("OCR 识别失败: {}", e))
     })?;
 
     tracing::info!("[OCR] 识别结果: {} 字", text.chars().count());

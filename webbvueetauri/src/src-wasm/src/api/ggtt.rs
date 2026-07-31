@@ -16,7 +16,7 @@ pub async fn search_ggtt(code: &str) -> Result<JsValue, JsValue> {
         search: code.to_string(),
     };
 
-    match search_ggtt_code(client, req).await {
+    match search_ggtt_code(&client, req).await {
         Ok(response) => {
             println!("请求成功！");
             println!("响应消息: {}", response.msg);

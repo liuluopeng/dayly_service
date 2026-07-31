@@ -10,7 +10,7 @@ pub async fn search_xiandaihanyu(word: &str) -> Result<JsValue, JsValue> {
 
     let client = get_api_client(None);
 
-    match dict::search_xiandaihanyu(client, word).await {
+    match dict::search_xiandaihanyu(&client, word).await {
         Ok(response) => {
             println!("请求成功！");
             println!("响应消息: {}", response.msg);
@@ -43,7 +43,7 @@ pub async fn search_collins(word: &str) -> Result<JsValue, JsValue> {
 
     let client = get_api_client(None);
 
-    match dict::search_collins(client, word).await {
+    match dict::search_collins(&client, word).await {
         Ok(response) => {
             println!("请求成功！");
             println!("响应消息: {}", response.msg);
@@ -76,7 +76,7 @@ pub async fn search_ldoce(word: &str) -> Result<JsValue, JsValue> {
 
     let client = get_api_client(None);
 
-    match dict::search_ldoce(client, word).await {
+    match dict::search_ldoce(&client, word).await {
         Ok(response) => {
             println!("请求成功！");
             println!("响应消息: {}", response.msg);
@@ -115,7 +115,7 @@ pub async fn get_recent_history(limit: i64) -> Result<JsValue, JsValue> {
 
     let client = get_api_client(None);
 
-    match dict::get_recent_history(client, limit).await {
+    match dict::get_recent_history(&client, limit).await {
         Ok(response) => {
             println!("请求成功！");
             println!("响应消息: {}", response.msg);
@@ -147,7 +147,7 @@ pub async fn get_top_words() -> Result<JsValue, JsValue> {
 
     let client = get_api_client(None);
 
-    match dict::get_top_words(client).await {
+    match dict::get_top_words(&client).await {
         Ok(response) => {
             println!("请求成功！");
             println!("响应消息: {}", response.msg);
@@ -171,7 +171,7 @@ pub async fn get_top_words() -> Result<JsValue, JsValue> {
 #[wasm_bindgen]
 pub async fn word_search_count_wasm(word: &str) -> Result<i64, JsValue> {
     let client = get_api_client(None);
-    match dict::word_search_count(client, word).await {
+    match dict::word_search_count(&client, word).await {
         Ok(response) => Ok(response.data.unwrap_or(0)),
         Err(e) => Err(JsValue::from_str(&format!("{}", e))),
     }

@@ -111,6 +111,7 @@ export const login_wasm = (username: string, password: string, token?: string | 
 
 // === 基础设施 ===
 export const init_api = wasm.init_api;
+export const clear_api_token_wasm = wasm.clear_api_token_wasm;
 export const set_api_port = wasm.set_api_port;
 export const get_base_url_wasm = wasm.get_base_url_wasm;
 export const get_wasm_memory = wasm.get_wasm_memory;

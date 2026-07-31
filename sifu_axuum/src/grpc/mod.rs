@@ -2,7 +2,9 @@ use clipboard::clipboard_history_server::{ClipboardHistory, ClipboardHistoryServ
 use clipboard::{HistoryEntry, HistoryRequest, HistoryResponse};
 use clipboard_sync::clipboard_sync_server::{ClipboardSync, ClipboardSyncServer};
 use clipboard_sync::{PushClipboardRequest, PushClipboardResponse};
+use jsonwebtoken::{DecodingKey, Validation, decode};
 use sqlx::PgPool;
+use tonic::service::Interceptor;
 
 pub mod clipboard {
     tonic::include_proto!("clipboard");
@@ -51,6 +53,52 @@ impl Greeter for GreeterSvc {
 
 pub fn hello_grpc_service() -> GreeterServer<GreeterSvc> {
     GreeterServer::new(GreeterSvc)
+}
+
+// ─── JWT 认证拦截器 ───────────────────────────────────────────
+
+/// 校验请求的 `authorization: Bearer <jwt>`（或 `token` 元数据）头
+#[derive(Clone)]
+pub struct JwtAuthInterceptor {
+    secret: String,
+}
+
+impl Interceptor for JwtAuthInterceptor {
+    fn call(&mut self, mut req: tonic::Request<()>) -> Result<tonic::Request<()>, tonic::Status> {
+        let token = req
+            .metadata()
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.strip_prefix("Bearer "))
+            .map(|t| t.to_string())
+            .or_else(|| {
+                req.metadata()
+                    .get("token")
+                    .and_then(|v| v.to_str().ok())
+                    .map(|t| t.to_string())
+            })
+            .unwrap_or_default();
+
+        if token.is_empty() {
+            return Err(tonic::Status::unauthenticated("缺少认证 token"));
+        }
+
+        let keys = DecodingKey::from_secret(self.secret.as_bytes());
+        match decode::<crate::middleware::Claims>(&token, &keys, &Validation::default()) {
+            Ok(data) => {
+                req.metadata_mut()
+                    .insert("claims-username", data.claims.username.parse().map_err(|_| {
+                        tonic::Status::unauthenticated("无效的 token 声明")
+                    })?);
+                Ok(req)
+            }
+            Err(_) => Err(tonic::Status::unauthenticated("无效的 token")),
+        }
+    }
+}
+
+fn jwt_auth_interceptor(secret: String) -> JwtAuthInterceptor {
+    JwtAuthInterceptor { secret }
 }
 
 // ─── ClipboardHistory 服务 ─────────────────────────────────────
@@ -136,8 +184,14 @@ impl ClipboardHistory for ClipboardHistorySvc {
     }
 }
 
-pub fn clipboard_grpc_service(pool: PgPool) -> ClipboardHistoryServer<ClipboardHistorySvc> {
-    ClipboardHistoryServer::new(ClipboardHistorySvc { pool })
+pub fn clipboard_grpc_service(
+    pool: PgPool,
+    jwt_secret: String,
+) -> tonic::service::interceptor::InterceptedService<
+    ClipboardHistoryServer<ClipboardHistorySvc>,
+    JwtAuthInterceptor,
+> {
+    ClipboardHistoryServer::with_interceptor(ClipboardHistorySvc { pool }, jwt_auth_interceptor(jwt_secret))
 }
 
 // ─── ClipboardSync 服务 ────────────────────────────────────────
@@ -154,29 +208,13 @@ impl ClipboardSync for ClipboardSyncSvc {
     ) -> Result<tonic::Response<PushClipboardResponse>, tonic::Status> {
         let req = request.into_inner();
 
-        // 去重检查
-        let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM clipboard_entries WHERE content_hash = $1 AND entry_type = $2)",
-        )
-        .bind(&req.content_hash)
-        .bind(&req.content_type)
-        .fetch_one(&self.pool)
-        .await
-        .unwrap_or(false);
-
-        if exists {
-            return Ok(tonic::Response::new(PushClipboardResponse {
-                code: 200,
-                message: "duplicate".into(),
-                deduplicated: true,
-            }));
-        }
-
+        // 去重检查（唯一索引兜底，避免 TOCTOU 竞态插入重复）
         let result = match req.content_type.as_str() {
             "text" => {
                 sqlx::query(
                     "INSERT INTO clipboard_entries (entry_type, text_content, content_hash, created_at)
-                     VALUES ($1, $2, $3, NOW())",
+                     VALUES ($1, $2, $3, NOW())
+                     ON CONFLICT (content_hash, entry_type) DO NOTHING",
                 )
                 .bind(&req.content_type)
                 .bind(&req.text_content)
@@ -187,7 +225,8 @@ impl ClipboardSync for ClipboardSyncSvc {
             "image" => {
                 sqlx::query(
                     "INSERT INTO clipboard_entries (entry_type, image_path, content_hash, created_at)
-                     VALUES ($1, $2, $3, NOW())",
+                     VALUES ($1, $2, $3, NOW())
+                     ON CONFLICT (content_hash, entry_type) DO NOTHING",
                 )
                 .bind(&req.content_type)
                 .bind(&req.image_path)
@@ -199,7 +238,14 @@ impl ClipboardSync for ClipboardSyncSvc {
         };
 
         match result {
-            Ok(_) => {
+            Ok(result) => {
+                if result.rows_affected() == 0 {
+                    return Ok(tonic::Response::new(PushClipboardResponse {
+                        code: 200,
+                        message: "duplicate".into(),
+                        deduplicated: true,
+                    }));
+                }
                 tracing::info!("📋 剪贴板已存储: {}", req.content_type);
                 Ok(tonic::Response::new(PushClipboardResponse {
                     code: 200,
@@ -212,8 +258,17 @@ impl ClipboardSync for ClipboardSyncSvc {
     }
 }
 
-pub fn clipboard_sync_grpc_service(pool: PgPool) -> ClipboardSyncServer<ClipboardSyncSvc> {
-    ClipboardSyncServer::new(ClipboardSyncSvc { pool })
+pub fn clipboard_sync_grpc_service(
+    pool: PgPool,
+    jwt_secret: String,
+) -> tonic::service::interceptor::InterceptedService<
+    ClipboardSyncServer<ClipboardSyncSvc>,
+    JwtAuthInterceptor,
+> {
+    ClipboardSyncServer::with_interceptor(
+        ClipboardSyncSvc { pool },
+        jwt_auth_interceptor(jwt_secret),
+    )
 }
 
 #[derive(sqlx::FromRow)]

@@ -12,9 +12,12 @@ pub fn generate_uuid_v4() -> String {
 /// * `namespace` - 命名空间 UUID
 /// * `name` - 名称字符串
 /// # Returns
-/// * UUID v5 字符串
+/// * UUID v5 字符串；命名空间无效时返回错误信息
 pub fn generate_uuid_v5(namespace: &str, name: &str) -> String {
-    let namespace_uuid = Uuid::parse_str(namespace).unwrap_or_else(|_| Uuid::new_v4());
+    let namespace_uuid = match Uuid::parse_str(namespace) {
+        Ok(u) => u,
+        Err(e) => return format!("无效的命名空间 UUID: {}", e),
+    };
     Uuid::new_v5(&namespace_uuid, name.as_bytes()).to_string()
 }
 
@@ -22,16 +25,22 @@ pub fn generate_uuid_v5(namespace: &str, name: &str) -> String {
 /// # Returns
 /// * UUID v6 字符串
 pub fn generate_uuid_v6() -> String {
-    // 使用 v4 作为 fallback，因为 v6 需要额外参数
-    Uuid::new_v4().to_string()
+    use std::sync::OnceLock;
+    static NODE: OnceLock<[u8; 6]> = OnceLock::new();
+    let node = NODE.get_or_init(|| {
+        let mut n = [0u8; 6];
+        let v4 = Uuid::new_v4();
+        n.copy_from_slice(&v4.as_bytes()[10..16]);
+        n
+    });
+    Uuid::new_v6(uuid::Timestamp::now(uuid::NoContext), node).to_string()
 }
 
 /// 生成 UUID v7（基于时间的 UUID，使用 Unix 时间戳）
 /// # Returns
 /// * UUID v7 字符串
 pub fn generate_uuid_v7() -> String {
-    // 使用 v4 作为 fallback，因为 v7 需要额外参数
-    Uuid::new_v4().to_string()
+    Uuid::now_v7().to_string()
 }
 
 /// 验证 UUID 字符串是否有效

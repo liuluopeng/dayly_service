@@ -17,7 +17,7 @@ crate::impl_display!(self, ShortNote,
     "ID"   => self.id,
     "视图" => self.view_name.as_deref().unwrap_or("无"),
     "内容" => self.content.as_ref().map(|c| {
-        if c.len() > 50 { format!("{}...", &c[..50]) } else { c.clone() }
+        if c.len() > 50 { format!("{}...", &c[..c.floor_char_boundary(50)]) } else { c.clone() }
     }).unwrap_or_else(|| "无内容".to_string())
 );
 
@@ -29,7 +29,7 @@ impl ShortNote {
             .as_ref()
             .map(|c| {
                 if c.len() > 50 {
-                    format!("{}...", &c[..50])
+                    format!("{}...", &c[..c.floor_char_boundary(50)])
                 } else {
                     c.clone()
                 }
@@ -57,7 +57,7 @@ impl ShortNote {
             .as_ref()
             .map(|c| {
                 if c.len() > 30 {
-                    format!("{}...", &c[..30])
+                    format!("{}...", &c[..c.floor_char_boundary(30)])
                 } else {
                     c.clone()
                 }

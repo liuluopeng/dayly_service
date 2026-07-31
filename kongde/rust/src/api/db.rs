@@ -7,6 +7,10 @@ static POOL: OnceLock<SqlitePool> = OnceLock::new();
 /// 初始化 / 打开 SQLite 数据库，返回是否为新创建
 #[flutter_rust_bridge::frb]
 pub fn init_db(db_path: String) -> Result<bool, String> {
+    if POOL.get().is_some() {
+        return Err("数据库已初始化，请勿重复调用 init_db".to_string());
+    }
+
     let path = Path::new(&db_path);
     let is_new = !path.exists();
 
@@ -96,7 +100,7 @@ pub fn kv_keys() -> Result<Vec<String>, String> {
 #[flutter_rust_bridge::frb]
 pub fn kv_get_int(key: String) -> Result<Option<i64>, String> {
     match kv_get(key)? {
-        Some(s) => Ok(s.parse::<i64>().ok()),
+        Some(s) => s.parse::<i64>().map(Some).map_err(|e| format!("kv 值无法解析为整数: {}", e)),
         None => Ok(None),
     }
 }
@@ -109,7 +113,7 @@ pub fn kv_set_int(key: String, value: i64) -> Result<(), String> {
 #[flutter_rust_bridge::frb]
 pub fn kv_get_double(key: String) -> Result<Option<f64>, String> {
     match kv_get(key)? {
-        Some(s) => Ok(s.parse::<f64>().ok()),
+        Some(s) => s.parse::<f64>().map(Some).map_err(|e| format!("kv 值无法解析为浮点数: {}", e)),
         None => Ok(None),
     }
 }
@@ -176,10 +180,31 @@ fn run_migrations() -> Result<(), String> {
                 ).execute(p).await.map_err(|e| format!("创建 music_cache 失败: {}", e))?;
             }
             if version < 3 {
-                sqlx::query("ALTER TABLE local_songs ADD COLUMN primary_color INTEGER NOT NULL DEFAULT 0")
-                    .execute(p).await.ok();
-                sqlx::query("ALTER TABLE local_songs ADD COLUMN secondary_color INTEGER NOT NULL DEFAULT 0")
-                    .execute(p).await.ok();
+                // 检查列是否存在，避免 ALTER 失败后仍提升版本号
+                let has_primary: bool = sqlx::query_scalar(
+                    "SELECT COUNT(*) > 0 FROM pragma_table_info('local_songs') WHERE name = 'primary_color'",
+                )
+                .fetch_one(p)
+                .await
+                .map_err(|e| format!("检查 primary_color 列失败: {}", e))?;
+                if !has_primary {
+                    sqlx::query("ALTER TABLE local_songs ADD COLUMN primary_color INTEGER NOT NULL DEFAULT 0")
+                        .execute(p)
+                        .await
+                        .map_err(|e| format!("添加 primary_color 列失败: {}", e))?;
+                }
+                let has_secondary: bool = sqlx::query_scalar(
+                    "SELECT COUNT(*) > 0 FROM pragma_table_info('local_songs') WHERE name = 'secondary_color'",
+                )
+                .fetch_one(p)
+                .await
+                .map_err(|e| format!("检查 secondary_color 列失败: {}", e))?;
+                if !has_secondary {
+                    sqlx::query("ALTER TABLE local_songs ADD COLUMN secondary_color INTEGER NOT NULL DEFAULT 0")
+                        .execute(p)
+                        .await
+                        .map_err(|e| format!("添加 secondary_color 列失败: {}", e))?;
+                }
             }
 
             sqlx::query("INSERT OR REPLACE INTO db_meta (key, value) VALUES ('schema_version', ?)")
@@ -273,13 +298,16 @@ pub fn import_local_songs(paths: Vec<String>, covers_dir: String) -> Result<Vec<
         let album = meta.album.filter(|s| !s.is_empty()).unwrap_or_else(|| "未知专辑".into());
 
         let rt = crate::api::runtime::shared_rt();
-        let _ = rt.block_on(async {
+        let result = rt.block_on(async {
             sqlx::query("INSERT OR REPLACE INTO local_songs (path, title, artist, album, duration, cover_path, album_id, primary_color, secondary_color) VALUES (?, ?, ?, ?, ?, ?, '', ?, ?)")
                 .bind(&path).bind(&title).bind(&artist)
                 .bind(&album).bind(&duration).bind(&cover_path)
                 .bind(primary_color.unwrap_or(0)).bind(secondary_color.unwrap_or(0))
                 .execute(p).await
         });
+        if let Err(e) = result {
+            return Err(format!("导入歌曲失败: {}, 文件: {}", e, path));
+        }
         imported += 1;
     }
 

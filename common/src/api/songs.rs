@@ -60,7 +60,7 @@ pub async fn get_all_songs(
 
 /// 根据专辑获取歌曲
 pub async fn get_songs_by_album(client: &ApiClient, album: &str) -> ApiResult<ApiResponse<Value>> {
-    let path = format!("/api/songs/album?album={}", album);
+    let path = format!("/api/songs/album?album={}", urlencoding::encode(album));
     let response = client
         .get(&path)
         .await
@@ -77,7 +77,7 @@ pub async fn get_songs_by_artist(
     client: &ApiClient,
     artist: &str,
 ) -> ApiResult<ApiResponse<Value>> {
-    let path = format!("/api/songs/artist?artist={}", artist);
+    let path = format!("/api/songs/artist?artist={}", urlencoding::encode(artist));
     let response = client
         .get(&path)
         .await
@@ -173,7 +173,7 @@ mod tests {
     // GET请求的测试，默认执行
     #[tokio::test]
     async fn test_get_all_songs() {
-        let client = ApiClient::tester_client();
+        let client = ApiClient::default();
 
         // 测试默认分页（第1页，每页10条）
         match get_all_songs(&client, None, None).await {

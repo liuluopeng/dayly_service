@@ -23,7 +23,9 @@ pub fn connect_chat_ws(sink: StreamSink<String>, path: String) {
         .replace("https://", "wss://");
     let full_url = format!("{}{}?token={}", ws_url, path, urlencoding::encode(&token));
 
-    tokio::spawn(async move {
+    // FRB 同步调用在线程池上执行（无 Tokio runtime 上下文），
+    // 必须用共享 runtime 来 spawn
+    crate::api::runtime::shared_rt().spawn(async move {
         let request = match full_url.into_client_request() {
             Ok(r) => r,
             Err(e) => {

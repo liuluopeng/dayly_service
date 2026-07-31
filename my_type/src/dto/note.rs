@@ -19,6 +19,6 @@ crate::impl_display!(self, NoteSummary,
     "ID"     => self.id,
     "文件名" => self.filename.as_deref().unwrap_or("无"),
     "内容"   => self.simple_text.as_ref().or(self.text.as_ref()).map(|t| {
-        if t.len() > 50 { format!("{}...", &t[..50]) } else { t.clone() }
+        if t.len() > 50 { format!("{}...", &t[..t.floor_char_boundary(50)]) } else { t.clone() }
     }).unwrap_or_else(|| "无".to_string())
 );

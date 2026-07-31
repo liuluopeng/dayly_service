@@ -7,6 +7,7 @@ use super::base::{ApiError, ApiResponse, ErrorBody};
 
 /// 统一的 API 客户端
 /// 支持 native 和 wasm 两种平台
+#[derive(Clone)]
 pub struct ApiClient {
     pub client: Client,
     pub base_url: String,
@@ -106,12 +107,6 @@ impl ApiClient {
     /// 清除 token
     pub fn clear_token(&mut self) {
         self.token = None;
-    }
-
-    pub fn tester_client() -> Self {
-        let mut client = Self::default();
-        client.set_token("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1dWlkIjoiYTg2MTFlNDMtMzNlNC00MThmLWFhZTMtNGQ3NWY1OTQxZTk4IiwiZXhwIjoyMDAwMDAwMDAwfQ.iHHkGDpGsN_XpehSTGzmXCJMPnW2PvVd2UzihrAfly4");
-        client
     }
 }
 

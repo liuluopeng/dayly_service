@@ -167,11 +167,16 @@ impl ClipboardHistory {
         keyword: &str,
         count: usize,
     ) -> Result<Vec<HistoryEntry>, String> {
-        let pattern = format!("%{}%", keyword.replace('%', "\\%"));
+        // 转义 LIKE 通配符：% _ 以及转义符本身
+        let escaped = keyword
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
+        let pattern = format!("%{}%", escaped);
         let rows = sqlx::query_as::<_, HistoryEntry>(
             "SELECT id, entry_type, text_content, image_path, content_hash, created_at
              FROM clipboard_entries
-             WHERE entry_type = 'text' AND text_content LIKE ?1
+             WHERE entry_type = 'text' AND text_content LIKE ?1 ESCAPE '\\'
              ORDER BY created_at DESC
              LIMIT ?2",
         )
