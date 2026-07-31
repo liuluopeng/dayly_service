@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -96,7 +96,9 @@ const timestamp_to_utc = (timestamp: number): string => {
 };
 
 const local_to_timestamp = (time_str: string): number | null => {
-  const date = new Date(time_str);
+  // Safari/WKWebView 不支持 "2023-01-01 12:00:00" 格式，补 T 分隔符
+  const normalized = time_str.includes('T') ? time_str : time_str.replace(' ', 'T');
+  const date = new Date(normalized);
   return isNaN(date.getTime()) ? null : Math.floor(date.getTime() / 1000);
 };
 
@@ -159,9 +161,15 @@ watch(localTimeInput, (newValue) => {
 });
 
 // 组件挂载时初始化
+let clockTimer: number | undefined;
+
 onMounted(() => {
   updateCurrentTime();
   // 每秒更新一次当前时间
-  setInterval(updateCurrentTime, 1000);
+  clockTimer = window.setInterval(updateCurrentTime, 1000);
+});
+
+onUnmounted(() => {
+  if (clockTimer !== undefined) clearInterval(clockTimer);
 });
 </script>

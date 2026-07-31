@@ -76,7 +76,7 @@ class _MelatoninMoviesPageState extends State<MelatoninMoviesPage>
         _hasMore = (page + 1) * _pageSize < total;
       });
     } catch (e) {
-      setState(() {
+      if (mounted) setState(() {
         _errorMessage = 'apiMelatoninMovies.loadFailed'.trParams({'error': '$e'});
         _isLoading = false;
       });

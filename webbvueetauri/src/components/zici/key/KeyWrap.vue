@@ -24,7 +24,13 @@ const state = reactive({
 });
 const handleKeyDown = (e: KeyboardEvent) => {
   const code = e.code;
-  // 只拦截虚拟键盘实际处理的按键，不阻塞系统快捷键（CMD+/F12/缩放等）
+  // 不阻塞系统快捷键（Cmd/Ctrl+F、Cmd/Ctrl+C/V 等）
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  // 输入框/下拉框等原生控件内不拦截（允许正常输入与浏览器查找）
+  const target = e.target as HTMLElement | null;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return;
+
+  // 只拦截虚拟键盘实际处理的按键
   const isVirtualKey = code.startsWith('Key') || code.startsWith('Digit') || code === 'Enter' || code === 'Backspace' || code === 'Space';
   if (isVirtualKey) {
     e.preventDefault();

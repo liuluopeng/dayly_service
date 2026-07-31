@@ -47,7 +47,7 @@ class _GenreMoviesPageState extends State<GenreMoviesPage> {
     setState(() { _isLoading = true; });
     try {
       final response = await getMoviesByGenreForDart(genre: widget.genre, page: page, pageSize: _pageSize);
-      setState(() {
+      if (mounted) setState(() {
         _movies = response.data;
         _currentPage = page;
         _isLoading = false;
@@ -62,7 +62,7 @@ class _GenreMoviesPageState extends State<GenreMoviesPage> {
     try {
       final nextPage = _currentPage + 1;
       final response = await getMoviesByGenreForDart(genre: widget.genre, page: nextPage, pageSize: _pageSize);
-      setState(() {
+      if (mounted) setState(() {
         _movies.addAll(response.data);
         _currentPage = nextPage;
         _isLoadingMore = false;

@@ -112,7 +112,7 @@ class _VideoLibraryPageState extends State<VideoLibraryPage> {
         );
       }
     } finally {
-      setState(() => _isScanning = false);
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 

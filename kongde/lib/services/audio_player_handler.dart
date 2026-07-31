@@ -48,6 +48,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     String? title,
   }) async {
     try {
+      // 切换到单曲模式：清空在线列表，避免残留的在线歌曲劫持播放/切歌逻辑
+      _onlineSongs = null;
+      _currentOnlineSongIndex = 0;
+
       final mediaItem = MediaItem(
         id: url,
         title: title ?? 'audio.onlineAudio'.tr,
@@ -99,6 +103,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     int index,
   ) async {
     try {
+      // 切换到本地列表模式：清空在线列表，避免残留的在线歌曲劫持播放/切歌逻辑
+      _onlineSongs = null;
+      _currentOnlineSongIndex = 0;
+
       if (songs.isEmpty) {
         LOGGER.i('歌曲列表为空');
         return;
@@ -323,8 +331,9 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       // 本地播放列表模式
       await _player.seekToNext();
     } else if (_playlist.isNotEmpty) {
-      // 循环播放
+      // 循环播放：seek 不会恢复播放，需要显式 play()
       await _player.seek(Duration.zero, index: 0);
+      await _player.play();
     }
   }
 
@@ -483,6 +492,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     String? coverUrl,
   }) async {
     try {
+      // 单曲在线播放：清空在线列表模式，避免切歌逻辑走在线列表
+      _onlineSongs = null;
+      _currentOnlineSongIndex = 0;
+
       LOGGER.i('开始获取音频数据: $songId');
 
       final songUuid = UuidValue(songId);
@@ -569,24 +582,34 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       LOGGER.i('播放器语速: ${_player.speed}');
       LOGGER.i('播放器处理状态: ${_player.processingState}');
 
-      // 播放完成后删除临时文件
-      // 注意：不要在每次调用时都添加新的监听器
-      // 而是在 _setupPlayerListeners 中处理
-      // 这里我们使用一个简单的 Future.delayed 来等待播放完成
-      // 这不是最优解，但可以避免添加多个监听器的问题
-      Future.delayed(const Duration(seconds: 300), () {
-        try {
-          if (tempFile.existsSync()) {
-            tempFile.deleteSync();
-            LOGGER.i('临时文件已删除');
-          }
-        } catch (e) {
-          LOGGER.i('删除临时文件失败: $e');
-        }
-      });
+      // 清理其他歌曲的旧临时文件（当前正在播放的文件保留）
+      // 不再使用固定 300 秒定时删除：长歌曲播放到一半文件被删会导致播放失败
+      _cleanupOldTempFiles(tempDir, exclude: tempFile);
     } catch (e) {
       LOGGER.i('播放在线歌曲失败: $e');
       // 确保即使发生错误也能继续执行
+    }
+  }
+
+  /// 清理临时目录中其他歌曲的旧临时文件
+  void _cleanupOldTempFiles(Directory tempDir, {required File exclude}) {
+    try {
+      final stale = tempDir
+          .listSync()
+          .whereType<File>()
+          .where((f) =>
+              f.path.endsWith('_temp.mp3') && f.path != exclude.path)
+          .toList();
+      for (final f in stale) {
+        try {
+          f.deleteSync();
+          LOGGER.i('清理旧临时文件: ${f.path}');
+        } catch (e) {
+          LOGGER.i('清理旧临时文件失败: ${f.path}: $e');
+        }
+      }
+    } catch (e) {
+      LOGGER.i('扫描临时目录失败: $e');
     }
   }
 
@@ -595,51 +618,52 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     int index,
   ) async {
     try {
-      if (songs.isEmpty) {
+      // 先过滤掉 songId 为 null 的歌曲，保证 _playlist 与 _onlineSongs 索引一一对应
+      final validSongs = <Map<String, dynamic>>[];
+      for (var song in songs) {
+        if (song['songId'] != null) {
+          validSongs.add(song);
+        }
+      }
+
+      if (validSongs.isEmpty) {
         LOGGER.i('歌曲列表为空');
         return;
       }
 
-      if (index < 0 || index >= songs.length) {
+      if (index < 0 || index >= validSongs.length) {
         LOGGER.i('索引超出范围');
         return;
       }
 
       // 保存在线歌曲列表和 songsClient 实例
-      _onlineSongs = songs;
+      _onlineSongs = validSongs;
       _currentOnlineSongIndex = index;
 
-      // 构建播放列表
+      // 构建播放列表（与 _onlineSongs 1:1 对应）
       _playlist = [];
-      for (var song in songs) {
+      for (var song in validSongs) {
         final songId = song['songId'] as String?;
         final title = song['title'] as String? ?? 'audio.unknownSong'.tr;
         final artist = song['artist'] as String?;
         final album = song['album'] as String?;
         final coverUrl = song['coverUrl'] as String?;
 
-        if (songId != null) {
-          final mediaItem = MediaItem(
-            id: songId,
-            title: title,
-            artist: artist ?? 'music.unknownArtist'.tr,
-            album: album ?? 'music.unknownAlbum'.tr,
-            duration: const Duration(seconds: 180),
-            artUri: coverUrl != null && coverUrl.isNotEmpty
-                ? Uri.parse(coverUrl)
-                : null,
-            extras: {
-              'primaryColor': Colors.grey.shade700.value,
-              'secondaryColor': Colors.blue.value,
-            },
-          );
-          _playlist.add(mediaItem);
-        }
-      }
-
-      if (_playlist.isEmpty) {
-        LOGGER.i('没有成功加载任何歌曲');
-        return;
+        final mediaItem = MediaItem(
+          id: songId!,
+          title: title,
+          artist: artist ?? 'music.unknownArtist'.tr,
+          album: album ?? 'music.unknownAlbum'.tr,
+          duration: const Duration(seconds: 180),
+          artUri: coverUrl != null && coverUrl.isNotEmpty
+              ? Uri.parse(coverUrl)
+              : null,
+          extras: {
+            'primaryColor': Colors.grey.shade700.value,
+            'secondaryColor': Colors.blue.value,
+          },
+        );
+        _playlist.add(mediaItem);
       }
 
       if (!_listenersSetup) {
@@ -698,6 +722,9 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       await tempFile.writeAsBytes(audioData);
       final fileUri = Uri.file(tempFile.path);
       LOGGER.i('创建临时文件: ${tempFile.path}，大小: ${await tempFile.length()}');
+
+      // 清理其他歌曲的旧临时文件（当前正在播放的文件保留）
+      _cleanupOldTempFiles(tempDir, exclude: tempFile);
 
       // 更新 mediaItem 和主颜色
       final currentMediaItem = _playlist[_currentOnlineSongIndex];

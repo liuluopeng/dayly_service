@@ -91,11 +91,17 @@ class _ChatPageState extends State<ChatPage> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      if (res.statusCode != 200) return;
+      if (res.statusCode != 200) {
+        if (_loading && mounted) setState(() => _loading = false);
+        return;
+      }
 
       final json = jsonDecode(res.body);
       final data = json['data'] as List?;
-      if (data == null || data.isEmpty) return;
+      if (data == null || data.isEmpty) {
+        if (_loading && mounted) setState(() => _loading = false);
+        return;
+      }
 
       if (_lastMessageTime != null) {
         setState(() {

@@ -38,7 +38,7 @@ class _NoteViewState extends State<NoteView> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
+      if (mounted) setState(() {
         _error = 'note.loadFailed'.trParams({'error': '$e'});
         _isLoading = false;
       });

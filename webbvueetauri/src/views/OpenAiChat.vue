@@ -197,13 +197,17 @@ async function streamChatCompletion(request: any, sessionId: string) {
     const decoder = new TextDecoder();
     let fullContent = '';
     let fullThink = '';
+    let sseBuffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
+      // SSE 事件可能被 TCP 分块拆开：累积缓冲，只在完整行上解析
+      sseBuffer += chunk;
+      const lines = sseBuffer.split('\n');
+      sseBuffer = lines.pop() ?? ''; // 最后一段可能不完整，留到下一块
 
       for (const line of lines) {
         if (line.startsWith('data: ') && !line.includes('[DONE]')) {

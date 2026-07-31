@@ -67,7 +67,7 @@ class _LdoceDictPageState extends State<LdoceDictPage> {
   Future<void> _loadTopWords() async {
     try {
       final words = await getTopWordsForDart();
-      setState(() {
+      if (mounted) setState(() {
         _topWords = words;
       });
     } catch (e) {
@@ -128,7 +128,7 @@ class _LdoceDictPageState extends State<LdoceDictPage> {
         ).showSnackBar(SnackBar(content: Text('common.searchError'.trParams({'error': '$e'}))));
       }
     } finally {
-      setState(() {
+      if (mounted) setState(() {
         _isLoading = false;
       });
     }

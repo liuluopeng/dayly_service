@@ -175,7 +175,7 @@ class _ImageGalleryPageState extends State<ImageGalleryPage> {
         );
       }
     } finally {
-      setState(() => _isScanning = false);
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 
@@ -202,8 +202,11 @@ class _ImageGalleryPageState extends State<ImageGalleryPage> {
     if (targetIndex < 0 || targetIndex >= _total) return;
 
     // 如果目标图片还没加载，先加载到那一页
+    // 记录加载前后长度，失败或空页时停止，避免无限重试
     while (targetIndex >= _images.length && _hasMore && !_isLoadingMore) {
+      final before = _images.length;
       await _loadImages(_selectedFolder!, reset: false);
+      if (_images.length <= before) break;
     }
 
     if (!_scrollController.hasClients) return;

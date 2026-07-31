@@ -83,7 +83,7 @@ class _OnlineMusicPageState extends State<OnlineMusicPage> {
         _hasMore = songs.length == _pageSize;
       });
     } catch (e) {
-      setState(() {
+      if (mounted) setState(() {
         _errorMessage = 'onlineMusic.loadFailed'.trParams({'error': '$e'});
         _isLoading = false;
         _isLoadingMore = false;

@@ -58,6 +58,8 @@ const currentLyricType = ref<LyricType | null>(null);
 const allLyricsData = ref<AllLyricsResponse | null>(null);
 
 let progressInterval: number | null = null;
+let loadId = 0;
+let pendingLoad = false;
 let rAFId: number | null = null;
 
 const BAR_COUNT = 48;
@@ -254,13 +256,25 @@ function stopLyricsRAF() {
 function initSong() {
   const songData = route.query.song;
   if (songData && typeof songData === 'string') {
-    song.value = JSON.parse(decodeURIComponent(songData));
+    try {
+      song.value = JSON.parse(decodeURIComponent(songData));
+    } catch (e) {
+      console.error('解析歌曲参数失败:', e);
+      return;
+    }
     loadSong();
   }
 }
 
 async function loadSong() {
   if (!song.value) return;
+
+  // 串行化：加载中的新请求记录待加载标记，完成后自动重载，避免双音频/状态失配
+  const myId = ++loadId;
+  if (isLoading.value) {
+    pendingLoad = true;
+    return;
+  }
 
   if (sound.value) {
     sound.value.unload();
@@ -284,6 +298,7 @@ async function loadSong() {
     const response = await fetch(songUrl);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const blob = await response.blob();
+    if (myId !== loadId) return; // 已有更新的加载请求，丢弃本次结果
     audioUrl.value = URL.createObjectURL(blob);
 
     // 推断格式：blob URL 无扩展名，优先从 Content-Type 读取；否则回退常见格式
@@ -306,6 +321,7 @@ async function loadSong() {
       autoplay: true,
       volume: volume.value,
       onload: () => {
+        if (myId !== loadId) return;
         duration.value = sound.value?.duration() || 0;
         isLoading.value = false;
         setupSpectrum();
@@ -342,13 +358,24 @@ async function loadSong() {
         stopLyricsRAF();
       },
       onloaderror: () => {
+        if (myId !== loadId) return;
         isLoading.value = false;
         console.error('音频加载失败');
       }
     });
   } catch (error) {
+    if (myId !== loadId) return;
     isLoading.value = false;
     console.error('获取歌曲文件失败:', error);
+  } finally {
+    // 仅最新加载请求负责解锁与重载
+    if (myId === loadId) {
+      isLoading.value = false;
+      if (pendingLoad) {
+        pendingLoad = false;
+        loadSong();
+      }
+    }
   }
 }
 

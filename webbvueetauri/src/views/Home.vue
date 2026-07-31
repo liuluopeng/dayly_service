@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { save_note_wasm } from "../types/wasm-typed";
@@ -169,9 +169,13 @@ const formattedDate = computed(() => {
   });
 });
 
-setInterval(() => {
+let clockTimer: number | undefined;
+clockTimer = window.setInterval(() => {
   currentTime.value = new Date();
 }, 1000);
+onUnmounted(() => {
+  if (clockTimer !== undefined) clearInterval(clockTimer);
+});
 </script>
 
 <template>

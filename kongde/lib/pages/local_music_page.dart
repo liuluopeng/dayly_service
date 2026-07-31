@@ -31,9 +31,9 @@ class _LocalMusicPageState extends State<LocalMusicPage> {
     setState(() { _loading = true; _error = null; });
     try {
       final songs = await MusicService.getMusicFromDevice();
-      setState(() { _songs = songs; _loading = false; });
+      if (mounted) setState(() { _songs = songs; _loading = false; });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -41,9 +41,9 @@ class _LocalMusicPageState extends State<LocalMusicPage> {
     setState(() { _loading = true; _error = null; });
     try {
       final songs = await MusicService.scanDeviceMusic();
-      setState(() { _songs = songs; _loading = false; });
+      if (mounted) setState(() { _songs = songs; _loading = false; });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -113,7 +113,7 @@ class _LocalMusicPageState extends State<LocalMusicPage> {
                 if (await coversDir.exists()) await coversDir.delete(recursive: true);
                 await SqliteStorage().init();
                 await RustLib.instance.api.crateApiDbKvDelete(key: '__local_songs__');
-                setState(() { _songs = []; });
+                if (mounted) setState(() { _songs = []; });
                 showDialog(context: context, builder: (_) => AlertDialog(title: const Text('已清除'), content: const Text('歌单、封面、元数据缓存已全部删除'), actions: [TextButton(onPressed: () => Get.back(), child: const Text('好'))]));
               } else if (v == 'clear_all') {
                 await SqliteStorage().init();

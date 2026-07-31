@@ -46,6 +46,7 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
   StreamSubscription? _fftDataSubscription;
   StreamSubscription? _playbackStateSubscription;
   StreamSubscription? _simulatedPlayingSubscription;
+  StreamSubscription? _mediaItemSubscription;
   Timer? _fftUpdateTimer;
   Timer? _simulatedSpectrumTimer;
   List<double> _pendingFftData = [];
@@ -68,7 +69,8 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
   }
 
   void _setupSongChangeListener() {
-    Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
+    _mediaItemSubscription =
+        Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
       if (mediaItem != null && mediaItem.id != _currentLyricsSongId) {
         _currentLyricsSongId = mediaItem.id;
         _loadLyrics(mediaItem.id);
@@ -155,7 +157,8 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
         }
       });
     } else if (Platform.isIOS) {
-      Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
+      _mediaItemSubscription =
+          Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
         if (mounted && mediaItem != null) {
           _initializeVisualizer();
         }
@@ -267,6 +270,7 @@ class _PlayOnlineMusicPageState extends State<PlayOnlineMusicPage> {
     _fftDataSubscription?.cancel();
     _playbackStateSubscription?.cancel();
     _simulatedPlayingSubscription?.cancel();
+    _mediaItemSubscription?.cancel();
     _fftUpdateTimer?.cancel();
     _simulatedSpectrumTimer?.cancel();
     _fftDataNotifier.dispose();

@@ -20,6 +20,7 @@ const lastSavedTime = ref<Date | null>(null);
 
 let saveTimer: number | undefined = undefined;
 let isSaving = ref(false);
+let pendingSave = false;
 
 onMounted(async () => {
   await loadNoteDetail();
@@ -56,7 +57,9 @@ const onInput = () => {
 
 const autoSave = async () => {
   if (isSaving.value) {
-    console.log('正在保存中，跳过本次保存');
+    // 有保存正在进行：记录待保存标记，保存完成后自动重试，避免丢失编辑内容
+    pendingSave = true;
+    console.log('正在保存中，稍后重试');
     return;
   }
 
@@ -93,6 +96,11 @@ const autoSave = async () => {
     }, 3000);
   } finally {
     isSaving.value = false;
+    // 保存期间有新编辑：立即重试一次，确保内容不丢失
+    if (pendingSave) {
+      pendingSave = false;
+      autoSave();
+    }
   }
 };
 

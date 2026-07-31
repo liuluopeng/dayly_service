@@ -151,7 +151,8 @@ const routes = [
     name: 'NoteDetail',
     component: NoteDetail
   },
-  { path: '/search-history', redirect: '/dict' },
+  { path: '/tools', redirect: '/tools/base64' },
+  { path: '/search-history', component: () => import('../views/SearchHistory.vue') },
 
   {
     path: '/tools/base64',

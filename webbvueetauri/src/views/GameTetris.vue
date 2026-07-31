@@ -20,7 +20,7 @@ function onKeydown(e: KeyboardEvent) {
 
 const colors = ["", "#0ff", "#ff0", "#a0f", "#f80", "#08f", "#0f0", "#f00"];
 
-function start() { tetris_init(); refresh(); timer = window.setInterval(tick, 400); }
+function start() { stop(); tetris_init(); refresh(); timer = window.setInterval(tick, 400); }
 function stop() { if (timer) { clearInterval(timer); timer = null; } }
 
 onMounted(() => { window.addEventListener("keydown", onKeydown); start(); });

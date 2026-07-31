@@ -53,7 +53,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
         });
       }
     } catch (e) {
-      setState(() {
+      if (mounted) setState(() {
         _errorMessage = 'imageViewer.loadFailed'.trParams({'error': '$e'});
         _isLoading = false;
       });

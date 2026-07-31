@@ -43,6 +43,7 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
   StreamSubscription? _fftDataSubscription;
   StreamSubscription? _playbackStateSubscription;
   StreamSubscription? _simulatedPlayingSubscription;
+  StreamSubscription? _mediaItemSubscription;
   Timer? _fftUpdateTimer;
   List<double> _pendingFftData = [];
   late final SettingsController _settingsController;
@@ -108,7 +109,8 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
         }
       });
     } else if (Platform.isIOS) {
-      Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
+      _mediaItemSubscription =
+          Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
         if (mounted && mediaItem != null) {
           _initializeVisualizer();
         }
@@ -154,7 +156,7 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
     });
 
     // 监听歌曲变化，启动 MacOSAudioPlayer 静音播放获取频谱
-    _simulatedPlayingSubscription = Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
+    _mediaItemSubscription = Get.find<AudioPlayerHandler>().mediaItem.listen((mediaItem) {
       if (mounted && mediaItem != null && mediaItem.id.isNotEmpty) {
         _startMacOSAnalysis(mediaItem.id);
       }
@@ -236,6 +238,7 @@ class _PlayLocalMusicPageState extends State<PlayLocalMusicPage> {
     _fftDataSubscription?.cancel();
     _playbackStateSubscription?.cancel();
     _simulatedPlayingSubscription?.cancel();
+    _mediaItemSubscription?.cancel();
     _fftUpdateTimer?.cancel();
     _currentMacOSAnalysisPath = null;
     _fftDataNotifier.dispose();

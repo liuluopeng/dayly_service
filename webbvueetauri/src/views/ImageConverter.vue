@@ -58,7 +58,7 @@ const fileName = computed(() => {
 
 const qualityLabel = computed(() => {
   const preset = qualityPresets.find(p => p.value === quality.value);
-  return preset ? `menu.imageConverter.${preset.label}` : `${quality.value}%`;
+  return preset ? t(`menu.imageConverter.${preset.label}`) : `${quality.value}%`;
 });
 
 function setQuality(val: number) { quality.value = val; }

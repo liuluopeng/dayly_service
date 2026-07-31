@@ -107,7 +107,7 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
 
     // 刷新统计
     await _loadStats();
-    setState(() {
+    if (mounted) setState(() {
       _isLoading = false;
       _searchCount = _topWords.where((w) => w.word == word).map((w) => w.hasSearchedTimes).firstOrNull ?? 1;
     });

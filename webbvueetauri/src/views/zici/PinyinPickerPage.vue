@@ -588,6 +588,9 @@ const gridTable = computed(() => {
 const handleGridCellClick = (cell) => {
   if (!cell.exists) return;
 
+  // 单元格点击同时更新声母/韵母：临时禁用 watcher 重置，避免高亮跳到第一个韵母
+  skipFinalReset = true;
+
   const initialIndex = initialSounds.findIndex(s => s.pinyin === cell.initial);
   if (initialIndex >= 0) {
     selectedInitialIndex.value = initialIndex;
@@ -599,11 +602,14 @@ const handleGridCellClick = (cell) => {
     selectedFinalIndex.value = finalIndex;
   }
 
+  skipFinalReset = false;
   navigateToWords();
 };
 
-// 监听声母变化，重置韵母选择
+// 监听声母变化，重置韵母选择（单元格点击场景除外）
+let skipFinalReset = false;
 watch(selectedInitialIndex, () => {
+  if (skipFinalReset) return;
   selectedFinalIndex.value = 0;
 });
 

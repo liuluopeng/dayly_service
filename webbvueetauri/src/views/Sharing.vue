@@ -132,6 +132,8 @@ const transfers = ref<{
 }[]>([]);
 
 let ws: WebSocket | null = null;
+let disposed = false;
+let reconnectTimer: number | undefined = undefined;
 let pc: RTCPeerConnection | null = null;
 let dc: RTCDataChannel | null = null;
 let lastClipboard = '';
@@ -187,7 +189,13 @@ async function setupWebRTC() {
   };
 
   ws.onmessage = async (event) => {
-    const msg = JSON.parse(event.data);
+    let msg: any;
+    try {
+      msg = JSON.parse(event.data);
+    } catch (e) {
+      console.error('无法解析信令消息:', e);
+      return;
+    }
 
     if (msg.type === 'registered') {
       // 创建 PeerConnection
@@ -245,7 +253,11 @@ async function setupWebRTC() {
 
   ws.onclose = () => {
     connected.value = false;
-    setTimeout(setupWebRTC, 3000);
+    if (disposed) return; // 组件已卸载，不再重连
+    if (reconnectTimer !== undefined) clearTimeout(reconnectTimer);
+    reconnectTimer = window.setTimeout(() => {
+      if (!disposed) setupWebRTC();
+    }, 3000);
   };
 }
 
@@ -378,7 +390,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  disposed = true;
   if (clipboardTimer) clearInterval(clipboardTimer);
+  if (reconnectTimer !== undefined) clearTimeout(reconnectTimer);
   dc?.close();
   pc?.close();
   ws?.close();

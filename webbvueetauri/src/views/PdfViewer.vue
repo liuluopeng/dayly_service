@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { getApiUrl } from '../utils/apiUrl';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -22,17 +23,11 @@ const containerRef = ref<HTMLDivElement | null>(null);
 
 let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
 
-function getApiUrl(): string {
-  if (import.meta.env.DEV) {
-    return `http://${window.location.hostname}:23001`;
-  }
-  return `http://${window.location.hostname}:23000`;
-}
-
 function getAuthUrl(path: string): string {
   const token = localStorage.getItem('token');
+  // 与其余页面一致：优先使用用户在设置里配置的自定义 API 地址
   const apiUrl = getApiUrl();
-  return `${apiUrl}/api/files/serve?path=${encodeURIComponent(path)}&token=${token}`;
+  return `${apiUrl}/api/files/serve?path=${encodeURIComponent(path)}&token=${token || ''}`;
 }
 
 async function loadPdf() {

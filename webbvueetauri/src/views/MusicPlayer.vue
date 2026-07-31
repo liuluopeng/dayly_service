@@ -34,6 +34,8 @@ const activeLyricIndex = ref(-1);
 const lyricsContainerRef = ref<HTMLElement | null>(null);
 
 let progressInterval: number | null = null;
+let loadId = 0;
+let pendingLoad = false;
 
 const BAR_COUNT = 48;
 const spectrumData = ref<number[]>(new Array(BAR_COUNT).fill(0));
@@ -186,13 +188,25 @@ function stopSpectrum() {
 function initSong() {
   const songData = route.query.song;
   if (songData && typeof songData === 'string') {
-    song.value = JSON.parse(decodeURIComponent(songData));
+    try {
+      song.value = JSON.parse(decodeURIComponent(songData));
+    } catch (e) {
+      console.error('解析歌曲参数失败:', e);
+      return;
+    }
     loadSong();
   }
 }
 
 async function loadSong() {
   if (!song.value) return;
+
+  // 串行化：加载中的新请求记录待加载标记，完成后自动重载，避免双音频/状态失配
+  const myId = ++loadId;
+  if (isLoading.value) {
+    pendingLoad = true;
+    return;
+  }
 
   if (sound.value) {
     sound.value.unload();
@@ -216,6 +230,7 @@ async function loadSong() {
     const response = await fetch(songUrl);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const blob = await response.blob();
+    if (myId !== loadId) return; // 已有更新的加载请求，丢弃本次结果
     audioUrl.value = URL.createObjectURL(blob);
 
     sound.value = new Howl({
@@ -224,6 +239,7 @@ async function loadSong() {
       autoplay: true,
       volume: volume.value,
       onload: () => {
+        if (myId !== loadId) return;
         duration.value = sound.value?.duration() || 0;
         isLoading.value = false;
         setupSpectrum();
@@ -244,19 +260,30 @@ async function loadSong() {
       onend: () => {
         isPlaying.value = false;
         currentTime.value = 0;
-        activeLyricIndex.value = 0;
+        activeLyricIndex.value = -1;
         stopProgressTracking();
         stopSpectrum();
         stopLyricsSync();
       },
       onloaderror: () => {
+        if (myId !== loadId) return;
         isLoading.value = false;
         console.error('音频加载失败');
       }
     });
   } catch (error) {
+    if (myId !== loadId) return;
     isLoading.value = false;
     console.error('获取歌曲文件失败:', error);
+  } finally {
+    // 仅最新加载请求负责解锁与重载
+    if (myId === loadId) {
+      isLoading.value = false;
+      if (pendingLoad) {
+        pendingLoad = false;
+        loadSong();
+      }
+    }
   }
 }
 

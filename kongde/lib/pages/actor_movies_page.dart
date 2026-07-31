@@ -89,7 +89,7 @@ class _ActorMoviesPageState extends State<ActorMoviesPage>
         _hasMore = (page + 1) * _pageSize < total;
       });
     } catch (e) {
-      setState(() {
+      if (mounted) setState(() {
         _errorMessage = 'actorMovies.loadFailed'.trParams({'error': '$e'});
         _isLoading = false;
       });
@@ -120,7 +120,7 @@ class _ActorMoviesPageState extends State<ActorMoviesPage>
         _hasMore = (nextPage + 1) * _pageSize < total;
       });
     } catch (e) {
-      setState(() {
+      if (mounted) setState(() {
         _isLoadingMore = false;
       });
     }

@@ -27,7 +27,7 @@ function onTouchEnd(e: TouchEvent) {
   setDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
 }
 
-function start() { snake_init(); refresh(); over.value = false; timer = window.setInterval(tick, 150); }
+function start() { stop(); snake_init(); refresh(); over.value = false; timer = window.setInterval(tick, 150); }
 function stop() { if (timer) { clearInterval(timer); timer = null; } }
 
 onMounted(() => { window.addEventListener("keydown", onKeydown); start(); });
