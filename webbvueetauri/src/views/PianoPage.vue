@@ -273,7 +273,7 @@ onUnmounted(() => {
     <p class="text-white/60 text-sm mb-3">{{ t('piano.subtitle') }}</p>
 
     <!-- 键位参考图 -->
-    <div class="w-full max-w-4xl bg-black/40 rounded-xl p-4 mb-4 border border-white/10">
+    <div class="w-full max-w-6xl bg-black/40 rounded-xl p-4 mb-4 border border-white/10">
       <div class="text-white/70 text-xs mb-2 flex items-center gap-2">
         <span>{{ t('piano.keyRefTitle') }}</span>
         <span class="text-amber-400">⇧ = Shift</span>
@@ -318,7 +318,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 钢琴（AutoPiano 布局：36 白键 + 5 组黑键） -->
-    <div class="w-full max-w-4xl select-none rounded-b-xl overflow-hidden shadow-2xl ring-1 ring-black/60" @mousedown.prevent>
+    <div class="w-full max-w-6xl select-none rounded-b-xl overflow-hidden shadow-2xl ring-1 ring-black/60" @mousedown.prevent>
       <div class="relative h-52 md:h-72 bg-black">
         <!-- 白键 -->
         <div class="flex h-full">
@@ -339,12 +339,13 @@ onUnmounted(() => {
               class="absolute top-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] md:text-[11px] font-bold select-none shadow">
               do
             </span>
-            <!-- 白键标注：灰色键名 + 唱名 -->
+            <!-- 白键标注：灰色键名 + 唱名 + 音名（C4 记法） -->
             <span class="absolute bottom-1 left-0 right-0 text-center leading-tight select-none">
-              <span class="block text-[10px] md:text-xs text-gray-500">
+              <span class="block text-[10px] md:text-xs font-semibold text-gray-500">
                 {{ WHITE_NOTES.find(n => n.note === note)?.key }}
               </span>
               <span class="block text-[9px] md:text-[11px] text-gray-400">{{ solfege(note) }}</span>
+              <span class="block text-[9px] md:text-[11px] text-gray-500">{{ note }}</span>
             </span>
           </div>
         </div>
