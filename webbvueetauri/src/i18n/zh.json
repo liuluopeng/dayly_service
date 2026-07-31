@@ -681,6 +681,9 @@
     "timbreWasm": "Wasm 合成",
     "timbreMp3": "MP3 采样",
     "timbreWasmHint": "Karplus-Strong 物理建模 · 96kHz HiRes，无需加载采样",
-    "synthPreparing": "（生成中…）"
+    "synthPreparing": "（生成中…）",
+    "timbreLearn": "学习音色",
+    "timbreLearnHint": "从采样提取参数再合成（STFT 分析 + 加法合成）",
+    "learnFailed": "音色分析失败"
   }
 }

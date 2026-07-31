@@ -194,3 +194,7 @@ export const get_clipboard_history_wasm = (count?: number | null, type_filter?: 
 // === 钢琴合成（Karplus-Strong） ===
 export const synth_piano_note = wasm.synth_piano_note as (freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;
 export const synth_piano_bright = wasm.synth_piano_bright as (freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;
+
+// === 音色分析-再合成（从采样学习参数） ===
+export const analyze_piano_samples = wasm.analyze_piano_samples as (samples: Float32Array, freq: number, sample_rate: number) => Float32Array;
+export const synth_analyzed_note = wasm.synth_analyzed_note as (params: Float32Array, freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;

@@ -683,6 +683,9 @@
     "timbreWasm": "Wasm Synth",
     "timbreMp3": "MP3 Samples",
     "timbreWasmHint": "Karplus-Strong physical modeling · 96kHz HiRes, no samples needed",
-    "synthPreparing": " (preparing…)"
+    "synthPreparing": " (preparing…)",
+    "timbreLearn": "Learned",
+    "timbreLearnHint": "Analysis-resynthesis: STFT params extracted from samples",
+    "learnFailed": "Timbre analysis failed"
   }
 }

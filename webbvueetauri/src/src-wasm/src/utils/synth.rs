@@ -13,10 +13,10 @@
 use wasm_bindgen::prelude::*;
 
 /// 确定性伪随机数（xorshift 风格）
-struct Rng(u32);
+pub(crate) struct Rng(pub(crate) u32);
 
 impl Rng {
-    fn next(&mut self) -> f32 {
+    pub(crate) fn next(&mut self) -> f32 {
         let mut x = self.0;
         x ^= x << 13;
         x ^= x >> 17;
@@ -69,23 +69,23 @@ fn pluck_string(freq: f32, sample_rate: u32, length: usize, seed: u32, decay: f3
 }
 
 /// 一阶低通（平滑数字味）
-struct OnePole {
+pub(crate) struct OnePole {
     y: f32,
 }
 
 impl OnePole {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self { y: 0.0 }
     }
 
-    fn process(&mut self, x: f32, alpha: f32) -> f32 {
+    pub(crate) fn process(&mut self, x: f32, alpha: f32) -> f32 {
         self.y += alpha * (x - self.y);
         self.y
     }
 }
 
 /// 钢琴不谐和度系数 B（低音大、高音小）
-fn inharmonicity(freq: f32) -> f32 {
+pub(crate) fn inharmonicity(freq: f32) -> f32 {
     // 中央 C 附近 ~0.0003，每低一个八度约 ×1.6
     (0.0003 * (261.63 / freq).powf(0.8)).clamp(0.00005, 0.004)
 }

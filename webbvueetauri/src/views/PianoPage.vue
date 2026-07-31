@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { synth_piano_note } from '../types/wasm-typed';
+import { synth_piano_note, analyze_piano_samples, synth_analyzed_note } from '../types/wasm-typed';
 
 const { t } = useI18n();
 
@@ -135,6 +135,10 @@ function playNote(note: string) {
     playSynthNote(note);
     return;
   }
+  if (timbre.value === 'learn') {
+    playLearnedNote(note);
+    return;
+  }
   const ctx = getAudioCtx();
   if (!ctx) return;
   if (ctx.state === 'suspended') ctx.resume();
@@ -152,7 +156,7 @@ function playNote(note: string) {
 
 // ─── Wasm 合成音色（Karplus-Strong，96kHz HiRes） ───
 
-type Timbre = 'mp3' | 'wasm';
+type Timbre = 'mp3' | 'wasm' | 'learn';
 
 const timbre = ref<Timbre>('wasm');
 const SYNTH_SAMPLE_RATE = 96000;
@@ -223,6 +227,121 @@ function setTimbre(t: Timbre) {
     // 切到合成音色时后台预生成（若尚未完成）
     setTimeout(prewarmSynth, 0);
   }
+  if (t === 'learn') {
+    learnIfNeeded();
+  }
+}
+
+// ─── 学习音色（从采样提取参数 → 加法再合成） ───
+
+// 代表性键：分析少量键，其余键用最近代表键参数（音色随音高平滑迁移）
+const LEARN_KEYS = ['C2', 'C3', 'C4', 'C5', 'C6'];
+const learnedParams = new Map<string, Float32Array>();
+const learnedCache = new Map<string, AudioBuffer>();
+const learnProgress = ref(0);
+const learnTotal = LEARN_KEYS.length;
+const learnReady = ref(false);
+
+function noteMidi(note: string): number {
+  const m = /^([A-G]#?)(\d)$/.exec(note);
+  if (!m) return 60;
+  return (parseInt(m[2], 10) + 1) * 12 + (SEMITONE[m[1][0]] ?? 0) + (m[1].includes('#') ? 1 : 0);
+}
+
+async function analyzeOneKey(note: string) {
+  const white = WHITE_NOTES.find(n => n.note === note);
+  if (!white) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const res = await fetch(`${sampleBase}${white.file}.mp3`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const arrayBuf = await res.arrayBuffer();
+  const audioBuf = await ctx.decodeAudioData(arrayBuf);
+  const mono = audioBuf.getChannelData(0);
+  const params = analyze_piano_samples(mono, noteToFreq(note), audioBuf.sampleRate);
+  if (params.length > 0) {
+    learnedParams.set(note, params);
+  }
+}
+
+async function learnIfNeeded() {
+  if (learnReady.value || learnProgress.value > 0) return;
+  learnProgress.value = 1;
+  try {
+    for (let i = 0; i < LEARN_KEYS.length; i++) {
+      await analyzeOneKey(LEARN_KEYS[i]);
+      learnProgress.value = i + 1;
+    }
+    learnReady.value = true;
+  } catch (e) {
+    console.error('音色分析失败:', e);
+    errorMsg.value = t('piano.learnFailed');
+    learnProgress.value = 0;
+  }
+}
+
+// 取最近的代表键参数
+function paramsForNote(note: string): Float32Array | undefined {
+  if (learnedParams.has(note)) return learnedParams.get(note)!;
+  let best: Float32Array | undefined;
+  let bestDist = Infinity;
+  const target = noteMidi(note);
+  learnedParams.forEach((p, k) => {
+    const d = Math.abs(noteMidi(k) - target);
+    if (d < bestDist) {
+      bestDist = d;
+      best = p;
+    }
+  });
+  return best;
+}
+
+function getLearnedBuffer(note: string): AudioBuffer | null {
+  const ctx = getAudioCtx();
+  if (!ctx) return null;
+
+  const params = paramsForNote(note);
+  if (!params) return null;
+
+  let buf = learnedCache.get(note);
+  if (!buf) {
+    const samples = synth_analyzed_note(params, noteToFreq(note), 2500, SYNTH_SAMPLE_RATE, noteSeed(note));
+    if (samples.length === 0) return null;
+    buf = ctx.createBuffer(1, samples.length, SYNTH_SAMPLE_RATE);
+    buf.copyToChannel(samples, 0);
+    learnedCache.set(note, buf);
+  }
+  return buf;
+}
+
+function playLearnedNote(note: string) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const buf = getLearnedBuffer(note);
+  if (!buf) return;
+
+  const source = ctx.createBufferSource();
+  source.buffer = buf;
+  source.connect(ctx.destination);
+  source.start();
+}
+
+// 后台分片预生成全部键（只生成缓存，不发声，避免阻塞 UI）
+function prewarmLearned() {
+  if (!learnReady.value) return;
+  const allNotes: string[] = [...whiteNotes];
+  Object.keys(BLACK_NOTES).forEach(n => allNotes.push(n));
+  let i = 0;
+  const BATCH = 4;
+  const tick = () => {
+    for (let j = 0; j < BATCH && i < allNotes.length; j++, i++) {
+      getLearnedBuffer(allNotes[i]);
+    }
+    if (i < allNotes.length) {
+      setTimeout(tick, 30);
+    }
+  };
+  setTimeout(tick, 0);
 }
 
 function pressNote(note: string) {
@@ -357,6 +476,8 @@ onMounted(() => {
   window.addEventListener('blur', clearAllNotes);
   loadSamples();
   prewarmSynth();
+  // 学习音色：分析完成后自动后台预生成
+  learnIfNeeded().then(() => { if (learnReady.value) prewarmLearned(); });
 });
 
 onUnmounted(() => {
@@ -392,7 +513,20 @@ onUnmounted(() => {
       >
         {{ t('piano.timbreMp3') }}
       </button>
+      <button
+        class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+        :class="timbre === 'learn'
+          ? 'bg-amber-500 text-black'
+          : 'bg-white/10 text-white/70 hover:bg-white/20'"
+        @click="setTimbre('learn')"
+      >
+        {{ t('piano.timbreLearn') }}
+        <span v-if="timbre === 'learn' && !learnReady" class="opacity-70">
+          {{ learnProgress > 0 ? ` (${learnProgress}/${learnTotal})` : '' }}
+        </span>
+      </button>
       <span v-if="timbre === 'wasm'" class="text-[11px] text-emerald-400/80">{{ t('piano.timbreWasmHint') }}</span>
+      <span v-if="timbre === 'learn' && learnReady" class="text-[11px] text-emerald-400/80">{{ t('piano.timbreLearnHint') }}</span>
     </div>
 
     <!-- 键位参考图 -->
