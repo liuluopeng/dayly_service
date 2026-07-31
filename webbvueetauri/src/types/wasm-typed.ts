@@ -190,3 +190,7 @@ export const tetris_over = wasm.tetris_over;
 // === 剪贴板 ===
 export const get_clipboard_history_wasm = (count?: number | null, type_filter?: string | null, search?: string | null): Promise<ClipboardEntry[]> =>
   wasm.get_clipboard_history_wasm(count, type_filter, search) as any;
+
+// === 钢琴合成（Karplus-Strong） ===
+export const synth_piano_note = wasm.synth_piano_note as (freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;
+export const synth_piano_bright = wasm.synth_piano_bright as (freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;

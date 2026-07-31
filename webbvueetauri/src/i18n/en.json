@@ -679,6 +679,10 @@
     "sampleLoadFailed": "Failed to load sample: {file}",
     "keyHint": "Layout: white keys 1-0 Q-P A-L Z-M, black keys Shift+corresponding white key. Multiple keys supported.",
     "keyRefTitle": "Key reference",
-    "doHint": "Green do = middle C (C4, key T), the reference note"
+    "doHint": "Green do = middle C (C4, key T), the reference note",
+    "timbreWasm": "Wasm Synth",
+    "timbreMp3": "MP3 Samples",
+    "timbreWasmHint": "Karplus-Strong physical modeling · 96kHz HiRes, no samples needed",
+    "synthPreparing": " (preparing…)"
   }
 }

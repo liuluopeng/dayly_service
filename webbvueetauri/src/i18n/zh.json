@@ -677,6 +677,10 @@
     "sampleLoadFailed": "采样加载失败: {file}",
     "keyHint": "键盘布局：白键 1-0 Q-P A-L Z-M，黑键 Shift+对应白键。支持同时按下多个键。",
     "keyRefTitle": "键位参考",
-    "doHint": "绿色 do = 中央 C（C4，键盘 T 键），钢琴上的基准音"
+    "doHint": "绿色 do = 中央 C（C4，键盘 T 键），钢琴上的基准音",
+    "timbreWasm": "Wasm 合成",
+    "timbreMp3": "MP3 采样",
+    "timbreWasmHint": "Karplus-Strong 物理建模 · 96kHz HiRes，无需加载采样",
+    "synthPreparing": "（生成中…）"
   }
 }

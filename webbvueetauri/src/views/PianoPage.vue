@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { synth_piano_note } from '../types/wasm-typed';
 
 const { t } = useI18n();
 
@@ -130,6 +131,10 @@ async function loadSamples() {
 }
 
 function playNote(note: string) {
+  if (timbre.value === 'wasm') {
+    playSynthNote(note);
+    return;
+  }
   const ctx = getAudioCtx();
   if (!ctx) return;
   if (ctx.state === 'suspended') ctx.resume();
@@ -143,6 +148,81 @@ function playNote(note: string) {
   source.buffer = buffer;
   source.connect(ctx.destination);
   source.start();
+}
+
+// ─── Wasm 合成音色（Karplus-Strong，96kHz HiRes） ───
+
+type Timbre = 'mp3' | 'wasm';
+
+const timbre = ref<Timbre>('wasm');
+const SYNTH_SAMPLE_RATE = 96000;
+const synthCache = new Map<string, AudioBuffer>();
+
+// 音符 → 频率：C4 = 261.63Hz（MIDI 公式 440 * 2^((midi-69)/12)）
+const SEMITONE: Record<string, number> = {
+  C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
+};
+
+function noteToFreq(note: string): number {
+  const match = /^([A-G]#?)(\d)$/.exec(note);
+  if (!match) return 261.63;
+  const midi = (parseInt(match[2], 10) + 1) * 12 + (SEMITONE[match[1][0]] ?? 0) + (match[1].includes('#') ? 1 : 0);
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+// 音符 → 确定性种子（同一音符每次生成相同音色）
+function noteSeed(note: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < note.length; i++) {
+    h ^= note.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+function playSynthNote(note: string) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+
+  let buf = synthCache.get(note);
+  if (!buf) {
+    const samples = synth_piano_note(noteToFreq(note), 2500, SYNTH_SAMPLE_RATE, noteSeed(note));
+    if (samples.length === 0) return;
+    buf = ctx.createBuffer(1, samples.length, SYNTH_SAMPLE_RATE);
+    buf.copyToChannel(samples, 0);
+    synthCache.set(note, buf);
+  }
+
+  const source = ctx.createBufferSource();
+  source.buffer = buf;
+  source.connect(ctx.destination);
+  source.start();
+}
+
+// 预生成全部 88 键（后台预热，首按不卡）
+function prewarmSynth() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const allNotes: string[] = [...whiteNotes];
+  Object.keys(BLACK_NOTES).forEach(n => allNotes.push(n));
+  for (const note of allNotes) {
+    if (synthCache.has(note)) continue;
+    const samples = synth_piano_note(noteToFreq(note), 2500, SYNTH_SAMPLE_RATE, noteSeed(note));
+    if (samples.length === 0) continue;
+    const buf = ctx.createBuffer(1, samples.length, SYNTH_SAMPLE_RATE);
+    buf.copyToChannel(samples, 0);
+    synthCache.set(note, buf);
+  }
+  synthReady.value = true;
+}
+
+function setTimbre(t: Timbre) {
+  timbre.value = t;
+  if (t === 'wasm') {
+    // 切到合成音色时后台预生成（若尚未完成）
+    setTimeout(prewarmSynth, 0);
+  }
 }
 
 function pressNote(note: string) {
@@ -201,6 +281,7 @@ function clearAllNotes() {
 }
 
 const whiteNotes = WHITE_NOTES.map(n => n.note);
+const synthReady = ref(false);
 
 function isActive(note: string): boolean {
   return activeKeys.value.has(note);
@@ -275,6 +356,7 @@ onMounted(() => {
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', clearAllNotes);
   loadSamples();
+  prewarmSynth();
 });
 
 onUnmounted(() => {
@@ -289,8 +371,32 @@ onUnmounted(() => {
     <h1 class="text-2xl md:text-3xl font-bold text-white mb-1">{{ t('piano.title') }}</h1>
     <p class="text-white/60 text-sm mb-3">{{ t('piano.subtitle') }}</p>
 
+    <!-- 音色选择 -->
+    <div class="w-full bg-black/40 rounded-xl px-4 py-2.5 mb-3 border border-white/10 flex flex-wrap items-center justify-center gap-3">
+      <button
+        class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+        :class="timbre === 'wasm'
+          ? 'bg-amber-500 text-black'
+          : 'bg-white/10 text-white/70 hover:bg-white/20'"
+        @click="setTimbre('wasm')"
+      >
+        {{ t('piano.timbreWasm') }}
+        <span v-if="timbre === 'wasm' && !synthReady" class="opacity-70">{{ t('piano.synthPreparing') }}</span>
+      </button>
+      <button
+        class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+        :class="timbre === 'mp3'
+          ? 'bg-amber-500 text-black'
+          : 'bg-white/10 text-white/70 hover:bg-white/20'"
+        @click="setTimbre('mp3')"
+      >
+        {{ t('piano.timbreMp3') }}
+      </button>
+      <span v-if="timbre === 'wasm'" class="text-[11px] text-emerald-400/80">{{ t('piano.timbreWasmHint') }}</span>
+    </div>
+
     <!-- 键位参考图 -->
-    <div class="w-full max-w-6xl bg-black/40 rounded-xl p-4 mb-4 border border-white/10">
+    <div class="w-full bg-black/40 rounded-xl p-4 mb-4 border border-white/10">
       <div class="text-white/70 text-xs mb-2 flex items-center gap-2">
         <span>{{ t('piano.keyRefTitle') }}</span>
         <span class="text-amber-400">⇧ = Shift</span>
@@ -335,7 +441,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 钢琴（AutoPiano 布局：36 白键 + 5 组黑键） -->
-    <div class="w-full max-w-6xl select-none rounded-b-xl overflow-hidden shadow-2xl ring-1 ring-black/60" @mousedown.prevent>
+    <div class="w-full select-none rounded-b-xl overflow-hidden shadow-2xl ring-1 ring-black/60" @mousedown.prevent>
       <div class="relative h-52 md:h-72 bg-black">
         <!-- 白键 -->
         <div class="flex h-full">
