@@ -677,6 +677,7 @@
     "ready": "Samples ready ✓",
     "audioUnsupported": "Web Audio is not supported in this browser",
     "sampleLoadFailed": "Failed to load sample: {file}",
-    "keyHint": "Layout: white keys 1-0 Q-P A-L Z-M, black keys Shift+corresponding white key. Multiple keys supported."
+    "keyHint": "Layout: white keys 1-0 Q-P A-L Z-M, black keys Shift+corresponding white key. Multiple keys supported.",
+    "keyRefTitle": "Key reference"
   }
 }

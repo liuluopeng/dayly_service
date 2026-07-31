@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
-// 音符定义（C2 - C7，采样文件名 a48.mp3 等，与 AutoPiano 一致）
+// ─── 音符定义（C2 - C7，采样文件名与 AutoPiano 一致） ───
+
 const WHITE_NOTES = [
   { note: 'C2', file: 'a49', key: '1' },
   { note: 'D2', file: 'a50', key: '2' },
@@ -52,8 +53,20 @@ const BLACK_NOTES: Record<string, string> = {
   'C#6': 'b76', 'D#6': 'b90', 'F#6': 'b67', 'G#6': 'b86', 'A#6': 'b66',
 };
 
-// 黑键相对其左侧白键的偏移（第几个白键之后）
-const BLACK_AFTER: Record<string, number> = {
+// 黑键八度组：相对钢琴整体的 left 偏移（参考 AutoPiano：0/19.5/39/58.3/77.7%）
+const BLACK_OCTAVES = [
+  { left: '0%', keys: ['C#2', 'D#2', 'F#2', 'G#2', 'A#2'] },
+  { left: '19.5%', keys: ['C#3', 'D#3', 'F#3', 'G#3', 'A#3'] },
+  { left: '39%', keys: ['C#4', 'D#4', 'F#4', 'G#4', 'A#4'] },
+  { left: '58.3%', keys: ['C#5', 'D#5', 'F#5', 'G#5', 'A#5'] },
+  { left: '77.7%', keys: ['C#6', 'D#6', 'F#6', 'G#6', 'A#6'] },
+];
+
+// 黑键在组内的 left（相对组宽 20%，参考 AutoPiano：9/23/50/65/79%）
+const BLACK_IN_GROUP_LEFT = ['9%', '23%', '50%', '65%', '79%'];
+
+// 每个黑键左侧的白键索引（用于取键盘键名与高亮关联）
+const BLACK_LEFT_WHITE_INDEX: Record<string, number> = {
   'C#2': 0, 'D#2': 1, 'F#2': 3, 'G#2': 4, 'A#2': 5,
   'C#3': 7, 'D#3': 8, 'F#3': 10, 'G#3': 11, 'A#3': 12,
   'C#4': 14, 'D#4': 15, 'F#4': 17, 'G#4': 18, 'A#4': 19,
@@ -61,8 +74,15 @@ const BLACK_AFTER: Record<string, number> = {
   'C#6': 28, 'D#6': 29, 'F#6': 31, 'G#6': 32, 'A#6': 33,
 };
 
-const WHITE_KEYS: Record<string, string> = {};
-WHITE_NOTES.forEach(n => { WHITE_KEYS[n.key] = n.note; });
+// 键盘映射：白键 key → 音符；黑键 = Shift + 左侧白键的 key
+const keyToWhite = new Map<string, string>(); // key → 白键音符
+WHITE_NOTES.forEach(n => keyToWhite.set(n.key, n.note));
+const shiftKeyToBlack = new Map<string, string>(); // 白键 key → 黑键音符
+Object.entries(BLACK_LEFT_WHITE_INDEX).forEach(([note, idx]) => {
+  shiftKeyToBlack.set(WHITE_NOTES[idx].key, note);
+});
+
+// ─── 音频 ───
 
 const sampleBase = import.meta.env.BASE_URL + 'samples/piano/';
 
@@ -73,17 +93,6 @@ const totalSamples = 61;
 const ready = computed(() => loading.value >= totalSamples);
 const errorMsg = ref('');
 const activeKeys = ref<Set<string>>(new Set()); // 按下的音符名
-
-const keyToNote = new Map<string, { note: string; file: string }>();
-WHITE_NOTES.forEach(n => keyToNote.set(n.key, { note: n.note, file: n.file }));
-
-// 黑键的 Shift 映射：黑键 = 对应白键左侧的白键 + Shift
-const shiftMap = new Map<string, { note: string; file: string }>();
-Object.entries(BLACK_NOTES).forEach(([note, file]) => {
-  const afterIndex = BLACK_AFTER[note];
-  const leftWhite = WHITE_NOTES[afterIndex];
-  if (leftWhite) shiftMap.set(leftWhite.key, { note, file });
-});
 
 function getAudioCtx(): AudioContext | null {
   if (audioCtx.value) return audioCtx.value;
@@ -152,31 +161,77 @@ function onKeyDown(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null;
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) return;
 
+  const key = e.key.toUpperCase();
   if (e.shiftKey) {
-    const entry = shiftMap.get(e.key.toUpperCase());
-    if (entry) { e.preventDefault(); pressNote(entry.note); return; }
+    const black = shiftKeyToBlack.get(key);
+    if (black) { e.preventDefault(); pressNote(black); return; }
   }
-  const entry = keyToNote.get(e.key.toUpperCase());
-  if (entry) { e.preventDefault(); pressNote(entry.note); }
+  const white = keyToWhite.get(key);
+  if (white) { e.preventDefault(); pressNote(white); }
 }
 
 function onKeyUp(e: KeyboardEvent) {
-  if (e.shiftKey) {
-    const entry = shiftMap.get(e.key.toUpperCase());
-    if (entry) { releaseNote(entry.note); return; }
-  }
-  const entry = keyToNote.get(e.key.toUpperCase());
-  if (entry) releaseNote(entry.note);
+  const key = e.key.toUpperCase();
+  const black = shiftKeyToBlack.get(key);
+  if (black) { releaseNote(black); return; }
+  const white = keyToWhite.get(key);
+  if (white) releaseNote(white);
 }
 
 const whiteNotes = WHITE_NOTES.map(n => n.note);
-const blackNotes = Object.entries(BLACK_AFTER)
-  .sort((a, b) => a[1] - b[1])
-  .map(([note]) => note);
 
 function isActive(note: string): boolean {
   return activeKeys.value.has(note);
 }
+
+function blackHint(note: string): string {
+  const idx = BLACK_LEFT_WHITE_INDEX[note];
+  return idx !== undefined ? WHITE_NOTES[idx].key : '';
+}
+
+// ─── 键位参考图数据 ───
+
+interface RefKey {
+  key: string;
+  note: string;
+  black?: boolean;
+}
+
+const refRows: RefKey[][] = [
+  WHITE_NOTES.slice(0, 10).map(n => ({ key: n.key, note: n.note })),
+  WHITE_NOTES.slice(10, 20).map(n => ({ key: n.key, note: n.note })),
+  WHITE_NOTES.slice(20, 29).map(n => ({ key: n.key, note: n.note })),
+  WHITE_NOTES.slice(29).map(n => ({ key: n.key, note: n.note })),
+];
+
+// 黑键参考：每行对应八度的黑键（Shift + 白键）
+const blackRefRows: RefKey[][] = [
+  ['C#2', 'D#2', 'F#2', 'G#2', 'A#2'].map(note => ({
+    key: '⇧' + blackHint(note),
+    note,
+    black: true,
+  })),
+  ['C#3', 'D#3', 'F#3', 'G#3', 'A#3'].map(note => ({
+    key: '⇧' + blackHint(note),
+    note,
+    black: true,
+  })),
+  ['C#4', 'D#4', 'F#4', 'G#4', 'A#4'].map(note => ({
+    key: '⇧' + blackHint(note),
+    note,
+    black: true,
+  })),
+  ['C#5', 'D#5', 'F#5', 'G#5', 'A#5'].map(note => ({
+    key: '⇧' + blackHint(note),
+    note,
+    black: true,
+  })),
+  ['C#6', 'D#6', 'F#6', 'G#6', 'A#6'].map(note => ({
+    key: '⇧' + blackHint(note),
+    note,
+    black: true,
+  })),
+];
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown);
@@ -192,8 +247,41 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-4 md:p-8 flex flex-col items-center">
-    <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">{{ t('piano.title') }}</h1>
-    <p class="text-white/60 text-sm mb-4">{{ t('piano.subtitle') }}</p>
+    <h1 class="text-2xl md:text-3xl font-bold text-white mb-1">{{ t('piano.title') }}</h1>
+    <p class="text-white/60 text-sm mb-3">{{ t('piano.subtitle') }}</p>
+
+    <!-- 键位参考图 -->
+    <div class="w-full max-w-4xl bg-black/40 rounded-xl p-4 mb-4 border border-white/10">
+      <div class="text-white/70 text-xs mb-2 flex items-center gap-2">
+        <span>{{ t('piano.keyRefTitle') }}</span>
+        <span class="text-amber-400">⇧ = Shift</span>
+      </div>
+
+      <!-- 白键参考行 -->
+      <div class="space-y-1.5">
+        <div v-for="(row, ri) in refRows" :key="ri" class="flex gap-1">
+          <div
+            v-for="k in row"
+            :key="k.key"
+            class="flex-1 min-w-0 rounded bg-gradient-to-b from-white to-gray-300 border border-gray-400 px-0.5 py-1 text-center cursor-default"
+          >
+            <div class="text-[11px] md:text-sm font-bold text-gray-700 leading-tight">{{ k.key }}</div>
+            <div class="text-[9px] md:text-[11px] text-blue-600 leading-tight">{{ k.note }}</div>
+          </div>
+        </div>
+        <!-- 黑键参考行 -->
+        <div v-for="(row, ri) in blackRefRows" :key="'b' + ri" class="flex gap-1">
+          <div
+            v-for="k in row"
+            :key="k.note"
+            class="flex-1 min-w-0 rounded bg-gradient-to-b from-[#444] to-black border border-black px-0.5 py-1 text-center cursor-default"
+          >
+            <div class="text-[10px] md:text-sm font-bold text-white leading-tight">{{ k.key }}</div>
+            <div class="text-[9px] md:text-[11px] text-amber-400 leading-tight">{{ k.note }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 状态栏 -->
     <div class="mb-4 text-sm">
@@ -204,9 +292,9 @@ onUnmounted(() => {
       <span v-if="errorMsg" class="text-red-400 ml-3">{{ errorMsg }}</span>
     </div>
 
-    <!-- 钢琴 -->
-    <div class="w-full max-w-4xl select-none" @mousedown.prevent>
-      <div class="relative h-56 md:h-72 rounded-b-lg overflow-hidden shadow-2xl">
+    <!-- 钢琴（AutoPiano 布局：36 白键 + 5 组黑键） -->
+    <div class="w-full max-w-4xl select-none rounded-b-xl overflow-hidden shadow-2xl ring-1 ring-black/60" @mousedown.prevent>
+      <div class="relative h-52 md:h-72 bg-black">
         <!-- 白键 -->
         <div class="flex h-full">
           <div
@@ -215,42 +303,46 @@ onUnmounted(() => {
             class="flex-1 relative border border-gray-300 rounded-b-md transition-all duration-75 cursor-pointer"
             :class="isActive(note)
               ? 'bg-gradient-to-b from-amber-200 to-amber-400 shadow-inner'
-              : 'bg-gradient-to-b from-white to-gray-200 hover:from-gray-50'"
+              : 'bg-gradient-to-b from-white via-white to-gray-300 hover:from-gray-100 shadow-[inset_0_-6px_8px_rgba(0,0,0,0.12)]'"
             @pointerdown="pressNote(note)"
             @pointerup="releaseNote(note)"
             @pointerleave="releaseNote(note)"
             @contextmenu.prevent
           >
-            <span class="absolute bottom-1 left-0 right-0 text-center text-xs text-gray-500 select-none">
+            <span class="absolute bottom-1 left-0 right-0 text-center text-[10px] md:text-xs text-gray-500 select-none">
               {{ WHITE_NOTES.find(n => n.note === note)?.key }}
             </span>
           </div>
         </div>
 
-        <!-- 黑键 -->
-        <div class="absolute inset-0 pointer-events-none">
+        <!-- 黑键（每组一个八度，组内按 AutoPiano 比例定位） -->
+        <div
+          v-for="oct in BLACK_OCTAVES"
+          :key="oct.left"
+          class="absolute top-0 h-full pointer-events-none"
+          :style="{ left: oct.left, width: '20%' }"
+        >
           <div
-            v-for="note in blackNotes"
+            v-for="(note, i) in oct.keys"
             :key="note"
-            class="absolute w-[6%] h-[62%] rounded-b-md transition-all duration-75 cursor-pointer pointer-events-auto"
+            class="absolute top-0 rounded-b-md transition-all duration-75 cursor-pointer pointer-events-auto"
+            :style="{ left: BLACK_IN_GROUP_LEFT[i], width: '10%', height: '70%' }"
             :class="isActive(note)
-              ? 'bg-gradient-to-b from-amber-600 to-amber-800 shadow-[0_0_12px_rgba(245,158,11,0.8)]'
-              : 'bg-gradient-to-b from-[#333] to-black border border-black/60 shadow-[inset_0_-2px_4px_rgba(255,255,255,0.15),0_3px_6px_rgba(0,0,0,0.6)]'"
-            :style="{ left: `calc(${(BLACK_AFTER[note] + 1) * (100 / whiteNotes.length)}% - 3%)` }"
+              ? 'bg-gradient-to-b from-amber-500 to-amber-800 shadow-[0_0_14px_rgba(245,158,11,0.7)]'
+              : 'bg-gradient-to-b from-[#3a3a3a] via-black to-[#1a1a1a] border-x border-black/70 border-b-4 border-b-[#111] shadow-[inset_0_-3px_5px_rgba(255,255,255,0.12),0_3px_6px_rgba(0,0,0,0.7)]'"
             @pointerdown="pressNote(note)"
             @pointerup="releaseNote(note)"
             @pointerleave="releaseNote(note)"
           >
-            <span class="absolute bottom-1 left-0 right-0 text-center text-[10px] text-white/60 select-none">
-              {{ WHITE_NOTES[BLACK_AFTER[note]]?.key }}
+            <span class="absolute bottom-1 left-0 right-0 text-center text-[9px] md:text-[11px] text-white/70 select-none">
+              ⇧{{ blackHint(note) }}
             </span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 按键提示 -->
-    <div class="mt-6 max-w-4xl w-full text-center text-white/50 text-xs leading-6">
+    <div class="mt-4 text-white/40 text-xs">
       {{ t('piano.keyHint') }}
     </div>
   </div>
