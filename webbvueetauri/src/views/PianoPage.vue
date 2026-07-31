@@ -198,16 +198,25 @@ interface RefKey {
   isDo?: boolean;
 }
 
-// do（C 音）标记：白键 C2-C7 都是每个八度的基准音 do
-function isDo(note: string): boolean {
-  return note.startsWith('C');
+// do（C 音）标记：只标注最常用的中央 C（C4，键盘 T 键）
+function isCentralDo(note: string): boolean {
+  return note === 'C4';
+}
+
+// 唱名映射（白键 C D E F G A B → do re mi fa sol la si）
+const SOLFEGE: Record<string, string> = {
+  C: 'do', D: 're', E: 'mi', F: 'fa', G: 'sol', A: 'la', B: 'si',
+};
+
+function solfege(note: string): string {
+  return SOLFEGE[note[0]] ?? '';
 }
 
 const refRows: RefKey[][] = [
-  WHITE_NOTES.slice(0, 10).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
-  WHITE_NOTES.slice(10, 20).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
-  WHITE_NOTES.slice(20, 29).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
-  WHITE_NOTES.slice(29).map(n => ({ key: n.key, note: n.note, isDo: isDo(n.note) })),
+  WHITE_NOTES.slice(0, 10).map(n => ({ key: n.key, note: n.note, isDo: isCentralDo(n.note) })),
+  WHITE_NOTES.slice(10, 20).map(n => ({ key: n.key, note: n.note, isDo: isCentralDo(n.note) })),
+  WHITE_NOTES.slice(20, 29).map(n => ({ key: n.key, note: n.note, isDo: isCentralDo(n.note) })),
+  WHITE_NOTES.slice(29).map(n => ({ key: n.key, note: n.note, isDo: isCentralDo(n.note) })),
 ];
 
 // 黑键参考：每行对应八度的黑键（Shift + 白键）
@@ -318,13 +327,17 @@ onUnmounted(() => {
             @pointerleave="releaseNote(note)"
             @contextmenu.prevent
           >
-            <!-- do 标记：每个八度的 C 键 -->
-            <span v-if="isDo(note)"
+            <!-- do 标记：只标注中央 C（C4，T 键） -->
+            <span v-if="isCentralDo(note)"
               class="absolute top-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] md:text-[11px] font-bold select-none shadow">
               do
             </span>
-            <span class="absolute bottom-1 left-0 right-0 text-center text-[10px] md:text-xs text-gray-500 select-none">
-              {{ WHITE_NOTES.find(n => n.note === note)?.key }}
+            <!-- 白键标注：灰色键名 + 唱名 -->
+            <span class="absolute bottom-1 left-0 right-0 text-center leading-tight select-none">
+              <span class="block text-[10px] md:text-xs text-gray-500">
+                {{ WHITE_NOTES.find(n => n.note === note)?.key }}
+              </span>
+              <span class="block text-[9px] md:text-[11px] text-gray-400">{{ solfege(note) }}</span>
             </span>
           </div>
         </div>
