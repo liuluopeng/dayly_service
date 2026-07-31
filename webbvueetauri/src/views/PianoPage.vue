@@ -451,6 +451,8 @@ function onKeyDown(e: KeyboardEvent) {
     e.preventDefault();
     pressedByKey.set(key, note);
     pressNoteFromKeyboard(note);
+    // 跟弹模式：按对当前音推进
+    onFollowKey(note);
   }
 }
 
@@ -473,12 +475,137 @@ const whiteNotes = WHITE_NOTES.map(n => n.note);
 const synthReady = ref(false);
 
 function isActive(note: string): boolean {
-  return activeKeys.value.has(note);
+  return activeKeys.value.has(note) || teachHighlight.value === note;
 }
 
 function blackHint(note: string): string {
   const idx = BLACK_LEFT_WHITE_INDEX[note];
   return idx !== undefined ? WHITE_NOTES[idx].key : '';
+}
+
+// ─── 欢乐颂教学 ───
+
+// 简谱 → 白键（1=do=C4=T 键）
+const JOY_DEGREE_TO_NOTE = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'];
+const JOY_DEGREE_TO_KEY = ['T', 'Y', 'U', 'I', 'O', 'P', 'A'];
+
+// 欢乐颂旋律（简谱数字 + 时长：1=四分音符 2=二分 4=全音符，0=休止）
+const JOY_MELODY: [number, number][] = [
+  [3,1],[3,1],[4,1],[5,1], [5,1],[4,1],[3,1],[2,1],
+  [1,1],[1,1],[2,1],[3,1], [3,2],[2,1],[2,2],
+  [3,1],[3,1],[4,1],[5,1], [5,1],[4,1],[3,1],[2,1],
+  [1,1],[1,1],[2,1],[3,1], [2,2],[1,1],[1,2],
+  [2,1],[2,1],[3,1],[1,1], [2,1],[3,1],[4,1],[3,1],
+  [1,1],[2,1],[3,1],[4,1], [3,1],[2,1],[1,1],[2,1],
+  [5,2],[5,1],[5,1],[4,1],[3,1],[2,2],[4,1],[3,2],[2,2],
+  [1,2],[2,1],[3,2],[4,2], [3,1],[3,1],[2,1],[2,1],[1,4],
+];
+
+const JOY_BEAT = 0.42; // 四分音符时长（秒）
+
+const teachIndex = ref(-1);
+const teachPlaying = ref(false);
+const teachFollow = ref(false);
+const teachHighlight = ref<string | null>(null);
+const teachTimers: number[] = [];
+
+function clearTeachTimers() {
+  while (teachTimers.length) {
+    clearTimeout(teachTimers.pop()!);
+  }
+}
+
+function stopTeaching() {
+  clearTeachTimers();
+  teachPlaying.value = false;
+  teachFollow.value = false;
+  teachIndex.value = -1;
+  teachHighlight.value = null;
+}
+
+function scheduleNextTeach() {
+  teachIndex.value++;
+  if (teachIndex.value >= JOY_MELODY.length) {
+    // 曲终
+    teachPlaying.value = false;
+    teachFollow.value = false;
+    teachIndex.value = -1;
+    teachHighlight.value = null;
+    return;
+  }
+  const [degree, dur] = JOY_MELODY[teachIndex.value];
+  if (degree === 0) {
+    // 休止：仅推进
+    teachTimers.push(window.setTimeout(scheduleNextTeach, JOY_BEAT * 1000));
+    return;
+  }
+  const note = JOY_DEGREE_TO_NOTE[degree - 1];
+  teachHighlight.value = note;
+  // 演示模式自动发声
+  if (teachPlaying.value && !teachFollow.value) {
+    pressNoteFromKeyboard(note);
+    const hold = window.setTimeout(() => releaseNote(note), dur * JOY_BEAT * 1000 * 0.9);
+    teachTimers.push(hold);
+  }
+  teachTimers.push(window.setTimeout(scheduleNextTeach, dur * JOY_BEAT * 1000));
+}
+
+function startDemo() {
+  stopTeaching();
+  teachPlaying.value = true;
+  teachFollow.value = false;
+  scheduleNextTeach();
+}
+
+function startFollow() {
+  stopTeaching();
+  teachPlaying.value = true;
+  teachFollow.value = true;
+  teachIndex.value = -1;
+  advanceFollow();
+}
+
+function advanceFollow() {
+  teachIndex.value++;
+  if (teachIndex.value >= JOY_MELODY.length) {
+    teachPlaying.value = false;
+    teachFollow.value = false;
+    teachIndex.value = -1;
+    teachHighlight.value = null;
+    return;
+  }
+  const [degree] = JOY_MELODY[teachIndex.value];
+  if (degree === 0) {
+    teachHighlight.value = null;
+    teachTimers.push(window.setTimeout(advanceFollow, JOY_BEAT * 1000));
+    return;
+  }
+  teachHighlight.value = JOY_DEGREE_TO_NOTE[degree - 1];
+}
+
+// 跟弹检测：按对当前音才推进
+function onFollowKey(note: string) {
+  if (!teachFollow.value || teachIndex.value < 0) return;
+  const [degree] = JOY_MELODY[teachIndex.value];
+  if (degree === 0) return;
+  if (note === JOY_DEGREE_TO_NOTE[degree - 1]) {
+    pressNoteFromKeyboard(note);
+    const hold = window.setTimeout(() => releaseNote(note), 300);
+    teachTimers.push(hold);
+    advanceFollow();
+  }
+}
+
+function teachCurrentLabel(): string {
+  if (teachIndex.value < 0 || teachIndex.value >= JOY_MELODY.length) return '';
+  const [degree] = JOY_MELODY[teachIndex.value];
+  if (degree === 0) return t('piano.teachRest');
+  return `${t(`piano.solfege.${['do','re','mi','fa','sol','la','si'][degree - 1]}`)} (${degree}) · ${JOY_DEGREE_TO_KEY[degree - 1]} 键`;
+}
+
+function teachProgress(): string {
+  if (teachIndex.value < 0) return '';
+  return `${Math.min(teachIndex.value + 1, JOY_MELODY.length)}/${JOY_MELODY.length}`;
 }
 
 // ─── 键位参考图数据 ───
@@ -554,6 +681,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('keyup', onKeyUp);
   window.removeEventListener('blur', clearAllNotes);
+  stopTeaching();
 });
 </script>
 
@@ -723,6 +851,52 @@ onUnmounted(() => {
     </div>
     <div class="mt-1 text-emerald-400/80 text-xs">
       {{ t('piano.doHint') }}
+    </div>
+
+    <!-- 欢乐颂教学 -->
+    <div class="mt-6 w-full bg-black/40 rounded-xl p-4 border border-white/10">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <h2 class="text-white font-bold mr-2">🎵 {{ t('piano.teachTitle') }}</h2>
+        <button
+          class="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="teachPlaying && !teachFollow ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+          @click="startDemo()"
+        >
+          {{ t('piano.teachDemo') }}
+        </button>
+        <button
+          class="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+          :class="teachFollow ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+          @click="startFollow()"
+        >
+          {{ t('piano.teachFollow') }}
+        </button>
+        <button
+          v-if="teachPlaying || teachFollow"
+          class="px-3 py-1 rounded-full text-xs bg-red-500/80 text-white hover:bg-red-500"
+          @click="stopTeaching()"
+        >
+          {{ t('common.stop') }}
+        </button>
+        <span v-if="teachProgress()" class="text-white/60 text-xs ml-2">{{ teachProgress() }}</span>
+      </div>
+
+      <div v-if="teachHighlight" class="flex items-center gap-3 mb-3">
+        <span class="text-2xl font-bold text-amber-400">{{ teachCurrentLabel() }}</span>
+        <span class="text-white/60 text-xs">
+          {{ teachFollow ? t('piano.teachFollowHint') : t('piano.teachDemoHint') }}
+        </span>
+      </div>
+
+      <!-- 简谱 -->
+      <div class="flex flex-wrap gap-x-3 gap-y-1 text-white/70 text-sm font-mono leading-6">
+        <span v-for="(m, i) in JOY_MELODY" :key="i"
+          class="px-1 rounded"
+          :class="i === teachIndex ? 'bg-amber-500 text-black font-bold' : ''">
+          {{ m[0] === 0 ? '·' : m[0] }}
+        </span>
+      </div>
+      <div class="mt-2 text-white/40 text-[11px]">{{ t('piano.teachHint') }}</div>
     </div>
   </div>
 </template>

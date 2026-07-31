@@ -40,7 +40,8 @@
       "minutesAgo": "{n}m ago",
       "hoursAgo": "{n}h ago",
       "daysAgo": "{n}d ago"
-    }
+    },
+    "stop": "Stop"
   },
   "app": {
     "sidebar": {
@@ -688,6 +689,22 @@
     "timbreLearnHint": "Analysis-resynthesis: STFT params extracted from samples",
     "learnFailed": "Timbre analysis failed",
     "timbreBell": "Glockenspiel",
-    "timbreBellHint": "Inharmonic partials + exponential decay (closed-form synthesis)"
+    "timbreBellHint": "Inharmonic partials + exponential decay (closed-form synthesis)",
+    "teachTitle": "Ode to Joy lesson",
+    "teachDemo": "Play demo",
+    "teachFollow": "Follow mode",
+    "teachRest": "rest · wait",
+    "teachFollowHint": "Press the highlighted key; advance when correct",
+    "teachDemoHint": "Watch the highlighted key and follow",
+    "teachHint": "1=do(C4·T) 2=re 3=mi 4=fa 5=sol 6=la 7=si — all white keys, start at T",
+    "solfege": {
+      "do": "do",
+      "re": "re",
+      "mi": "mi",
+      "fa": "fa",
+      "sol": "sol",
+      "la": "la",
+      "si": "si"
+    }
   }
 }

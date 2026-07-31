@@ -40,7 +40,8 @@
       "minutesAgo": "{n}分钟前",
       "hoursAgo": "{n}小时前",
       "daysAgo": "{n}天前"
-    }
+    },
+    "stop": "停止"
   },
   "app": {
     "sidebar": {
@@ -686,6 +687,22 @@
     "timbreLearnHint": "从采样提取参数再合成（STFT 分析 + 加法合成）",
     "learnFailed": "音色分析失败",
     "timbreBell": "钟琴",
-    "timbreBellHint": "不谐和泛音 + 指数衰减（闭式表达式合成，最易模拟的乐器）"
+    "timbreBellHint": "不谐和泛音 + 指数衰减（闭式表达式合成，最易模拟的乐器）",
+    "teachTitle": "欢乐颂教学",
+    "teachDemo": "开始演示",
+    "teachFollow": "跟弹模式",
+    "teachRest": "休止 · 等待",
+    "teachFollowHint": "按高亮的键跟弹，按对自动前进",
+    "teachDemoHint": "看高亮的键，跟着按",
+    "teachHint": "简谱 1=do(C4·T键) 2=re 3=mi 4=fa 5=sol 6=la 7=si —— 欢乐颂全是白键，从 T 键开始",
+    "solfege": {
+      "do": "do",
+      "re": "re",
+      "mi": "mi",
+      "fa": "fa",
+      "sol": "sol",
+      "la": "la",
+      "si": "si"
+    }
   }
 }
