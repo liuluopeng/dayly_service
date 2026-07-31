@@ -1,13 +1,18 @@
-//! Karplus-Strong 物理建模合成 —— 拨弦/钢琴类音色
+//! Karplus-Strong 物理建模合成 —— 钢琴音色（润色版）
 //!
-//! 原理：用噪声突发激励一段"延迟线"（弦），每周期取相邻采样平均（低通）
-//! 并乘以衰减系数，形成自然的指数衰减振荡 —— 比简单正弦波真实得多。
-//! 本实现采用多弦模型（主弦 + 失谐八度 + 谐波）+ 槌头瞬态 + 包络，
-//! 输出 HiRes（默认 96kHz）PCM 采样，由前端转 AudioBuffer 播放。
+//! 相比 v1 的改进（消除"皮筋"感）：
+//! 1. 分数延迟线（线性插值）：音准精确，无整数延迟的拍频
+//! 2. 槌击脉冲激励（脉冲 + 衰减噪声）而非纯噪声：谐波更丰富、更接近琴槌
+//! 3. 不谐和度（inharmonicity）：钢琴弦有刚度，泛音频率 = n*f0*sqrt(1+B*n²) 略高于整数倍
+//! 4. 双弦失谐（每键两根基频弦，±几音分 detune）：真实钢琴的弦组
+//! 5. 分弦衰减：高频泛音衰减快、低频余音长
+//! 6. 输出一阶低通：去掉数字采样的高频噪感
+//!
+//! 输出 HiRes（默认 96kHz）PCM 采样，前端转 AudioBuffer 播放。
 
 use wasm_bindgen::prelude::*;
 
-/// 确定性伪随机数（xorshift 风格，按 seed 可复现）
+/// 确定性伪随机数（xorshift 风格）
 struct Rng(u32);
 
 impl Rng {
@@ -21,40 +26,77 @@ impl Rng {
     }
 }
 
-/// 单根弦：Karplus-Strong 延迟线
-fn pluck_string(freq: f32, sample_rate: u32, length: usize, seed: u32) -> Vec<f32> {
-    let delay = ((sample_rate as f32 / freq).round() as usize).max(2);
-    let mut buffer = vec![0f32; delay];
+/// 单根弦：分数延迟 Karplus-Strong
+/// `freq` 弦的振动频率；`decay` 每周期衰减系数（0.99x 附近）
+fn pluck_string(freq: f32, sample_rate: u32, length: usize, seed: u32, decay: f32) -> Vec<f32> {
+    let d = (sample_rate as f32 / freq).max(2.0);
+    let cap = ((d + 2.0) as usize).max(16);
+    let mut buf = vec![0f32; cap];
+    let mut w = 0.0f32; // 浮点写指针（线性插值读取延迟位置）
 
-    // 激励：噪声突发（弦的初始振动）
     let mut rng = Rng(seed | 1);
-    for x in buffer.iter_mut() {
-        *x = rng.next();
-    }
-
-    // 频率相关衰减：低音衰减慢（钢琴低音余音长）
-    let decay = (0.9985 - freq / sample_rate as f32 * 1.2).clamp(0.94, 0.9995);
-
+    // 槌击激励时长：约 1.5ms
+    let excite_len = ((sample_rate as f32 * 0.0015) as usize).max(2);
     let mut out = Vec::with_capacity(length);
-    let mut idx = 0usize;
-    for _ in 0..length {
-        let prev = buffer[idx];
-        let next = buffer[(idx + 1) % delay];
-        let avg = (prev + next) * 0.5;
-        buffer[idx] = avg * decay;
-        out.push(avg);
-        idx = (idx + 1) % delay;
+
+    for i in 0..length {
+        // 读延迟位置 = 写指针 - d，线性插值
+        let rp = w - d;
+        let r0 = rp.rem_euclid(cap as f32);
+        let i0 = r0.floor() as usize;
+        let frac = r0 - r0.floor();
+        let i1 = (i0 + 1) % cap;
+        let delayed = buf[i0] * (1.0 - frac) + buf[i1] * frac;
+
+        // 激励：槌击脉冲（首个采样强脉冲）+ 快速衰减的噪声（模拟羊毛毡槌头）
+        let excite = if i < excite_len {
+            let env = 1.0 - i as f32 / excite_len as f32;
+            (if i == 0 { 0.9 } else { 0.0 }) + rng.next() * 0.55 * env
+        } else {
+            0.0
+        };
+
+        // Karplus-Strong：相邻平均（低通）* 衰减 + 激励，写回弦缓冲
+        let w0 = w.rem_euclid(cap as f32);
+        let wi = w0.floor() as usize;
+        let prev = buf[wi];
+        buf[wi] = (prev + delayed) * 0.5 * decay + excite;
+        out.push(delayed);
+
+        w += 1.0;
     }
     out
 }
 
-/// 生成钢琴音符 PCM 采样（Karplus-Strong 多弦模型）
+/// 一阶低通（平滑数字味）
+struct OnePole {
+    y: f32,
+}
+
+impl OnePole {
+    fn new() -> Self {
+        Self { y: 0.0 }
+    }
+
+    fn process(&mut self, x: f32, alpha: f32) -> f32 {
+        self.y += alpha * (x - self.y);
+        self.y
+    }
+}
+
+/// 钢琴不谐和度系数 B（低音大、高音小）
+fn inharmonicity(freq: f32) -> f32 {
+    // 中央 C 附近 ~0.0003，每低一个八度约 ×1.6
+    (0.0003 * (261.63 / freq).powf(0.8)).clamp(0.00005, 0.004)
+}
+
+/// 生成钢琴音符 PCM（润色版 Karplus-Strong 多弦模型）
 ///
 /// # Arguments
-/// * `freq`       - 音符基频（Hz），如中央 C4 = 261.63
-/// * `duration_ms`- 持续时长（毫秒）
-/// * `sample_rate`- 采样率（建议 96000 HiRes，48k 亦可）
-/// * `seed`       - 随机种子（同一音符固定 seed 可得到稳定音色）
+/// * `freq`        - 音符基频（Hz），中央 C4 = 261.63
+/// * `duration_ms` - 持续时长（毫秒）
+/// * `sample_rate` - 采样率（建议 96000 HiRes）
+/// * `seed`        - 随机种子（同一音符固定 seed 得到稳定音色）
 #[wasm_bindgen]
 pub fn synth_piano_note(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f32> {
     if !freq.is_finite() || freq <= 0.0 || sample_rate < 8000 || duration_ms == 0 {
@@ -62,35 +104,63 @@ pub fn synth_piano_note(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32
     }
 
     let n = ((duration_ms as f64 * sample_rate as f64) / 1000.0) as usize;
+    let sr = sample_rate as f32;
     let mut out = vec![0f32; n];
 
-    // 主弦（基频）
-    let main = pluck_string(freq, sample_rate, n, seed);
-    // 副弦：八度 + 轻微失谐（真实钢琴多弦同击的效果）
-    let oct = pluck_string(freq * 2.001, sample_rate, n, seed ^ 0x9E37_79B9);
-    // 谐波增强
-    let harm = pluck_string(freq * 3.0, sample_rate, n, seed ^ 0xC2B2_AE35);
+    // 双弦失谐：真实钢琴同键 2-3 根弦，微差音分（±0.05% ~ ±0.2%）
+    let detune = 0.0008 + (seed & 0x1F) as f32 * 0.00004; // 与种子相关，每键略有差异
+    let f_a = freq * (1.0 - detune);
+    let f_b = freq * (1.0 + detune);
 
-    // 槌头瞬态：前 5ms 的快速冲击
-    let hammer_samples = ((sample_rate as f64 * 0.005) as usize).min(n);
+    // 不谐和度：泛音弦频率略高于整数倍
+    let b = inharmonicity(freq);
+    let f_h2 = 2.0 * freq * (1.0 + b * 4.0).sqrt();
+    let f_h3 = 3.0 * freq * (1.0 + b * 9.0).sqrt();
+
+    // 分弦衰减：低频余音长、高频衰减快
+    let decay_base = 0.9965 - freq / sr * 0.8;
+    let decay_a = decay_base;
+    let decay_b = decay_base;
+    let decay_h2 = (decay_base - 0.0015).clamp(0.9, 0.999);
+    let decay_h3 = (decay_base - 0.003).clamp(0.9, 0.999);
+
+    let main_a = pluck_string(f_a, sample_rate, n, seed, decay_a);
+    let main_b = pluck_string(f_b, sample_rate, n, seed ^ 0x7F4A_7C15, decay_b);
+    let harm2 = pluck_string(f_h2, sample_rate, n, seed ^ 0x9E37_79B9, decay_h2);
+    let harm3 = pluck_string(f_h3, sample_rate, n, seed ^ 0xC2B2_AE35, decay_h3);
+
+    // 槌头瞬态噪声通道：~12ms 指数衰减，提供"击键感"
+    let hammer_len = ((sample_rate as f64 * 0.012) as usize).min(n);
+    let mut hammer = vec![0f32; n];
+    {
+        let mut rng = Rng(seed ^ 0x5EED_CAFE);
+        for i in 0..hammer_len {
+            let env = (1.0 - i as f32 / hammer_len as f32).powf(2.0);
+            hammer[i] = rng.next() * 0.35 * env;
+        }
+    }
+
+    // 混合 + 包络 + 低通
+    let mut lp = OnePole::new();
+    let lp_alpha = (sr * 0.00006).clamp(0.02, 0.12); // ~2.6kHz 截止（96kHz 时）
 
     for i in 0..n {
         let t = i as f64 / sample_rate as f64;
-        let mut v = main[i] * 0.9 + oct[i] * 0.35 + harm[i] * 0.12;
+        let mut v = main_a[i] * 0.55
+            + main_b[i] * 0.55
+            + harm2[i] * 0.22
+            + harm3[i] * 0.08
+            + hammer[i];
 
-        // 槌头瞬态
-        if i < hammer_samples {
-            let env = (1.0 - i as f64 / hammer_samples as f64) as f32;
-            v += env * 0.6 * main[i];
-        }
-
-        // 起音（~3ms 防爆音）与尾部释放（~50ms 平滑归零）
+        // 起音（~2.5ms）防爆音
         let attack = ((t * 400.0).min(1.0)) as f32;
-        let release = (((n - i) as f64 / (sample_rate as f64 * 0.05)).min(1.0).max(0.0)) as f32;
-        out[i] = v * attack * release;
+        // 尾部释放（~80ms 平滑归零）
+        let release = (((n - i) as f64 / (sample_rate as f64 * 0.08)).min(1.0).max(0.0)) as f32;
+
+        out[i] = lp.process(v, lp_alpha) * attack * release;
     }
 
-    // 归一化到 0.9 峰值，避免削波
+    // 归一化
     let peak = out.iter().fold(0f32, |a, &b| a.max(b.abs()));
     if peak > 0.0001 {
         let scale = (1.0 / peak).min(1.0) * 0.9;
@@ -102,7 +172,7 @@ pub fn synth_piano_note(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32
     out
 }
 
-/// 生成"明亮"钢琴变体（更强的谐波，可作第二音色）
+/// 明亮钢琴变体：更强的谐波与更短的余音（适合快节奏）
 #[wasm_bindgen]
 pub fn synth_piano_bright(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f32> {
     if !freq.is_finite() || freq <= 0.0 || sample_rate < 8000 || duration_ms == 0 {
@@ -110,25 +180,51 @@ pub fn synth_piano_bright(freq: f32, duration_ms: u32, sample_rate: u32, seed: u
     }
 
     let n = ((duration_ms as f64 * sample_rate as f64) / 1000.0) as usize;
+    let sr = sample_rate as f32;
     let mut out = vec![0f32; n];
 
-    let main = pluck_string(freq, sample_rate, n, seed);
-    let oct = pluck_string(freq * 2.003, sample_rate, n, seed ^ 0x1234_5678);
-    let harm = pluck_string(freq * 3.0, sample_rate, n, seed ^ 0xDEAD_BEEF);
-    let bright = pluck_string(freq * 4.02, sample_rate, n, seed ^ 0x0BAD_F00D);
+    let detune = 0.0010 + (seed & 0x1F) as f32 * 0.00005;
+    let f_a = freq * (1.0 - detune);
+    let f_b = freq * (1.0 + detune);
 
-    let hammer_samples = ((sample_rate as f64 * 0.004) as usize).min(n);
+    let b = inharmonicity(freq);
+    let f_h2 = 2.0 * freq * (1.0 + b * 4.0).sqrt();
+    let f_h3 = 3.0 * freq * (1.0 + b * 9.0).sqrt();
+    let f_h4 = 4.0 * freq * (1.0 + b * 16.0).sqrt();
+
+    let decay_base = 0.9950 - freq / sr * 0.8;
+    let main_a = pluck_string(f_a, sample_rate, n, seed, decay_base);
+    let main_b = pluck_string(f_b, sample_rate, n, seed ^ 0x1234_5678, decay_base);
+    let harm2 = pluck_string(f_h2, sample_rate, n, seed ^ 0xDEAD_BEEF, (decay_base - 0.002).clamp(0.9, 0.999));
+    let harm3 = pluck_string(f_h3, sample_rate, n, seed ^ 0x0BAD_F00D, (decay_base - 0.004).clamp(0.9, 0.999));
+    let harm4 = pluck_string(f_h4, sample_rate, n, seed ^ 0xFACE_B00C, (decay_base - 0.006).clamp(0.9, 0.999));
+
+    let hammer_len = ((sample_rate as f64 * 0.010) as usize).min(n);
+    let mut hammer = vec![0f32; n];
+    {
+        let mut rng = Rng(seed ^ 0x5EED_CAFE);
+        for i in 0..hammer_len {
+            let env = (1.0 - i as f32 / hammer_len as f32).powf(2.0);
+            hammer[i] = rng.next() * 0.45 * env;
+        }
+    }
+
+    let mut lp = OnePole::new();
+    let lp_alpha = (sr * 0.00008).clamp(0.02, 0.15);
 
     for i in 0..n {
         let t = i as f64 / sample_rate as f64;
-        let mut v = main[i] * 0.8 + oct[i] * 0.4 + harm[i] * 0.2 + bright[i] * 0.08;
-        if i < hammer_samples {
-            let env = (1.0 - i as f64 / hammer_samples as f64) as f32;
-            v += env * 0.7 * main[i];
-        }
-        let attack = ((t * 500.0).min(1.0)) as f32;
-        let release = (((n - i) as f64 / (sample_rate as f64 * 0.05)).min(1.0).max(0.0)) as f32;
-        out[i] = v * attack * release;
+        let mut v = main_a[i] * 0.5
+            + main_b[i] * 0.5
+            + harm2[i] * 0.25
+            + harm3[i] * 0.12
+            + harm4[i] * 0.06
+            + hammer[i];
+
+        let attack = ((t * 450.0).min(1.0)) as f32;
+        let release = (((n - i) as f64 / (sample_rate as f64 * 0.06)).min(1.0).max(0.0)) as f32;
+
+        out[i] = lp.process(v, lp_alpha) * attack * release;
     }
 
     let peak = out.iter().fold(0f32, |a, &b| a.max(b.abs()));
