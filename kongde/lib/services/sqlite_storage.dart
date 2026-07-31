@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 // ignore_for_file: invalid_use_of_internal_member
@@ -12,6 +13,51 @@ class SqliteStorage {
   SqliteStorage._();
 
   bool _ready = false;
+
+  /// 迁移沙盒数据：旧版本启用了 App Sandbox，数据在容器路径
+  /// （~/Library/Containers/com.example.kongde/Data/Documents）。
+  /// 关闭沙盒后 getApplicationDocumentsDirectory() 指向 ~/Documents，
+  /// 需要把 app.db 与 covers 一次性迁移过去，避免数据"丢失"。
+  static Future<void> migrateSandboxData() async {
+    if (kIsWeb || !Platform.isMacOS) return;
+    final newDir = await getApplicationDocumentsDirectory();
+    final home = Platform.environment['HOME'];
+    if (home == null) return;
+    final oldDir =
+        '$home/Library/Containers/com.example.kongde/Data/Documents';
+    if (oldDir == newDir.path || !Directory(oldDir).existsSync()) return;
+
+    LOGGER.i('检测到旧沙盒数据目录，开始迁移: $oldDir');
+
+    for (final name in ['app.db', 'covers']) {
+      final src = '$oldDir/$name';
+      final dst = '${newDir.path}/$name';
+      final srcFile = File(src);
+      final srcDir = Directory(src);
+
+      if (srcFile.existsSync() && !File(dst).existsSync()) {
+        try {
+          srcFile.rename(dst);
+          LOGGER.i('已迁移文件: $name');
+        } catch (e) {
+          // 跨卷 rename 可能失败，退回拷贝
+          try {
+            srcFile.copy(dst);
+            LOGGER.i('已拷贝文件: $name');
+          } catch (e2) {
+            LOGGER.w('迁移文件失败: $name: $e2');
+          }
+        }
+      } else if (srcDir.existsSync() && !Directory(dst).existsSync()) {
+        try {
+          srcDir.rename(dst);
+          LOGGER.i('已迁移目录: $name');
+        } catch (e) {
+          LOGGER.w('迁移目录失败（封面缓存可重新生成）: $name: $e');
+        }
+      }
+    }
+  }
 
   Future<void> init() async {
     if (_ready) return;

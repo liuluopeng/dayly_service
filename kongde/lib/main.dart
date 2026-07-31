@@ -15,6 +15,7 @@ import 'package:kongde/controllers/settings_controller.dart';
 import 'package:kongde/locales/messages.dart';
 import 'package:kongde/services/navigation_service.dart';
 import 'package:kongde/services/open_file_service.dart';
+import 'package:kongde/services/sqlite_storage.dart';
 
 import 'package:kongde/src/rust/api/simple.dart';
 import 'package:kongde/src/rust/api/logger_bridge.dart';
@@ -197,6 +198,9 @@ Future<void> main() async {
   }
 
   await RustLib.init();
+
+  // 迁移旧沙盒数据（app.db / covers），必须在任何 DB 初始化之前
+  await SqliteStorage.migrateSandboxData();
 
   await AppConfig.instance.loadFromPreferences();
 
