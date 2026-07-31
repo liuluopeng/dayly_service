@@ -151,6 +151,13 @@ function pressNote(note: string) {
   playNote(note);
 }
 
+// 键盘路径：即使音符仍处于按下状态（keyup 丢失/快速连按）也重新发声，
+// 与鼠标每次点击都能触发的行为保持一致
+function pressNoteFromKeyboard(note: string) {
+  activeKeys.value.add(note);
+  playNote(note);
+}
+
 function releaseNote(note: string) {
   activeKeys.value.delete(note);
 }
@@ -164,10 +171,10 @@ function onKeyDown(e: KeyboardEvent) {
   const key = e.key.toUpperCase();
   if (e.shiftKey) {
     const black = shiftKeyToBlack.get(key);
-    if (black) { e.preventDefault(); pressNote(black); return; }
+    if (black) { e.preventDefault(); pressNoteFromKeyboard(black); return; }
   }
   const white = keyToWhite.get(key);
-  if (white) { e.preventDefault(); pressNote(white); }
+  if (white) { e.preventDefault(); pressNoteFromKeyboard(white); }
 }
 
 function onKeyUp(e: KeyboardEvent) {
