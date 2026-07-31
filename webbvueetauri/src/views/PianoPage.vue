@@ -162,6 +162,10 @@ function releaseNote(note: string) {
   activeKeys.value.delete(note);
 }
 
+// 物理键 → 实际按下的音符：keyup 时按记录释放，
+// 避免 Shift 状态在按下/抬起之间变化导致误释放（键一直亮）
+const pressedByKey = new Map<string, string>();
+
 function onKeyDown(e: KeyboardEvent) {
   if (e.repeat) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -169,20 +173,31 @@ function onKeyDown(e: KeyboardEvent) {
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) return;
 
   const key = e.key.toUpperCase();
+  let note: string | undefined;
   if (e.shiftKey) {
-    const black = shiftKeyToBlack.get(key);
-    if (black) { e.preventDefault(); pressNoteFromKeyboard(black); return; }
+    note = shiftKeyToBlack.get(key);
   }
-  const white = keyToWhite.get(key);
-  if (white) { e.preventDefault(); pressNoteFromKeyboard(white); }
+  if (!note) note = keyToWhite.get(key);
+  if (note) {
+    e.preventDefault();
+    pressedByKey.set(key, note);
+    pressNoteFromKeyboard(note);
+  }
 }
 
 function onKeyUp(e: KeyboardEvent) {
   const key = e.key.toUpperCase();
-  const black = shiftKeyToBlack.get(key);
-  if (black) { releaseNote(black); return; }
-  const white = keyToWhite.get(key);
-  if (white) releaseNote(white);
+  const note = pressedByKey.get(key);
+  if (note) {
+    pressedByKey.delete(key);
+    releaseNote(note);
+  }
+}
+
+// 窗口失焦兜底：清空所有按下的键，避免 keyup 丢失导致键一直亮
+function clearAllNotes() {
+  activeKeys.value.clear();
+  pressedByKey.clear();
 }
 
 const whiteNotes = WHITE_NOTES.map(n => n.note);
@@ -258,12 +273,14 @@ const blackRefRows: RefKey[][] = [
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', clearAllNotes);
   loadSamples();
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('keyup', onKeyUp);
+  window.removeEventListener('blur', clearAllNotes);
 });
 </script>
 
