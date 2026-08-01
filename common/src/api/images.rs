@@ -8,6 +8,7 @@ use crate::{
 use my_type::dto::images::ImageWithUrl;
 
 /// 扫描图片
+/// 触发图片库扫描
 pub async fn scan_images(client: &ApiClient) -> ApiResult<ApiResponse<Value>> {
     let response = client
         .post("/api/images/scan", &())
@@ -33,6 +34,7 @@ pub async fn get_image_folders(client: &ApiClient) -> ApiResult<ApiResponse<Vec<
 }
 
 /// 获取图片列表（支持分页和文件夹过滤）
+/// 分页列出图片
 pub async fn list_images(
     client: &ApiClient,
     folder: Option<&str>,

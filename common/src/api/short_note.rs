@@ -6,6 +6,8 @@ use uuid::Uuid;
 
 /// 创建短笔记请求
 #[derive(Debug, Serialize, Deserialize)]
+/// 创建短笔记的请求体
+#[allow(missing_docs)]
 pub struct CreateShortNoteRequest {
     pub content: Option<String>,
     pub view_name: Option<String>,
@@ -13,12 +15,15 @@ pub struct CreateShortNoteRequest {
 
 /// 更新短笔记请求
 #[derive(Debug, Serialize, Deserialize)]
+/// 更新短笔记的请求体
+#[allow(missing_docs)]
 pub struct UpdateShortNoteRequest {
     pub content: Option<String>,
     pub view_name: Option<String>,
 }
 
 /// 获取短笔记列表
+/// 分页列出短笔记
 pub async fn list_short_notes(
     client: &ApiClient,
     page: Option<u32>,
@@ -65,6 +70,7 @@ pub async fn list_short_notes(
 }
 
 /// 获取单个短笔记
+/// 获取短笔记详情
 pub async fn get_short_note(client: &ApiClient, id: Uuid) -> ApiResult<ApiResponse<ShortNote>> {
     let path = format!("/api/short_notes/get/{}", id);
 

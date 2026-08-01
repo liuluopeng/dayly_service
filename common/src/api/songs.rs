@@ -11,6 +11,7 @@ use my_type::dto;
 pub use dto::{AllLyricsResponse, LyricsResponse, SongWithUrl};
 
 /// 扫描歌曲
+/// 触发歌曲库扫描
 pub async fn scan_songs(client: &ApiClient) -> ApiResult<ApiResponse<Value>> {
     let response = client
         .post("/api/songs/scan", &())
@@ -24,6 +25,7 @@ pub async fn scan_songs(client: &ApiClient) -> ApiResult<ApiResponse<Value>> {
 }
 
 /// 获取所有歌曲（支持分页）
+/// 分页获取歌曲列表（按用户媒体路径过滤）
 pub async fn get_all_songs(
     client: &ApiClient,
     page: Option<u32>,
@@ -56,6 +58,7 @@ pub async fn get_all_songs(
 }
 
 /// 根据专辑获取歌曲
+/// 按专辑获取歌曲
 pub async fn get_songs_by_album(client: &ApiClient, album: &str) -> ApiResult<ApiResponse<Value>> {
     let path = format!("/api/songs/album?album={}", urlencoding::encode(album));
     let response = client
@@ -70,6 +73,7 @@ pub async fn get_songs_by_album(client: &ApiClient, album: &str) -> ApiResult<Ap
 }
 
 /// 根据艺术家获取歌曲
+/// 按艺术家获取歌曲
 pub async fn get_songs_by_artist(
     client: &ApiClient,
     artist: &str,
@@ -87,6 +91,7 @@ pub async fn get_songs_by_artist(
 }
 
 /// 获取歌曲封面
+/// 获取歌曲封面图片
 pub async fn get_song_cover(client: &ApiClient, song_id: &Uuid) -> ApiResult<ApiResponse<Vec<u8>>> {
     let path = format!("/api/songs/cover/{}", song_id);
     let response = client
@@ -101,6 +106,7 @@ pub async fn get_song_cover(client: &ApiClient, song_id: &Uuid) -> ApiResult<Api
 }
 
 /// 获取歌曲文件
+/// 获取歌曲音频文件
 pub async fn get_song_file(client: &ApiClient, song_id: &Uuid) -> ApiResult<ApiResponse<Vec<u8>>> {
     let path = format!("/api/songs/{}", song_id);
     let response = client
@@ -115,6 +121,7 @@ pub async fn get_song_file(client: &ApiClient, song_id: &Uuid) -> ApiResult<ApiR
 }
 
 /// 获取歌词(LRC)
+/// 获取歌曲 LRC 歌词
 pub async fn get_song_lyrics(
     client: &ApiClient,
     song_id: &Uuid,
@@ -131,6 +138,7 @@ pub async fn get_song_lyrics(
 }
 
 /// 获取 TTML 逐字歌词（AMLL 格式）
+/// 获取歌曲 TTML 逐字歌词
 pub async fn get_song_ttml(client: &ApiClient, song_id: &Uuid) -> ApiResult<ApiResponse<String>> {
     let path = format!("/api/songs/{}/ttml", song_id);
     let response = client
@@ -144,6 +152,7 @@ pub async fn get_song_ttml(client: &ApiClient, song_id: &Uuid) -> ApiResult<ApiR
 }
 
 /// 获取所有类型的歌词
+/// 获取歌曲全部类型的歌词
 pub async fn get_all_lyrics(
     client: &ApiClient,
     song_id: &Uuid,

@@ -3,9 +3,13 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+/// 基础实体：通用 ID 与时间戳字段
 pub struct BaseEntity {
+    /// 实体 ID
     pub id: Uuid,
+    /// 创建时间
     pub created_at: DateTime<Utc>,
+    /// 更新时间
     pub updated_at: DateTime<Utc>,
 }
 
@@ -20,10 +24,12 @@ impl Default for BaseEntity {
 }
 
 impl BaseEntity {
+    /// 创建空实体（使用当前时间戳）
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// 以指定 ID 创建实体（使用当前时间戳）
     pub fn with_id(id: Uuid) -> Self {
         Self {
             id,

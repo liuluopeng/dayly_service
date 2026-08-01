@@ -3,6 +3,8 @@ use super::client::ApiClient;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
+/// 剪贴板历史条目
+#[allow(missing_docs)]
 pub struct ClipboardEntry {
     pub id: i64,
     #[serde(rename = "type")]
@@ -21,6 +23,7 @@ struct ClipboardResponse {
     pub message: Option<String>,
 }
 
+/// 获取剪贴板历史（可按类型过滤/关键字搜索）
 pub async fn get_clipboard_history(
     client: &ApiClient,
     count: Option<usize>,

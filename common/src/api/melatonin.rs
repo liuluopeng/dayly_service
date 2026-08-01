@@ -9,6 +9,7 @@ pub use my_type::dto::{
 };
 
 /// 获取 melatonin 电影列表
+/// 分页获取 Melatonin 电影列表
 pub async fn get_melatonin_movies(
     client: &ApiClient,
     query: &MelatoninListQuery,
@@ -39,6 +40,7 @@ pub async fn get_melatonin_movies(
 }
 
 /// 根据 ID 获取 melatonin 电影详情
+/// 按 ID 获取电影详情
 pub async fn get_melatonin_movie_by_id(
     client: &ApiClient,
     id: &Uuid,
@@ -55,6 +57,7 @@ pub async fn get_melatonin_movie_by_id(
 }
 
 /// 根据演员获取 melatonin 电影列表
+/// 按演员获取电影列表
 pub async fn get_movies_by_actor(
     client: &ApiClient,
     query: &ActorMovieQuery,
@@ -85,6 +88,7 @@ pub async fn get_movies_by_actor(
 }
 
 /// 获取 bt_list.csv 磁力链接列表
+/// 读取电影目录的 bt_list.csv 磁力链接
 pub async fn get_bt_list(
     client: &ApiClient,
     id: &Uuid,
@@ -101,6 +105,7 @@ pub async fn get_bt_list(
 }
 
 /// 根据类型获取 melatonin 电影列表
+/// 按类型获取电影列表
 pub async fn get_movies_by_genre(
     client: &ApiClient,
     query: &ActorMovieQuery,

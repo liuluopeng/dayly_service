@@ -6,6 +6,8 @@ use urlencoding;
 use crate::api::base::{ApiError, ApiResponse, ApiResult};
 
 #[derive(Debug, Serialize, Deserialize)]
+/// 保存笔记的请求体
+#[allow(missing_docs)]
 pub struct SaveNoteRequest {
     pub id: Option<String>,
     pub text: String,
@@ -13,24 +15,31 @@ pub struct SaveNoteRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+/// 保存笔记的响应
+#[allow(missing_docs)]
 pub struct SaveNoteResponse {
     pub id: String,
     pub message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+/// 创建笔记的请求体
+#[allow(missing_docs)]
 pub struct CreateNoteRequest {
     pub text: String,
     pub filename: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+/// 创建笔记的响应
+#[allow(missing_docs)]
 pub struct CreateNoteResponse {
     pub id: String,
     pub message: String,
 }
 
 /// 保存笔记（支持创建和更新）
+/// 保存笔记（有 id 更新，无 id 新建）
 pub async fn save_note(
     client: &ApiClient,
     req: &SaveNoteRequest,
@@ -47,6 +56,7 @@ pub async fn save_note(
 }
 
 /// 创建笔记
+/// 创建新笔记
 pub async fn create_note(
     client: &ApiClient,
     req: &CreateNoteRequest,
@@ -63,6 +73,7 @@ pub async fn create_note(
 }
 
 /// 获取笔记列表
+/// 分页列出笔记
 pub async fn list_notes(
     client: &ApiClient,
     page: Option<u32>,
@@ -109,6 +120,7 @@ pub async fn get_note(client: &ApiClient, uuid: &str) -> ApiResult<ApiResponse<N
 }
 
 /// 搜索笔记
+/// 搜索笔记（LIKE 模糊匹配）
 pub async fn search_notes(
     client: &ApiClient,
     query: &str,

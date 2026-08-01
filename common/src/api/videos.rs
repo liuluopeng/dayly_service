@@ -8,6 +8,7 @@ use crate::{
 use my_type::dto::videos::VideoWithUrl;
 
 /// 扫描视频
+/// 触发视频库扫描
 pub async fn scan_videos(client: &ApiClient) -> ApiResult<ApiResponse<Value>> {
     let response = client
         .post("/api/videos/scan", &())

@@ -8,6 +8,8 @@ use super::base::{ApiError, ApiResponse, ErrorBody};
 /// 统一的 API 客户端
 /// 支持 native 和 wasm 两种平台
 #[derive(Clone)]
+/// 统一的 HTTP API 客户端（native 与 wasm 双平台）
+#[allow(missing_docs)]
 pub struct ApiClient {
     pub client: Client,
     pub base_url: String,
@@ -176,7 +178,7 @@ impl ApiClient {
         request.send().await
     }
 
-    /// 统一的 JSON 响应处理：成功时解析为 ApiResponse<T>，失败时解析 ErrorBody 为 ApiError
+    /// 统一的 JSON 响应处理：成功时解析为 `ApiResponse<T>`，失败时解析 `ErrorBody` 为 `ApiError`
     pub async fn json_response<T: serde::de::DeserializeOwned>(
         &self,
         response: reqwest::Response,

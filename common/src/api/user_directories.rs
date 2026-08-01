@@ -4,12 +4,15 @@ use serde::Serialize;
 use serde_json::Value;
 
 #[derive(Debug, Serialize)]
+/// 添加用户目录的请求体
+#[allow(missing_docs)]
 pub struct AddUserDirRequest {
     pub path: String,
     pub label: Option<String>,
     pub allow_list: Option<Vec<String>>,
 }
 
+/// 列出所有用户（管理员）
 pub async fn list_users(client: &ApiClient) -> ApiResult<Value> {
     let resp = client
         .get("/api/user/list")
@@ -22,6 +25,7 @@ pub async fn list_users(client: &ApiClient) -> ApiResult<Value> {
     Ok(data)
 }
 
+/// 列出用户授权目录
 pub async fn list_user_directories(client: &ApiClient, username: Option<&str>) -> ApiResult<Value> {
     let url = match username {
         Some(u) => format!("/api/admin/user-directories?username={}", u),
@@ -38,6 +42,7 @@ pub async fn list_user_directories(client: &ApiClient, username: Option<&str>) -
     Ok(data)
 }
 
+/// 添加用户授权目录
 pub async fn add_user_directory(
     client: &ApiClient,
     path: &str,
@@ -60,6 +65,7 @@ pub async fn add_user_directory(
     Ok(data)
 }
 
+/// 删除用户授权目录
 pub async fn delete_user_directory(client: &ApiClient, dir_id: &str) -> ApiResult<Value> {
     let resp = client
         .delete(&format!("/api/admin/user-directories/{}", dir_id))

@@ -6,6 +6,7 @@ use super::client::ApiClient;
 
 pub use dto::SearchRequest;
 
+/// 搜索 GGTT 五笔编码
 pub async fn search_ggtt_code(
     client: &ApiClient,
     req: SearchRequest,
@@ -34,6 +35,7 @@ pub async fn search_ggtt_code(
     Ok(api_response)
 }
 
+/// 搜索 GGTT 编码（WASM 封装版）
 pub async fn search_ggtt_code_for_wasm(req: SearchRequest) -> ApiResult<ApiResponse<GgttCode>> {
     #[cfg(not(target_arch = "wasm32"))]
     use std::time::Duration;

@@ -7,11 +7,15 @@ use super::base::{ApiResponse, ApiResult};
 use super::client::ApiClient;
 
 #[derive(Debug, Deserialize, Serialize)]
+/// 创建会话的请求体
+#[allow(missing_docs)]
 pub struct CreateSessionRequest {
     pub title: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+/// 添加消息的请求体
+#[allow(missing_docs)]
 pub struct AddMessageRequest {
     pub role: String,
     pub content: String,
@@ -20,12 +24,16 @@ pub struct AddMessageRequest {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+/// 会话及消息列表
+#[allow(missing_docs)]
 pub struct SessionWithMessages {
     pub session: OpenAiSession,
     pub messages: Vec<OpenAiMessage>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+/// 聊天补全请求体
+#[allow(missing_docs)]
 pub struct ChatCompletionRequest {
     pub model: String,
     pub messages: Vec<Message>,
@@ -35,11 +43,14 @@ pub struct ChatCompletionRequest {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+/// 聊天消息（角色+内容）
+#[allow(missing_docs)]
 pub struct Message {
     pub role: String,
     pub content: String,
 }
 
+/// 创建新的 OpenAI 会话
 pub async fn create_session(
     client: &ApiClient,
     title: &str,
@@ -58,6 +69,7 @@ pub async fn create_session(
     Ok(data)
 }
 
+/// 列出当前用户的会话
 pub async fn list_sessions(client: &ApiClient) -> ApiResult<ApiResponse<Vec<OpenAiSession>>> {
     let response = client
         .get("/api/openai/sessions")
@@ -70,6 +82,7 @@ pub async fn list_sessions(client: &ApiClient) -> ApiResult<ApiResponse<Vec<Open
     Ok(data)
 }
 
+/// 获取会话详情
 pub async fn get_session(
     client: &ApiClient,
     session_id: &Uuid,
@@ -85,6 +98,7 @@ pub async fn get_session(
     Ok(data)
 }
 
+/// 删除会话
 pub async fn delete_session(client: &ApiClient, session_id: &Uuid) -> ApiResult<ApiResponse<()>> {
     let response = client
         .delete(&format!("/api/openai/sessions/{}", session_id))
@@ -97,6 +111,7 @@ pub async fn delete_session(client: &ApiClient, session_id: &Uuid) -> ApiResult<
     Ok(data)
 }
 
+/// 向会话添加消息
 pub async fn add_message(
     client: &ApiClient,
     session_id: &Uuid,
@@ -125,6 +140,7 @@ pub async fn add_message(
     Ok(data)
 }
 
+/// 获取会话的消息列表
 pub async fn get_session_messages(
     client: &ApiClient,
     session_id: &Uuid,
@@ -140,6 +156,7 @@ pub async fn get_session_messages(
     Ok(data)
 }
 
+/// 发起聊天补全请求
 pub async fn chat_completion(
     client: &ApiClient,
     req: &ChatCompletionRequest,

@@ -4,6 +4,8 @@ use super::base::{ApiError, ApiResult};
 use super::client::ApiClient;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+/// 目录列表中的文件条目
+#[allow(missing_docs)]
 pub struct FileEntry {
     pub name: String,
     pub path: String,
@@ -13,6 +15,8 @@ pub struct FileEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+/// 目录列表（分页）
+#[allow(missing_docs)]
 pub struct DirListing {
     pub path: String,
     pub entries: Vec<FileEntry>,
@@ -20,6 +24,8 @@ pub struct DirListing {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+/// 文件元数据
+#[allow(missing_docs)]
 pub struct FileInfo {
     pub name: String,
     pub path: String,
@@ -30,6 +36,7 @@ pub struct FileInfo {
 }
 
 /// 列出目录内容
+/// 列出目录内容（分页）
 pub async fn list_files(
     client: &ApiClient,
     path: &str,
@@ -67,6 +74,7 @@ pub async fn get_file_info(client: &ApiClient, path: &str) -> ApiResult<FileInfo
 }
 
 /// 对目录生成树形文件
+/// 生成目录树文本文件
 pub async fn generate_tree(client: &ApiClient, path: &str) -> ApiResult<serde_json::Value> {
     let body = serde_json::json!({ "path": path });
     let response = client
@@ -80,6 +88,7 @@ pub async fn generate_tree(client: &ApiClient, path: &str) -> ApiResult<serde_js
 }
 
 /// 构建文件下载 URL（带 token）
+/// 构建文件下载 URL（携带认证参数）
 pub fn build_file_url(client: &ApiClient, path: &str) -> String {
     let encoded = urlencoding::encode(path);
     match &client.token {

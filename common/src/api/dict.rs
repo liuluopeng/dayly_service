@@ -9,6 +9,7 @@ pub use dto::{
 };
 
 /// 搜索现代汉语词典
+/// 搜索现代汉语词典（返回 HTML）
 pub async fn search_xiandaihanyu(
     client: &ApiClient,
     query: &str,
@@ -29,6 +30,7 @@ pub async fn search_xiandaihanyu(
 }
 
 /// 搜索柯林斯词典
+/// 搜索柯林斯词典（返回 HTML）
 pub async fn search_collins(client: &ApiClient, query: &str) -> ApiResult<ApiResponse<String>> {
     let path = format!("/api/dict/collins?search={}", urlencoding::encode(query));
     let response = client
@@ -43,6 +45,7 @@ pub async fn search_collins(client: &ApiClient, query: &str) -> ApiResult<ApiRes
 }
 
 /// 获取柯林斯词典资源
+/// 获取柯林斯词典资源文件（音频/图片/样式）
 pub async fn collins_resource(
     client: &ApiClient,
     resource_path: &str,
@@ -60,6 +63,7 @@ pub async fn collins_resource(
 }
 
 /// 搜索朗文词典
+/// 搜索朗文词典（返回 HTML）
 pub async fn search_ldoce(client: &ApiClient, query: &str) -> ApiResult<ApiResponse<String>> {
     let path = format!("/api/dict/ldoce?search={}", urlencoding::encode(query));
     let response = client
@@ -74,6 +78,7 @@ pub async fn search_ldoce(client: &ApiClient, query: &str) -> ApiResult<ApiRespo
 }
 
 /// 获取朗文词典资源
+/// 获取朗文词典资源文件
 pub async fn ldoce_resource(
     client: &ApiClient,
     resource_path: &str,
@@ -91,6 +96,7 @@ pub async fn ldoce_resource(
 }
 
 /// 获取现代汉语词典资源
+/// 获取现代汉语词典资源文件
 pub async fn xiandaihanyu_resource(
     client: &ApiClient,
     resource_path: &str,
@@ -108,6 +114,7 @@ pub async fn xiandaihanyu_resource(
 }
 
 /// 获取最近搜索历史
+/// 获取当前用户的词典搜索历史
 pub async fn get_recent_history(
     client: &ApiClient,
     limit: i64,
@@ -125,6 +132,7 @@ pub async fn get_recent_history(
 }
 
 /// 获取热门词语
+/// 获取热门搜索词（按搜索次数排序）
 pub async fn get_top_words(client: &ApiClient) -> ApiResult<ApiResponse<Vec<Word>>> {
     let response = client
         .get("/api/dict/top-words")
@@ -137,6 +145,7 @@ pub async fn get_top_words(client: &ApiClient) -> ApiResult<ApiResponse<Vec<Word
     Ok(words)
 }
 
+/// 查询单词的历史搜索次数
 pub async fn word_search_count(client: &ApiClient, word: &str) -> ApiResult<ApiResponse<i64>> {
     let path = format!("/api/dict/word-count?search={}", urlencoding::encode(word));
     let response = client

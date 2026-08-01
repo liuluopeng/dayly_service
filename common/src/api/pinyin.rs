@@ -1,6 +1,7 @@
 use super::client::ApiClient;
 
 /// 根据汉字获取拼音
+/// 按原始字形查询拼音
 pub async fn get_pinyin_by_ori(
     client: &ApiClient,
     ori: &str,

@@ -3,7 +3,9 @@ use super::client::ApiClient;
 /// 白噪音音频文件结构体
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct AudioFile {
+    /// 音频名称
     pub name: String,
+    /// 音频 URL
     pub url: String,
 }
 
