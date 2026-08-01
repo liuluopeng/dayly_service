@@ -40,7 +40,8 @@
       "minutesAgo": "{n}分钟前",
       "hoursAgo": "{n}小时前",
       "daysAgo": "{n}天前"
-    }
+    },
+    "stop": "停止"
   },
   "app": {
     "sidebar": {
@@ -169,50 +170,50 @@
         "title": "密码生成器",
         "desc": "生成随机密码"
       },
-        "chineseRemover": {
-          "title": "中文去除",
-          "desc": "去除中文字符"
-        },
-        "imageConverter": {
-          "title": "图片格式转换",
-          "desc": "在浏览器中转换图片格式"
-        },
-        "qrcode": {
-          "title": "QR 码生成",
-          "desc": "生成二维码图片",
-          "input": "文本内容",
-          "placeholder": "输入文本或粘贴 URL...",
-          "size": "大小",
-          "margin": "边距",
-          "generate": "生成",
-          "version": "QR 版本"
-        },
-        "qrscan": {
-          "title": "QR 码扫描",
-          "desc": "从图片中识别二维码",
-          "select": "选择图片",
-          "result": "扫描结果",
-          "noQr": "未在图片中检测到 QR 码"
-        }
+      "chineseRemover": {
+        "title": "中文去除",
+        "desc": "去除中文字符"
       },
       "imageConverter": {
-        "title": "图片格式转换器",
-        "original": "原图",
-        "result": "转换结果",
-        "format": "目标格式",
-        "quality": "质量",
-        "low": "低",
-        "medium": "中",
-        "high": "高",
-        "max": "最高",
-        "convert": "转换",
-        "crop": "裁剪",
-        "resetCrop": "重置为全图",
-        "resize": "缩放",
-        "width": "宽",
-        "height": "高",
-        "keepRatio": "保持宽高比",
-        "download": "下载"
+        "title": "图片格式转换",
+        "desc": "在浏览器中转换图片格式"
+      },
+      "qrcode": {
+        "title": "QR 码生成",
+        "desc": "生成二维码图片",
+        "input": "文本内容",
+        "placeholder": "输入文本或粘贴 URL...",
+        "size": "大小",
+        "margin": "边距",
+        "generate": "生成",
+        "version": "QR 版本"
+      },
+      "qrscan": {
+        "title": "QR 码扫描",
+        "desc": "从图片中识别二维码",
+        "select": "选择图片",
+        "result": "扫描结果",
+        "noQr": "未在图片中检测到 QR 码"
+      }
+    },
+    "imageConverter": {
+      "title": "图片格式转换器",
+      "original": "原图",
+      "result": "转换结果",
+      "format": "目标格式",
+      "quality": "质量",
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "max": "最高",
+      "convert": "转换",
+      "crop": "裁剪",
+      "resetCrop": "重置为全图",
+      "resize": "缩放",
+      "width": "宽",
+      "height": "高",
+      "keepRatio": "保持宽高比",
+      "download": "下载"
     },
     "images": {
       "title": "图片库",
@@ -229,6 +230,10 @@
     "settings": {
       "title": "设置",
       "desc": "切换环境和配置"
+    },
+    "piano": {
+      "title": "钢琴",
+      "desc": "键盘钢琴（采样音色）"
     }
   },
   "home": {
@@ -663,5 +668,50 @@
     "INTERNAL_ERROR": "服务器内部错误"
   },
   "currentUser": "当前用户",
-  "notLoggedIn": "未登录"
+  "notLoggedIn": "未登录",
+  "piano": {
+    "title": "钢琴",
+    "subtitle": "键盘钢琴 · 按键盘或点击琴键演奏",
+    "loading": "加载音色中… {current}/{total}",
+    "ready": "音色就绪 ✓",
+    "audioUnsupported": "当前浏览器不支持 Web Audio",
+    "sampleLoadFailed": "采样加载失败: {file}",
+    "keyHint": "键盘布局：白键 1-0 Q-P A-L Z-M，黑键 Shift+对应白键。支持同时按下多个键。",
+    "keyRefTitle": "键位参考",
+    "doHint": "绿色 do = 中央 C（C4，键盘 T 键），钢琴上的基准音",
+    "timbreWasm": "Wasm 合成",
+    "timbreMp3": "MP3 采样",
+    "timbreWasmHint": "Karplus-Strong 物理建模 · 96kHz HiRes，无需加载采样",
+    "synthPreparing": "（生成中…）",
+    "timbreLearn": "学习音色",
+    "timbreLearnHint": "从采样提取参数再合成（STFT 分析 + 加法合成）",
+    "learnFailed": "音色分析失败",
+    "timbreBell": "钟琴",
+    "timbreBellHint": "不谐和泛音 + 指数衰减（闭式表达式合成，最易模拟的乐器）",
+    "teachTitle": "欢乐颂教学",
+    "teachDemo": "开始演示",
+    "teachFollow": "跟弹模式",
+    "teachRest": "休止 · 等待",
+    "teachFollowHint": "按高亮的键跟弹，按对自动前进",
+    "teachDemoHint": "看高亮的键，跟着按",
+    "teachHint": "简谱 1=do(C4·T键) 2=re 3=mi 4=fa 5=sol 6=la 7=si —— 欢乐颂全是白键，从 T 键开始",
+    "solfege": {
+      "do": "do",
+      "re": "re",
+      "mi": "mi",
+      "fa": "fa",
+      "sol": "sol",
+      "la": "la",
+      "si": "si"
+    },
+    "practiceTitle": "视唱练习",
+    "teachJoy": "欢乐颂",
+    "practiceNew": "新练习",
+    "practiceAgain": "再来一条",
+    "practiceEasy": "入门(1-5音)",
+    "practiceMedium": "进阶(全音阶)",
+    "practiceHard": "挑战(含节奏)",
+    "practiceDone": "完成 {n} 条 ✓",
+    "practiceHint": "看简谱直接按键（不试音）——视唱练耳：看到 3 就按 U，看到 5 就按 O。按对自动前进"
+  }
 }

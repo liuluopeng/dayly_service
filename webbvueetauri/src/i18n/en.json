@@ -40,7 +40,8 @@
       "minutesAgo": "{n}m ago",
       "hoursAgo": "{n}h ago",
       "daysAgo": "{n}d ago"
-    }
+    },
+    "stop": "Stop"
   },
   "app": {
     "sidebar": {
@@ -171,50 +172,50 @@
         "title": "Password Generator",
         "desc": "Generate random passwords"
       },
-        "chineseRemover": {
-          "title": "Chinese Remover",
-          "desc": "Remove Chinese characters"
-        },
-        "imageConverter": {
-          "title": "Image Converter",
-          "desc": "Convert image formats in browser"
-        },
-        "qrcode": {
-          "title": "QR Code",
-          "desc": "Generate QR code images",
-          "input": "Content",
-          "placeholder": "Enter text or paste URL...",
-          "size": "Size",
-          "margin": "Margin",
-          "generate": "Generate",
-          "version": "QR version"
-        },
-        "qrscan": {
-          "title": "QR Scan",
-          "desc": "Scan QR codes from images",
-          "select": "Select image",
-          "result": "Result",
-          "noQr": "No QR code found in image"
-        }
+      "chineseRemover": {
+        "title": "Chinese Remover",
+        "desc": "Remove Chinese characters"
       },
       "imageConverter": {
         "title": "Image Converter",
-        "original": "Original",
+        "desc": "Convert image formats in browser"
+      },
+      "qrcode": {
+        "title": "QR Code",
+        "desc": "Generate QR code images",
+        "input": "Content",
+        "placeholder": "Enter text or paste URL...",
+        "size": "Size",
+        "margin": "Margin",
+        "generate": "Generate",
+        "version": "QR version"
+      },
+      "qrscan": {
+        "title": "QR Scan",
+        "desc": "Scan QR codes from images",
+        "select": "Select image",
         "result": "Result",
-        "format": "Target format",
-        "quality": "Quality",
-        "low": "Low",
-        "medium": "Med",
-        "high": "High",
-        "max": "Max",
-        "convert": "Convert",
-        "crop": "Crop",
-        "resetCrop": "Reset to full",
-        "resize": "Resize",
-        "width": "Width",
-        "height": "Height",
-        "keepRatio": "Keep aspect ratio",
-        "download": "Download"
+        "noQr": "No QR code found in image"
+      }
+    },
+    "imageConverter": {
+      "title": "Image Converter",
+      "original": "Original",
+      "result": "Result",
+      "format": "Target format",
+      "quality": "Quality",
+      "low": "Low",
+      "medium": "Med",
+      "high": "High",
+      "max": "Max",
+      "convert": "Convert",
+      "crop": "Crop",
+      "resetCrop": "Reset to full",
+      "resize": "Resize",
+      "width": "Width",
+      "height": "Height",
+      "keepRatio": "Keep aspect ratio",
+      "download": "Download"
     },
     "images": {
       "title": "Image Gallery",
@@ -231,6 +232,10 @@
     "settings": {
       "title": "Settings",
       "desc": "Switch environment and configuration"
+    },
+    "piano": {
+      "title": "Piano",
+      "desc": "Keyboard piano (sampled sound)"
     }
   },
   "home": {
@@ -665,5 +670,50 @@
     "INTERNAL_ERROR": "Internal server error"
   },
   "currentUser": "Current User",
-  "notLoggedIn": "Not Logged In"
+  "notLoggedIn": "Not Logged In",
+  "piano": {
+    "title": "Piano",
+    "subtitle": "Keyboard piano · play with keys or click",
+    "loading": "Loading samples… {current}/{total}",
+    "ready": "Samples ready ✓",
+    "audioUnsupported": "Web Audio is not supported in this browser",
+    "sampleLoadFailed": "Failed to load sample: {file}",
+    "keyHint": "Layout: white keys 1-0 Q-P A-L Z-M, black keys Shift+corresponding white key. Multiple keys supported.",
+    "keyRefTitle": "Key reference",
+    "doHint": "Green do = middle C (C4, key T), the reference note",
+    "timbreWasm": "Wasm Synth",
+    "timbreMp3": "MP3 Samples",
+    "timbreWasmHint": "Karplus-Strong physical modeling · 96kHz HiRes, no samples needed",
+    "synthPreparing": " (preparing…)",
+    "timbreLearn": "Learned",
+    "timbreLearnHint": "Analysis-resynthesis: STFT params extracted from samples",
+    "learnFailed": "Timbre analysis failed",
+    "timbreBell": "Glockenspiel",
+    "timbreBellHint": "Inharmonic partials + exponential decay (closed-form synthesis)",
+    "teachTitle": "Ode to Joy lesson",
+    "teachDemo": "Play demo",
+    "teachFollow": "Follow mode",
+    "teachRest": "rest · wait",
+    "teachFollowHint": "Press the highlighted key; advance when correct",
+    "teachDemoHint": "Watch the highlighted key and follow",
+    "teachHint": "1=do(C4·T) 2=re 3=mi 4=fa 5=sol 6=la 7=si — all white keys, start at T",
+    "solfege": {
+      "do": "do",
+      "re": "re",
+      "mi": "mi",
+      "fa": "fa",
+      "sol": "sol",
+      "la": "la",
+      "si": "si"
+    },
+    "practiceTitle": "Sight-singing practice",
+    "teachJoy": "Ode to Joy",
+    "practiceNew": "New exercise",
+    "practiceAgain": "Another one",
+    "practiceEasy": "Easy (1-5)",
+    "practiceMedium": "Medium (full scale)",
+    "practiceHard": "Hard (with rhythm)",
+    "practiceDone": "{n} done ✓",
+    "practiceHint": "Press keys directly from the score (no trial) — sight reading: see 3 press U, see 5 press O. Advance when correct"
+  }
 }

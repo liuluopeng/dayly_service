@@ -35,6 +35,7 @@ import Game2048 from '../views/Game2048.vue';
 import GameSnake from '../views/GameSnake.vue';
 import GameMinesweeper from '../views/GameMinesweeper.vue';
 import GameTetris from '../views/GameTetris.vue';
+import PianoPage from '../views/PianoPage.vue';
 import ImageConverter from '../views/ImageConverter.vue';
 import QrCodeGenerator from '../views/QrCodeGenerator.vue';
 import QrCodeScanner from '../views/QrCodeScanner.vue';
@@ -275,6 +276,11 @@ const routes = [
     component: GameTetris
   },
   {
+    path: '/piano',
+    name: 'PianoPage',
+    component: PianoPage
+  },
+  {
     path: '/chat',
     name: 'Chat',
     component: Chat
@@ -299,7 +305,7 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const token = localStorage.getItem('token');
 
-  const requiresAuth = ['/menu', '/ggtt', '/dict', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history', '/game2048', '/game-snake', '/game-minesweeper', '/game-tetris'];
+  const requiresAuth = ['/menu', '/ggtt', '/dict', '/songs', '/player', '/player-wasm', '/player-lyrics', '/files', '/video', '/epub', '/pdf', '/short-notes', '/openai-chat', '/note-search', '/notes', '/note-create', '/note', '/tools', '/zici', '/images', '/videos', '/admin', '/settings', '/chat', '/sharing', '/clipboard-history', '/game2048', '/game-snake', '/game-minesweeper', '/game-tetris', '/piano'];
 
   if (to.path === '/login' && token) {
     return '/menu';
