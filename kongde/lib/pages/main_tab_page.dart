@@ -87,8 +87,12 @@ class _MainTabPageState extends State<MainTabPage> {
           }),
           const VerticalDivider(thickness: 1, width: 1),
           Expanded(
+            // IndexedStack：切换 tab 时保持页面状态不重建
             child: Obx(() {
-              return _pages[_tabBarController.currentIndex.value];
+              return IndexedStack(
+                index: _tabBarController.currentIndex.value,
+                children: _pages,
+              );
             }),
           ),
         ],
@@ -109,7 +113,11 @@ class _MainTabPageState extends State<MainTabPage> {
       child: Scaffold(
         body: SafeArea(
           child: Obx(() {
-            return _pages[_tabBarController.currentIndex.value];
+            // IndexedStack：切换 tab 时保持页面状态不重建
+            return IndexedStack(
+              index: _tabBarController.currentIndex.value,
+              children: _pages,
+            );
           }),
         ),
         bottomNavigationBar: Obx(() {
@@ -173,7 +181,11 @@ class _MainTabPageState extends State<MainTabPage> {
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(
               child: Obx(() {
-                return _pages[_tabBarController.currentIndex.value];
+                // IndexedStack：切换 tab 时保持页面状态不重建
+                return IndexedStack(
+                  index: _tabBarController.currentIndex.value,
+                  children: _pages,
+                );
               }),
             ),
           ],
