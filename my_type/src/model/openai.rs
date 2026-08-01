@@ -72,10 +72,6 @@ impl OpenAiSession {
 impl OpenAiMessage {
     /// 返回格式化的显示字符串
     pub fn display(&self) -> String {
-        format!(
-            "[{}] {}",
-            self.role,
-            self.content
-        )
+        format!("[{}] {}", self.role, self.content)
     }
 }

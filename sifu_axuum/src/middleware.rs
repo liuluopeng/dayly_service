@@ -9,8 +9,8 @@ use axum_extra::headers::Authorization;
 use axum_extra::headers::authorization::Bearer;
 use http::request::Parts;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
-use redis::aio::ConnectionManager;
 use redis::AsyncCommands;
+use redis::aio::ConnectionManager;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fmt::Display;
@@ -93,7 +93,9 @@ where
             return Ok(claims.clone());
         }
 
-        let secret = parts.extensions.get::<JwtSecret>()
+        let secret = parts
+            .extensions
+            .get::<JwtSecret>()
             .ok_or(AuthError::InvalidToken)?
             .0
             .as_bytes()
@@ -104,7 +106,9 @@ where
         if let Ok(TypedHeader(Authorization(bearer))) =
             parts.extract::<TypedHeader<Authorization<Bearer>>>().await
         {
-            if let Ok(token_data) = decode::<Claims>(bearer.token(), &keys.decoding, &Validation::default()) {
+            if let Ok(token_data) =
+                decode::<Claims>(bearer.token(), &keys.decoding, &Validation::default())
+            {
                 return Ok(token_data.claims);
             }
         }
@@ -115,7 +119,11 @@ where
                 if let Some((key, value)) = pair.split_once('=') {
                     if key == "token" {
                         let decoded = urlencoding::decode(value).unwrap_or_default();
-                        if let Ok(token_data) = decode::<Claims>(decoded.as_ref(), &keys.decoding, &Validation::default()) {
+                        if let Ok(token_data) = decode::<Claims>(
+                            decoded.as_ref(),
+                            &keys.decoding,
+                            &Validation::default(),
+                        ) {
                             return Ok(token_data.claims);
                         }
                     }

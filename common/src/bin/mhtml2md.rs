@@ -14,7 +14,10 @@ fn main() {
     let output_path = if args.len() > 2 {
         args[2].clone()
     } else {
-        Path::new(input_path).with_extension("md").to_string_lossy().to_string()
+        Path::new(input_path)
+            .with_extension("md")
+            .to_string_lossy()
+            .to_string()
     };
 
     let content = fs::read_to_string(input_path).unwrap_or_else(|e| {
@@ -46,6 +49,7 @@ fn main() {
 }
 
 fn extract_title(html: &str) -> Option<String> {
-    regex::Regex::new(r"<title>(.*?)</title>").ok()
+    regex::Regex::new(r"<title>(.*?)</title>")
+        .ok()
         .and_then(|re| re.captures(html).map(|c| c[1].to_string()))
 }

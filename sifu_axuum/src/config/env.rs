@@ -78,9 +78,12 @@ impl ServerConfig {
         std::env::var("DICT_DB_DIR").unwrap_or_else(|_| {
             if self.app_env().is_development() {
                 let ws_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                    .parent().unwrap();
+                    .parent()
+                    .unwrap();
                 format!("{}/cold_data", ws_root.display())
-            } else { "/app/cold_data".into() }
+            } else {
+                "/app/cold_data".into()
+            }
         })
     }
 }

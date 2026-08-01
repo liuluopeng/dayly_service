@@ -1,17 +1,17 @@
 pub mod api {
     pub mod base;
+    pub mod chat;
     pub mod client;
     pub mod clipboard;
     pub mod dict;
     pub mod files;
     pub mod ggtt;
     pub mod hello;
-    pub mod melatonin;
     pub mod images;
     pub mod media_paths;
+    pub mod melatonin;
     pub mod note;
     pub mod openai;
-    pub mod chat;
     pub mod pinyin;
     pub mod short_note;
     pub mod songs;
@@ -21,13 +21,13 @@ pub mod api {
     pub mod whitenoise;
 }
 
-pub mod read_metadata;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod color_extract;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod mhtml;
 #[cfg(feature = "ocr")]
 pub mod ocr;
+pub mod read_metadata;
 
 pub mod front_can_do {
     pub mod base64;

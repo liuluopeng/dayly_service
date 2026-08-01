@@ -30,7 +30,12 @@ pub struct FileInfo {
 }
 
 /// 列出目录内容
-pub async fn list_files(client: &ApiClient, path: &str, page: Option<usize>, page_size: Option<usize>) -> ApiResult<DirListing> {
+pub async fn list_files(
+    client: &ApiClient,
+    path: &str,
+    page: Option<usize>,
+    page_size: Option<usize>,
+) -> ApiResult<DirListing> {
     let mut url = format!("/api/files/list?path={}", urlencoding::encode(path));
     if let Some(p) = page {
         url.push_str(&format!("&page={}", p));

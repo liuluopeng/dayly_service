@@ -1,19 +1,18 @@
 use axum::{
-    Json,
+    Json, Router,
     body::Body,
     extract::{Extension, Query},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
-    Router,
 };
+use chrono::DateTime;
 use common::api::base::{ApiError, ApiResult};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use chrono::DateTime;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
@@ -58,16 +57,18 @@ struct FileInfo {
 async fn get_user_directories(claims: &Claims, pool: &PgPool) -> Result<Vec<String>, ApiError> {
     let username = &claims.username;
 
-    let directories: Vec<String> = sqlx::query_scalar(
-        "SELECT path FROM user_directories WHERE $1 = ANY(allow_list)"
-    )
-    .bind(username)
-    .fetch_all(pool)
-    .await
-    .map_err(|e| ApiError::Internal(format!("查询用户目录失败: {}", e)))?;
+    let directories: Vec<String> =
+        sqlx::query_scalar("SELECT path FROM user_directories WHERE $1 = ANY(allow_list)")
+            .bind(username)
+            .fetch_all(pool)
+            .await
+            .map_err(|e| ApiError::Internal(format!("查询用户目录失败: {}", e)))?;
 
     if directories.is_empty() {
-        return Err(ApiError::bad_request(ApiError::NO_AUTHORIZED_DIR, "用户未配置授权目录"));
+        return Err(ApiError::bad_request(
+            ApiError::NO_AUTHORIZED_DIR,
+            "用户未配置授权目录",
+        ));
     }
 
     Ok(directories)
@@ -105,12 +106,21 @@ fn resolve_path(roots: &[String], request_path: &str) -> Result<PathBuf, ApiErro
         }
     }
 
-    Err(ApiError::bad_request(ApiError::PATH_NOT_IN_DIR, "路径不在任何授权目录内"))
+    Err(ApiError::bad_request(
+        ApiError::PATH_NOT_IN_DIR,
+        "路径不在任何授权目录内",
+    ))
 }
 
 /// 检测文件的 Content-Type
 fn detect_content_type(path: &Path) -> &'static str {
-    match path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase().as_str() {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase()
+        .as_str()
+    {
         "mp4" => "video/mp4",
         "mkv" => "video/x-matroska",
         "avi" => "video/x-msvideo",
@@ -153,7 +163,9 @@ fn detect_content_type(path: &Path) -> &'static str {
 }
 
 fn format_system_time(time: SystemTime) -> String {
-    let duration = time.duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default();
+    let duration = time
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default();
     DateTime::from_timestamp(duration.as_secs() as i64, 0)
         .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
         .unwrap_or_else(|| "未知".to_string())
@@ -171,19 +183,22 @@ async fn list_files(
 
     // 空路径或根路径 → 返回授权目录列表
     if query.path.is_empty() || query.path == "/" {
-        let entries: Vec<FileEntry> = roots.iter().map(|dir| {
-            let name = std::path::Path::new(dir)
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| dir.clone());
-            FileEntry {
-                name,
-                path: dir.clone(),
-                is_dir: true,
-                size: 0,
-                last_modified: None,
-            }
-        }).collect();
+        let entries: Vec<FileEntry> = roots
+            .iter()
+            .map(|dir| {
+                let name = std::path::Path::new(dir)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| dir.clone());
+                FileEntry {
+                    name,
+                    path: dir.clone(),
+                    is_dir: true,
+                    size: 0,
+                    last_modified: None,
+                }
+            })
+            .collect();
         let total = entries.len();
         return Ok(Json(DirListing {
             path: String::new(),
@@ -195,12 +210,15 @@ async fn list_files(
     let full_path = resolve_path(&roots, &query.path)?;
 
     if !full_path.is_dir() {
-        return Err(ApiError::bad_request(ApiError::NOT_A_DIRECTORY, "路径不是目录"));
+        return Err(ApiError::bad_request(
+            ApiError::NOT_A_DIRECTORY,
+            "路径不是目录",
+        ));
     }
 
     let mut entries = Vec::new();
-    let dir_entries = fs::read_dir(&full_path)
-        .map_err(|e| ApiError::Internal(format!("读取目录失败: {}", e)))?;
+    let dir_entries =
+        fs::read_dir(&full_path).map_err(|e| ApiError::Internal(format!("读取目录失败: {}", e)))?;
 
     for entry in dir_entries.flatten() {
         let name = entry.file_name().to_string_lossy().to_string();
@@ -224,12 +242,10 @@ async fn list_files(
     }
 
     // 目录在前，文件在后，按名称排序
-    entries.sort_by(|a, b| {
-        match (a.is_dir, b.is_dir) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-        }
+    entries.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
     });
 
     let total = entries.len();
@@ -264,7 +280,8 @@ async fn file_info(
     let metadata = fs::metadata(&full_path)
         .map_err(|e| ApiError::Internal(format!("获取元数据失败: {}", e)))?;
 
-    let name = full_path.file_name()
+    let name = full_path
+        .file_name()
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_default();
 
@@ -302,7 +319,7 @@ async fn serve_file(
                     (StatusCode::BAD_REQUEST, format!("{}: {}", code, message)).into_response()
                 }
                 other => (StatusCode::INTERNAL_SERVER_ERROR, other.to_string()).into_response(),
-            }
+            };
         }
     };
 
@@ -329,9 +346,13 @@ async fn serve_file(
 
     // ETag + Last-Modified (参照 dufs)
     let mtime = metadata.modified().ok().or_else(|| metadata.created().ok());
-    let mtime_ts = mtime.map(|t| {
-        t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()
-    }).unwrap_or(0);
+    let mtime_ts = mtime
+        .map(|t| {
+            t.duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+        })
+        .unwrap_or(0);
     let etag = format!(r#""{}-{}""#, mtime_ts, file_size);
     let last_modified = mtime.and_then(|t| {
         let dt: DateTime<chrono::Utc> = t.into();
@@ -364,10 +385,22 @@ async fn serve_file(
         if let Some(range) = headers.get("Range") {
             if let Ok(range_str) = range.to_str() {
                 if let Some((start, end)) = parse_range_header(range_str, file_size) {
-                    return handle_range_request(&full_path, start, end, file_size, &content_type, &etag, last_modified.as_deref()).await;
+                    return handle_range_request(
+                        &full_path,
+                        start,
+                        end,
+                        file_size,
+                        &content_type,
+                        &etag,
+                        last_modified.as_deref(),
+                    )
+                    .await;
                 } else {
                     let mut resp = StatusCode::RANGE_NOT_SATISFIABLE.into_response();
-                    resp.headers_mut().insert("content-range", format!("bytes */{}", file_size).parse().unwrap());
+                    resp.headers_mut().insert(
+                        "content-range",
+                        format!("bytes */{}", file_size).parse().unwrap(),
+                    );
                     return resp;
                 }
             }
@@ -378,11 +411,19 @@ async fn serve_file(
     if is_head {
         let mut resp = StatusCode::OK.into_response();
         let h = resp.headers_mut();
-        h.insert(axum::http::header::CONTENT_TYPE, content_type.parse().unwrap());
+        h.insert(
+            axum::http::header::CONTENT_TYPE,
+            content_type.parse().unwrap(),
+        );
         h.insert(axum::http::header::ACCEPT_RANGES, "bytes".parse().unwrap());
-        h.insert(axum::http::header::CONTENT_LENGTH, file_size.to_string().parse().unwrap());
+        h.insert(
+            axum::http::header::CONTENT_LENGTH,
+            file_size.to_string().parse().unwrap(),
+        );
         h.insert("etag", etag.parse().unwrap());
-        if let Some(lm) = last_modified { h.insert("last-modified", lm.parse().unwrap()); }
+        if let Some(lm) = last_modified {
+            h.insert("last-modified", lm.parse().unwrap());
+        }
         return resp;
     }
 
@@ -394,17 +435,28 @@ async fn serve_file(
                 StatusCode::OK,
                 axum::http::HeaderMap::new(),
                 Body::from_stream(stream),
-            ).into_response();
+            )
+                .into_response();
             let h = resp.headers_mut();
-            h.insert(axum::http::header::CONTENT_TYPE, content_type.parse().unwrap());
+            h.insert(
+                axum::http::header::CONTENT_TYPE,
+                content_type.parse().unwrap(),
+            );
             h.insert(axum::http::header::ACCEPT_RANGES, "bytes".parse().unwrap());
-            h.insert(axum::http::header::CONTENT_LENGTH, file_size.to_string().parse().unwrap());
-            h.insert(axum::http::header::CONTENT_DISPOSITION,
+            h.insert(
+                axum::http::header::CONTENT_LENGTH,
+                file_size.to_string().parse().unwrap(),
+            );
+            h.insert(
+                axum::http::header::CONTENT_DISPOSITION,
                 format!(r#"inline; filename="{}""#, filename)
                     .parse()
-                    .unwrap_or(axum::http::HeaderValue::from_static("inline")));
+                    .unwrap_or(axum::http::HeaderValue::from_static("inline")),
+            );
             h.insert("etag", etag.parse().unwrap());
-            if let Some(lm) = last_modified { h.insert("last-modified", lm.parse().unwrap()); }
+            if let Some(lm) = last_modified {
+                h.insert("last-modified", lm.parse().unwrap());
+            }
             resp
         }
         Err(e) => {
@@ -468,7 +520,10 @@ async fn handle_range_request(
     last_modified: Option<&str>,
 ) -> Response {
     let content_length = end - start + 1;
-    info!("Range: bytes={}-{} ({} bytes), path: {:?}", start, end, content_length, path);
+    info!(
+        "Range: bytes={}-{} ({} bytes), path: {:?}",
+        start, end, content_length, path
+    );
 
     let mut file = match File::open(path).await {
         Ok(f) => f,
@@ -491,14 +546,26 @@ async fn handle_range_request(
         StatusCode::PARTIAL_CONTENT,
         axum::http::HeaderMap::new(),
         Body::from_stream(stream),
-    ).into_response();
+    )
+        .into_response();
     let h = resp.headers_mut();
-    h.insert(axum::http::header::CONTENT_TYPE, content_type.parse().unwrap());
+    h.insert(
+        axum::http::header::CONTENT_TYPE,
+        content_type.parse().unwrap(),
+    );
     h.insert(axum::http::header::ACCEPT_RANGES, "bytes".parse().unwrap());
-    h.insert(axum::http::header::CONTENT_RANGE, content_range.parse().unwrap());
-    h.insert(axum::http::header::CONTENT_LENGTH, content_length.to_string().parse().unwrap());
+    h.insert(
+        axum::http::header::CONTENT_RANGE,
+        content_range.parse().unwrap(),
+    );
+    h.insert(
+        axum::http::header::CONTENT_LENGTH,
+        content_length.to_string().parse().unwrap(),
+    );
     h.insert("etag", etag.parse().unwrap());
-    if let Some(lm) = last_modified { h.insert("last-modified", lm.parse().unwrap()); }
+    if let Some(lm) = last_modified {
+        h.insert("last-modified", lm.parse().unwrap());
+    }
     resp
 }
 
@@ -506,11 +573,19 @@ const TREE_MAX_DEPTH: usize = 32;
 
 fn build_tree_string(path: &Path, prefix: &str, is_last: bool, depth: usize) -> String {
     if depth > TREE_MAX_DEPTH {
-        return format!("{}{}{}\n", prefix, connector_for(is_last), "... (达到最大深度)");
+        return format!(
+            "{}{}{}\n",
+            prefix,
+            connector_for(is_last),
+            "... (达到最大深度)"
+        );
     }
     let mut result = String::new();
     let connector = connector_for(is_last);
-    let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
     result.push_str(&format!("{}{}{}\n", prefix, connector, name));
 
     // 使用 symlink_metadata 且跳过符号链接，避免符号链接环导致无限递归
@@ -546,7 +621,12 @@ fn build_tree_string(path: &Path, prefix: &str, is_last: bool, depth: usize) -> 
         all.extend(files);
         let len = all.len();
         for (i, child) in all.iter().enumerate() {
-            result.push_str(&build_tree_string(child, &new_prefix, i == len - 1, depth + 1));
+            result.push_str(&build_tree_string(
+                child,
+                &new_prefix,
+                i == len - 1,
+                depth + 1,
+            ));
         }
     }
     result
@@ -573,10 +653,16 @@ async fn generate_tree(
     let symlink_meta = std::fs::symlink_metadata(&target)
         .map_err(|e| ApiError::Internal(format!("读取目录元数据失败: {}", e)))?;
     if symlink_meta.file_type().is_symlink() || !symlink_meta.is_dir() {
-        return Err(ApiError::bad_request(ApiError::NOT_A_DIRECTORY, "路径不是目录"));
+        return Err(ApiError::bad_request(
+            ApiError::NOT_A_DIRECTORY,
+            "路径不是目录",
+        ));
     }
 
-    let dir_name = target.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "root".to_string());
+    let dir_name = target
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "root".to_string());
     let now = chrono::Local::now();
     let timestamp = now.format("%Y%m%d_%H%M%S").to_string();
     let filename = format!("树_{}_{}.txt", dir_name, timestamp);
@@ -596,7 +682,11 @@ async fn generate_tree(
             if is_symlink {
                 continue;
             }
-            if p.is_dir() { dirs.push(p); } else { files.push(p); }
+            if p.is_dir() {
+                dirs.push(p);
+            } else {
+                files.push(p);
+            }
         }
         dirs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
         files.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
@@ -608,8 +698,13 @@ async fn generate_tree(
         }
     }
 
-    fs::write(&output_path, &content).map_err(|e| ApiError::Internal(format!("写入文件失败: {}", e)))?;
-    info!("生成目录树: {} -> {}", target.display(), output_path.display());
+    fs::write(&output_path, &content)
+        .map_err(|e| ApiError::Internal(format!("写入文件失败: {}", e)))?;
+    info!(
+        "生成目录树: {} -> {}",
+        target.display(),
+        output_path.display()
+    );
 
     Ok(Json(serde_json::json!({
         "success": true,

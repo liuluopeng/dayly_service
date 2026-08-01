@@ -1,5 +1,5 @@
-use wasm_bindgen::prelude::*;
 use common::front_can_do::uuid;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn generate_uuid_v4() -> String {

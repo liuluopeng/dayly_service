@@ -263,7 +263,8 @@ pub async fn load_song_audio_zc(song_id: &str) -> Result<JsValue, JsValue> {
                     }
                 });
 
-                to_value(&(ptr as u32, len as u32)).map_err(|e| JsValue::from_str(&format!("{}", e)))
+                to_value(&(ptr as u32, len as u32))
+                    .map_err(|e| JsValue::from_str(&format!("{}", e)))
             } else {
                 Err(JsValue::from_str("没有音频数据"))
             }

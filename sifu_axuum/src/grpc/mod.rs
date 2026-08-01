@@ -20,8 +20,7 @@ pub mod hello {
     tonic::include_proto!("hello");
 }
 
-pub static HELLO_DESCRIPTOR: &[u8] =
-    tonic::include_file_descriptor_set!("hello_descriptor");
+pub static HELLO_DESCRIPTOR: &[u8] = tonic::include_file_descriptor_set!("hello_descriptor");
 
 use hello::greeter_server::{Greeter, GreeterServer};
 use hello::{HelloRequest, HelloResponse};
@@ -86,10 +85,13 @@ impl Interceptor for JwtAuthInterceptor {
         let keys = DecodingKey::from_secret(self.secret.as_bytes());
         match decode::<crate::middleware::Claims>(&token, &keys, &Validation::default()) {
             Ok(data) => {
-                req.metadata_mut()
-                    .insert("claims-username", data.claims.username.parse().map_err(|_| {
-                        tonic::Status::unauthenticated("无效的 token 声明")
-                    })?);
+                req.metadata_mut().insert(
+                    "claims-username",
+                    data.claims
+                        .username
+                        .parse()
+                        .map_err(|_| tonic::Status::unauthenticated("无效的 token 声明"))?,
+                );
                 Ok(req)
             }
             Err(_) => Err(tonic::Status::unauthenticated("无效的 token")),
@@ -191,7 +193,10 @@ pub fn clipboard_grpc_service(
     ClipboardHistoryServer<ClipboardHistorySvc>,
     JwtAuthInterceptor,
 > {
-    ClipboardHistoryServer::with_interceptor(ClipboardHistorySvc { pool }, jwt_auth_interceptor(jwt_secret))
+    ClipboardHistoryServer::with_interceptor(
+        ClipboardHistorySvc { pool },
+        jwt_auth_interceptor(jwt_secret),
+    )
 }
 
 // ─── ClipboardSync 服务 ────────────────────────────────────────
@@ -210,31 +215,32 @@ impl ClipboardSync for ClipboardSyncSvc {
 
         // 去重检查（唯一索引兜底，避免 TOCTOU 竞态插入重复）
         let result = match req.content_type.as_str() {
-            "text" => {
-                sqlx::query(
-                    "INSERT INTO clipboard_entries (entry_type, text_content, content_hash, created_at)
+            "text" => sqlx::query(
+                "INSERT INTO clipboard_entries (entry_type, text_content, content_hash, created_at)
                      VALUES ($1, $2, $3, NOW())
                      ON CONFLICT (content_hash, entry_type) DO NOTHING",
-                )
-                .bind(&req.content_type)
-                .bind(&req.text_content)
-                .bind(&req.content_hash)
-                .execute(&self.pool)
-                .await
-            }
-            "image" => {
-                sqlx::query(
-                    "INSERT INTO clipboard_entries (entry_type, image_path, content_hash, created_at)
+            )
+            .bind(&req.content_type)
+            .bind(&req.text_content)
+            .bind(&req.content_hash)
+            .execute(&self.pool)
+            .await,
+            "image" => sqlx::query(
+                "INSERT INTO clipboard_entries (entry_type, image_path, content_hash, created_at)
                      VALUES ($1, $2, $3, NOW())
                      ON CONFLICT (content_hash, entry_type) DO NOTHING",
-                )
-                .bind(&req.content_type)
-                .bind(&req.image_path)
-                .bind(&req.content_hash)
-                .execute(&self.pool)
-                .await
+            )
+            .bind(&req.content_type)
+            .bind(&req.image_path)
+            .bind(&req.content_hash)
+            .execute(&self.pool)
+            .await,
+            _ => {
+                return Err(tonic::Status::invalid_argument(format!(
+                    "未知类型: {}",
+                    req.content_type
+                )));
             }
-            _ => return Err(tonic::Status::invalid_argument(format!("未知类型: {}", req.content_type))),
         };
 
         match result {

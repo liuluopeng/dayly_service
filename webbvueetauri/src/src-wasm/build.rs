@@ -1,12 +1,14 @@
 use std::io::Write;
 
 fn main() {
-    let json_path = format!("{}/../../public/word_frequency_list.json",
-        std::env::var("CARGO_MANIFEST_DIR").unwrap());
-    let json = std::fs::read_to_string(&json_path)
-        .expect("Failed to read word_frequency_list.json");
-    let data: Vec<serde_json::Value> = serde_json::from_str(&json)
-        .expect("Failed to parse word_frequency_list.json");
+    let json_path = format!(
+        "{}/../../public/word_frequency_list.json",
+        std::env::var("CARGO_MANIFEST_DIR").unwrap()
+    );
+    let json =
+        std::fs::read_to_string(&json_path).expect("Failed to read word_frequency_list.json");
+    let data: Vec<serde_json::Value> =
+        serde_json::from_str(&json).expect("Failed to parse word_frequency_list.json");
 
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let dest = std::path::Path::new(&out_dir).join("words_data.rs");

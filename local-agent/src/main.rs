@@ -26,7 +26,12 @@ enum Commands {
     /// 监听剪贴板，自动保存图片并记录历史
     Monitor {
         /// gRPC 服务器地址
-        #[arg(short, long, default_value = "http://localhost:50053", env = "GRPC_ADDR")]
+        #[arg(
+            short,
+            long,
+            default_value = "http://localhost:50053",
+            env = "GRPC_ADDR"
+        )]
         grpc_addr: String,
     },
     /// 查看或搜索剪贴板历史
@@ -54,7 +59,9 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command.unwrap_or(Commands::Monitor { grpc_addr: "http://localhost:50053".into() }) {
+    match cli.command.unwrap_or(Commands::Monitor {
+        grpc_addr: "http://localhost:50053".into(),
+    }) {
         Commands::Monitor { grpc_addr } => run_monitor(&grpc_addr),
         Commands::History {
             count,
@@ -155,7 +162,11 @@ fn cmd_history(count: usize, search: Option<&str>, filter_type: Option<&str>) {
     };
 
     let total = rt.block_on(hist.total_count()).unwrap_or(0);
-    println!("📋 剪贴板历史 (共 {} 条，显示 {} 条)\n", total, entries.len());
+    println!(
+        "📋 剪贴板历史 (共 {} 条，显示 {} 条)\n",
+        total,
+        entries.len()
+    );
 
     if entries.is_empty() {
         println!("  (无记录)");
@@ -218,7 +229,11 @@ fn run_monitor(grpc_addr: &str) {
 
     impl Default for State {
         fn default() -> Self {
-            Self { last_change_count: 0, last_text_hash: 0, last_image_hash: 0 }
+            Self {
+                last_change_count: 0,
+                last_text_hash: 0,
+                last_image_hash: 0,
+            }
         }
     }
 
@@ -385,7 +400,12 @@ fn run_monitor(grpc_addr: &str) {
                 if let Some(path) = save_image(bytes, w as usize, h as usize) {
                     let hash_hex = format!("{:016x}", hash);
                     let path_str = path.to_string_lossy().to_string();
-                    match rt.block_on(sync_client.push_image(&path_str, bytes.to_vec(), &hash_hex, &now)) {
+                    match rt.block_on(sync_client.push_image(
+                        &path_str,
+                        bytes.to_vec(),
+                        &hash_hex,
+                        &now,
+                    )) {
                         Ok(_) => {
                             // 推送成功后才更新 hash，网络失败时下次轮询重试
                             state.last_image_hash = hash;

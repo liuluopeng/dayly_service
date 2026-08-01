@@ -18,13 +18,12 @@ pub async fn get_pinyin_dict(
     Query(query): Query<PinyinQuery>,
 ) -> ApiResult<Json<serde_json::Value>> {
     let key = query.ori.trim().to_lowercase();
-    let words: Option<serde_json::Value> = sqlx::query_scalar(
-        "SELECT words FROM pinyin_dict WHERE pinyin = $1"
-    )
-    .bind(&key)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| ApiError::Internal(e.to_string()))?;
+    let words: Option<serde_json::Value> =
+        sqlx::query_scalar("SELECT words FROM pinyin_dict WHERE pinyin = $1")
+            .bind(&key)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     Ok(Json(words.unwrap_or(serde_json::Value::Array(vec![]))))
 }

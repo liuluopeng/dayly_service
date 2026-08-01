@@ -158,7 +158,10 @@ pub async fn delete_short_note(
         })?;
 
     if result.rows_affected() == 0 {
-        return Err(ApiError::not_found(ApiError::SHORT_NOTE_NOT_FOUND, "Short note not found"));
+        return Err(ApiError::not_found(
+            ApiError::SHORT_NOTE_NOT_FOUND,
+            "Short note not found",
+        ));
     }
 
     Ok(ApiResponse::ok(()))
@@ -232,7 +235,10 @@ mod tests {
         }
 
         // 列表
-        let query = ListQuery { page: 1, page_size: 10 };
+        let query = ListQuery {
+            page: 1,
+            page_size: 10,
+        };
         let result = list_short_notes(Extension(pool.clone()), claims, Query(query)).await;
         assert!(result.is_ok());
         let notes = result.unwrap().data.unwrap();
@@ -299,7 +305,8 @@ mod tests {
             .data
             .unwrap();
 
-        let result = delete_short_note(Extension(pool.clone()), claims.clone(), Path(note.id)).await;
+        let result =
+            delete_short_note(Extension(pool.clone()), claims.clone(), Path(note.id)).await;
         assert!(result.is_ok());
 
         // 再次获取应报 NotFound

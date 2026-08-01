@@ -50,8 +50,8 @@ pub async fn get_clipboard_history(
         return Err(ApiError::Internal(format!("HTTP {}: {}", status, body)));
     }
 
-    let resp: ClipboardResponse = serde_json::from_str(&body)
-        .map_err(|e| ApiError::Internal(format!("{}", e)))?;
+    let resp: ClipboardResponse =
+        serde_json::from_str(&body).map_err(|e| ApiError::Internal(format!("{}", e)))?;
 
     if resp.code != 200 {
         return Err(ApiError::Internal(

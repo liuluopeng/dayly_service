@@ -5,7 +5,7 @@ use crate::api::wifi_api::init::get_client_clone;
 pub use common::api::{
     base::ApiError,
     client::ApiClient,
-    files::{DirListing, FileInfo, list_files, get_file_info, build_file_url},
+    files::{build_file_url, get_file_info, list_files, DirListing, FileInfo},
 };
 
 #[frb(mirror(FileEntry))]
@@ -40,10 +40,21 @@ pub struct FileInfoForDart {
     pub content_type: String,
 }
 
-pub async fn list_files_for_dart(path: String, page: Option<u32>, page_size: Option<u32>) -> Result<DirListingForDart, ApiError> {
+pub async fn list_files_for_dart(
+    path: String,
+    page: Option<u32>,
+    page_size: Option<u32>,
+) -> Result<DirListingForDart, ApiError> {
     let client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
 
-    match list_files(&client, &path, page.map(|p| p as usize), page_size.map(|p| p as usize)).await {
+    match list_files(
+        &client,
+        &path,
+        page.map(|p| p as usize),
+        page_size.map(|p| p as usize),
+    )
+    .await
+    {
         Ok(listing) => {
             let count = listing.entries.len();
             let total = listing.total;

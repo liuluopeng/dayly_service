@@ -9,8 +9,8 @@ pub use common::api::{
     base::{ApiError, ApiResponse},
     client::ApiClient,
     note::{
-        CreateNoteRequest, CreateNoteResponse, SaveNoteRequest, SaveNoteResponse, create_note,
-        get_note, list_notes, save_note, search_notes,
+        create_note, get_note, list_notes, save_note, search_notes, CreateNoteRequest,
+        CreateNoteResponse, SaveNoteRequest, SaveNoteResponse,
     },
 };
 

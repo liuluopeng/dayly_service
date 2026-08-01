@@ -17,8 +17,7 @@ impl std::fmt::Display for ScanError {
 
 /// 从图片中扫描并解码 QR 码
 pub fn scan_qr_from_image(data: &[u8]) -> Result<String, ScanError> {
-    let img = image::load_from_memory(data)
-        .map_err(|e| ScanError::Decode(e.to_string()))?;
+    let img = image::load_from_memory(data).map_err(|e| ScanError::Decode(e.to_string()))?;
 
     let grey = img.to_luma8();
     let (w, h) = grey.dimensions();

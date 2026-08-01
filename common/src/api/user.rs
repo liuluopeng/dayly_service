@@ -67,9 +67,7 @@ pub async fn user_login(
 }
 
 /// 获取用户设置
-pub async fn get_user_settings(
-    client: &ApiClient,
-) -> ApiResult<ApiResponse<UserSettings>> {
+pub async fn get_user_settings(client: &ApiClient) -> ApiResult<ApiResponse<UserSettings>> {
     let response = client
         .get("/api/user/settings")
         .await

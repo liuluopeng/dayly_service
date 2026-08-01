@@ -71,10 +71,7 @@ impl SignalingState {
             .collect();
         drop(names);
 
-        let msg = serde_json::to_string(&SignalingResponse::PeerList {
-            peers: peer_list,
-        })
-        .unwrap();
+        let msg = serde_json::to_string(&SignalingResponse::PeerList { peers: peer_list }).unwrap();
 
         let senders = self.ws_senders.lock().await;
         for (_, sender) in senders.iter() {
@@ -169,11 +166,18 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
         }
     };
 
-    info!("WebRTC signaling: 设备 '{}' 注册, peer_id={}", device_name, peer_id);
+    info!(
+        "WebRTC signaling: 设备 '{}' 注册, peer_id={}",
+        device_name, peer_id
+    );
 
     // 保存设备名和 WebSocket sender
     state.set_name(peer_id.clone(), device_name.clone()).await;
-    state.ws_senders.lock().await.insert(peer_id.clone(), ws_sender.clone());
+    state
+        .ws_senders
+        .lock()
+        .await
+        .insert(peer_id.clone(), ws_sender.clone());
 
     // 发送注册确认
     let resp = SignalingResponse::Registered {
@@ -195,10 +199,7 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
 
     // 创建 WebRTC PeerConnection
     let api = APIBuilder::new().build();
-    let peer_connection = match api
-        .new_peer_connection(RTCConfiguration::default())
-        .await
-    {
+    let peer_connection = match api.new_peer_connection(RTCConfiguration::default()).await {
         Ok(pc) => Arc::new(pc),
         Err(e) => {
             error!("创建 PeerConnection 失败: {}", e);
@@ -308,9 +309,7 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
                             }
                         };
 
-                        if let Err(e) = peer_connection
-                            .set_local_description(answer.clone())
-                            .await
+                        if let Err(e) = peer_connection.set_local_description(answer.clone()).await
                         {
                             error!("设置 local description 失败: {}", e);
                             continue;
@@ -321,9 +320,7 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
                         };
                         let mut sender = ws_sender.lock().await;
                         let _ = sender
-                            .send(
-                                Message::Text(serde_json::to_string(&resp).unwrap().into()),
-                            )
+                            .send(Message::Text(serde_json::to_string(&resp).unwrap().into()))
                             .await;
                     }
                     SignalingMessage::Candidate {
@@ -337,10 +334,7 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
                             sdp_mline_index: Some(sdp_mline_index),
                             username_fragment: None,
                         };
-                        if let Err(e) = peer_connection
-                            .add_ice_candidate(ice_candidate)
-                            .await
-                        {
+                        if let Err(e) = peer_connection.add_ice_candidate(ice_candidate).await {
                             error!("添加 ICE candidate 失败: {}", e);
                         }
                     }

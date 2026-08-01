@@ -72,7 +72,10 @@ async fn chat_completion(
     Json(mut request): Json<OpenAiRequest>,
 ) -> Result<Json<ApiResponse<Value>>, ApiError> {
     if openai_config.openai_api_key.is_empty() {
-        return Err(ApiError::bad_request(ApiError::OPENAI_KEY_MISSING, "OpenAI API Key 未配置"));
+        return Err(ApiError::bad_request(
+            ApiError::OPENAI_KEY_MISSING,
+            "OpenAI API Key 未配置",
+        ));
     }
 
     debug!(
@@ -156,7 +159,10 @@ async fn chat_completion_stream(
     Json(mut request): Json<OpenAiRequest>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     if openai_config.openai_api_key.is_empty() {
-        return Err(ApiError::bad_request(ApiError::OPENAI_KEY_MISSING, "OpenAI API Key 未配置"));
+        return Err(ApiError::bad_request(
+            ApiError::OPENAI_KEY_MISSING,
+            "OpenAI API Key 未配置",
+        ));
     }
 
     debug!(
@@ -232,51 +238,54 @@ async fn chat_completion_stream(
                     // 流结束，保存AI回复到数据库（无 session_id 或不属于当前用户时不保存）
                     debug!("Stream ended, saving AI response to database");
                     if session_belongs_to(&pool, session_id, user_id).await {
-                    // 直接使用session_id，因为Uuid总是有效的
-                    if !session_id.to_string().is_empty() {
-                        debug!("Session ID: {}", session_id);
-                        // 解析完整内容，提取AI回复
-                        let lines: Vec<&str> = full_content.split('\n').collect();
-                        let mut assistant_content = String::new();
-                        let mut assistant_think = String::new();
-                        let mut assistant_cite: Option<Value> = None;
+                        // 直接使用session_id，因为Uuid总是有效的
+                        if !session_id.to_string().is_empty() {
+                            debug!("Session ID: {}", session_id);
+                            // 解析完整内容，提取AI回复
+                            let lines: Vec<&str> = full_content.split('\n').collect();
+                            let mut assistant_content = String::new();
+                            let mut assistant_think = String::new();
+                            let mut assistant_cite: Option<Value> = None;
 
-                        for line in lines {
-                            if line.starts_with("data: ") && !line.contains("[DONE]") {
-                                let data = line.trim_start_matches("data: ");
-                                debug!("Raw data from API: {}", data);
-                                if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
-                                    debug!("Parsed JSON: {}", json);
-                                    // 提取content
-                                    if let Some(content) =
-                                        json["choices"][0]["delta"]["content"].as_str()
+                            for line in lines {
+                                if line.starts_with("data: ") && !line.contains("[DONE]") {
+                                    let data = line.trim_start_matches("data: ");
+                                    debug!("Raw data from API: {}", data);
+                                    if let Ok(json) =
+                                        serde_json::from_str::<serde_json::Value>(data)
                                     {
-                                        assistant_content.push_str(content);
-                                    }
-                                    // 提取reasoning_content (DeepSeek Reasoner使用这个字段名)
-                                    if let Some(think) =
-                                        json["choices"][0]["delta"]["reasoning_content"].as_str()
-                                    {
-                                        debug!("Found think content: {}", think);
-                                        assistant_think.push_str(think);
-                                    }
-                                    // 提取cite（通常在最后一个chunk中）
-                                    if let Some(cite) =
-                                        json["choices"][0]["delta"]["cite"].as_object()
-                                    {
-                                        debug!("Found cite data: {:?}", cite);
-                                        assistant_cite = Some(Value::Object(cite.clone()));
+                                        debug!("Parsed JSON: {}", json);
+                                        // 提取content
+                                        if let Some(content) =
+                                            json["choices"][0]["delta"]["content"].as_str()
+                                        {
+                                            assistant_content.push_str(content);
+                                        }
+                                        // 提取reasoning_content (DeepSeek Reasoner使用这个字段名)
+                                        if let Some(think) =
+                                            json["choices"][0]["delta"]["reasoning_content"]
+                                                .as_str()
+                                        {
+                                            debug!("Found think content: {}", think);
+                                            assistant_think.push_str(think);
+                                        }
+                                        // 提取cite（通常在最后一个chunk中）
+                                        if let Some(cite) =
+                                            json["choices"][0]["delta"]["cite"].as_object()
+                                        {
+                                            debug!("Found cite data: {:?}", cite);
+                                            assistant_cite = Some(Value::Object(cite.clone()));
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        debug!("AI response content: {}", assistant_content);
-                        debug!("AI response think: {}", assistant_think);
-                        if !assistant_content.is_empty() {
-                            // 保存到数据库
-                            debug!("Saving AI response to database");
-                            match sqlx::query(
+                            debug!("AI response content: {}", assistant_content);
+                            debug!("AI response think: {}", assistant_think);
+                            if !assistant_content.is_empty() {
+                                // 保存到数据库
+                                debug!("Saving AI response to database");
+                                match sqlx::query(
                                 "INSERT INTO openai_messages (session_id, role, content, think, cite, created_at) 
                                  VALUES ($1, $2, $3, $4, $5, NOW())"
                             )
@@ -290,10 +299,10 @@ async fn chat_completion_stream(
                                 Ok(result) => debug!("Saved successfully, rows affected: {}", result.rows_affected()),
                                 Err(e) => error!("Failed to save: {:?}", e),
                             }
-                        } else {
-                            debug!("No assistant content to save");
+                            } else {
+                                debug!("No assistant content to save");
+                            }
                         }
-                    }
                     } else {
                         debug!("会话不存在或不属于当前用户，跳过保存");
                     }

@@ -1,5 +1,5 @@
-use wasm_bindgen::prelude::*;
 use common::front_can_do::password;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn generate_password(length: usize) -> String {

@@ -89,9 +89,6 @@ impl ApiClient {
             );
             self.base_url = new_base;
         }
-
-
-        
     }
 
     /// 获取 token

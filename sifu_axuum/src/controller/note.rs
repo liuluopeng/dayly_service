@@ -227,7 +227,8 @@ pub async fn get_note(
         ApiError::Internal(e.to_string())
     })?;
 
-    let note = note.ok_or_else(|| ApiError::not_found(ApiError::NOTE_NOT_FOUND, "Note not found"))?;
+    let note =
+        note.ok_or_else(|| ApiError::not_found(ApiError::NOTE_NOT_FOUND, "Note not found"))?;
 
     Ok(axum::Json(ApiResponse::ok(note)))
 }
@@ -288,7 +289,8 @@ pub async fn preview_note(
         ApiError::Internal(e.to_string())
     })?;
 
-    let note = note.ok_or_else(|| ApiError::not_found(ApiError::NOTE_NOT_FOUND, "Note not found"))?;
+    let note =
+        note.ok_or_else(|| ApiError::not_found(ApiError::NOTE_NOT_FOUND, "Note not found"))?;
 
     let raw_content = note
         .raw_content
@@ -343,10 +345,9 @@ pub async fn preview_note(
             ))
         })
         .unwrap_or_else(|_| axum::http::HeaderValue::from_static("inline"));
-    response.headers_mut().insert(
-        header::CONTENT_DISPOSITION,
-        content_disposition_header,
-    );
+    response
+        .headers_mut()
+        .insert(header::CONTENT_DISPOSITION, content_disposition_header);
     response.headers_mut().insert(
         axum::http::header::CACHE_CONTROL,
         axum::http::HeaderValue::from_static("public, max-age=31536000"),
@@ -535,7 +536,10 @@ mod tests {
     #[test]
     fn test_extract_boundary_quoted() {
         let mhtml = "Content-Type: multipart/related; boundary=\"----=_NextPart_000\"\n\n";
-        assert_eq!(extract_boundary(mhtml), Some("----=_NextPart_000".to_string()));
+        assert_eq!(
+            extract_boundary(mhtml),
+            Some("----=_NextPart_000".to_string())
+        );
     }
 
     #[test]

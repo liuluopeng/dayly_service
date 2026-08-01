@@ -16,16 +16,22 @@ pub async fn search_ggtt(
     claims: Claims,
     Json(req): Json<SearchRequest>,
 ) -> ApiResult<ApiResponse<GgttCode>> {
-    let (code_86, svg1, svg2, svg3, svg4, has_diagram) = crate::controller::dict::lookup_ggtt_char(&req.search)
-        .await
-        .ok_or_else(|| ApiError::not_found(ApiError::CHARACTER_NOT_FOUND, "Character not found"))?;
+    let (code_86, svg1, svg2, svg3, svg4, has_diagram) =
+        crate::controller::dict::lookup_ggtt_char(&req.search)
+            .await
+            .ok_or_else(|| {
+                ApiError::not_found(ApiError::CHARACTER_NOT_FOUND, "Character not found")
+            })?;
 
     Ok(ApiResponse::ok(GgttCode {
         id: 0,
         char: req.search,
         code_86,
         has_diagram,
-        svg1, svg2, svg3, svg4,
+        svg1,
+        svg2,
+        svg3,
+        svg4,
     }))
 }
 

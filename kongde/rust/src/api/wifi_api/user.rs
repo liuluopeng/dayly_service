@@ -5,7 +5,10 @@ use crate::api::wifi_api::init::get_client_clone;
 pub use common::api::{
     base::{ApiError, ApiResponse},
     client::ApiClient,
-    user::{LoginResponse, UpdateUserSettings, UserSettings, get_user_settings, update_user_settings, user_login},
+    user::{
+        get_user_settings, update_user_settings, user_login, LoginResponse, UpdateUserSettings,
+        UserSettings,
+    },
 };
 
 #[frb(mirror(LoginResponse))]

@@ -12,8 +12,7 @@ pub fn convert_image_wasm(
     output_format: &str,
     quality: u8,
 ) -> Result<Vec<u8>, String> {
-    image_convert::convert_image(input, output_format, quality)
-        .map_err(|e| e.to_string())
+    image_convert::convert_image(input, output_format, quality).map_err(|e| e.to_string())
 }
 
 #[wasm_bindgen]
@@ -29,23 +28,11 @@ pub fn convert_image_with_size_wasm(
 }
 
 #[wasm_bindgen]
-pub fn crop_image_wasm(
-    input: &[u8],
-    x: u32,
-    y: u32,
-    w: u32,
-    h: u32,
-) -> Result<Vec<u8>, String> {
-    image_convert::crop_image(input, x, y, w, h)
-        .map_err(|e| e.to_string())
+pub fn crop_image_wasm(input: &[u8], x: u32, y: u32, w: u32, h: u32) -> Result<Vec<u8>, String> {
+    image_convert::crop_image(input, x, y, w, h).map_err(|e| e.to_string())
 }
 
 #[wasm_bindgen]
-pub fn resize_image_wasm(
-    input: &[u8],
-    width: u32,
-    height: u32,
-) -> Result<Vec<u8>, String> {
-    image_convert::resize_image(input, width, height)
-        .map_err(|e| e.to_string())
+pub fn resize_image_wasm(input: &[u8], width: u32, height: u32) -> Result<Vec<u8>, String> {
+    image_convert::resize_image(input, width, height).map_err(|e| e.to_string())
 }

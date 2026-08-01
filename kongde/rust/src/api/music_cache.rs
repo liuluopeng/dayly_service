@@ -1,4 +1,4 @@
-use common::read_metadata::{AudioMetadata, read_metadata};
+use common::read_metadata::{read_metadata, AudioMetadata};
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -18,7 +18,11 @@ pub fn read_metadata_cached(file_path: String) -> Result<AudioMetadata, String> 
     let modified = path
         .metadata()
         .map(|m| m.modified().unwrap_or(SystemTime::UNIX_EPOCH))
-        .map(|t| t.duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default().as_secs())
+        .map(|t| {
+            t.duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+        })
         .unwrap_or(0) as i64;
 
     let rt = crate::api::runtime::shared_rt();

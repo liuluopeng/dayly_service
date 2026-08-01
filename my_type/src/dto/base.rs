@@ -191,19 +191,30 @@ impl ApiError {
 
     // ---- 便捷构造方法 ----
     pub fn bad_request(code: &str, message: impl Into<String>) -> Self {
-        ApiError::BadRequest { code: code.to_string(), message: message.into() }
+        ApiError::BadRequest {
+            code: code.to_string(),
+            message: message.into(),
+        }
     }
 
     pub fn not_found(code: &str, message: impl Into<String>) -> Self {
-        ApiError::NotFound { code: code.to_string(), message: message.into() }
+        ApiError::NotFound {
+            code: code.to_string(),
+            message: message.into(),
+        }
     }
 
     pub fn unauthorized(code: &str) -> Self {
-        ApiError::Unauthorized { code: code.to_string() }
+        ApiError::Unauthorized {
+            code: code.to_string(),
+        }
     }
 
     pub fn forbidden(code: &str, message: impl Into<String>) -> Self {
-        ApiError::Forbidden { code: code.to_string(), message: message.into() }
+        ApiError::Forbidden {
+            code: code.to_string(),
+            message: message.into(),
+        }
     }
 
     pub fn error_code(&self) -> &str {
@@ -229,20 +240,31 @@ impl IntoResponse for ApiError {
         let (status, error_type, code, message) = match &self {
             ApiError::BadRequest { code, message } => {
                 eprintln!("Bad request: {:?}", message);
-                (StatusCode::BAD_REQUEST, "bad_request", code.clone(), message.clone())
+                (
+                    StatusCode::BAD_REQUEST,
+                    "bad_request",
+                    code.clone(),
+                    message.clone(),
+                )
             }
-            ApiError::NotFound { code, message } => {
-                (StatusCode::NOT_FOUND, "not_found", code.clone(), message.clone())
-            }
+            ApiError::NotFound { code, message } => (
+                StatusCode::NOT_FOUND,
+                "not_found",
+                code.clone(),
+                message.clone(),
+            ),
             ApiError::Unauthorized { code } => (
                 StatusCode::UNAUTHORIZED,
                 "unauthorized",
                 code.clone(),
                 "unauthorized".into(),
             ),
-            ApiError::Forbidden { code, message } => {
-                (StatusCode::FORBIDDEN, "forbidden", code.clone(), message.clone())
-            }
+            ApiError::Forbidden { code, message } => (
+                StatusCode::FORBIDDEN,
+                "forbidden",
+                code.clone(),
+                message.clone(),
+            ),
             ApiError::Internal(err) => {
                 eprintln!("Error: {:?}", err);
                 (
@@ -283,9 +305,7 @@ impl ErrorBody {
                 code: code.clone(),
                 message: self.error.message.clone(),
             },
-            "unauthorized" => ApiError::Unauthorized {
-                code: code.clone(),
-            },
+            "unauthorized" => ApiError::Unauthorized { code: code.clone() },
             "forbidden" => ApiError::Forbidden {
                 code: code.clone(),
                 message: self.error.message.clone(),

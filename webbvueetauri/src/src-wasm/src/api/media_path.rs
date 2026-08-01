@@ -1,6 +1,6 @@
-use wasm_bindgen::prelude::*;
-use crate::api::init::get_api_client;
 use super::helpers::{data_array_to_js, data_to_js};
+use crate::api::init::get_api_client;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub async fn list_media_paths_wasm(media_type: Option<String>) -> Result<JsValue, JsValue> {

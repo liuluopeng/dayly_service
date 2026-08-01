@@ -18,7 +18,8 @@ pub struct AudioMetadata {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn read_metadata(file_path: &str) -> Result<AudioMetadata, String> {
     let path = Path::new(file_path);
-    let tagged_file = read_from_path(path).map_err(|e| format!("Failed to read file {}: {}", file_path, e))?;
+    let tagged_file =
+        read_from_path(path).map_err(|e| format!("Failed to read file {}: {}", file_path, e))?;
 
     let tag = tagged_file
         .primary_tag()
@@ -31,7 +32,13 @@ pub fn read_metadata(file_path: &str) -> Result<AudioMetadata, String> {
     let duration_ms = tagged_file.properties().duration().as_millis() as u32;
     let picture = tag.pictures().first().map(|pic| pic.data().to_vec());
 
-    Ok(AudioMetadata { title, artist, album, duration_ms: Some(duration_ms), picture })
+    Ok(AudioMetadata {
+        title,
+        artist,
+        album,
+        duration_ms: Some(duration_ms),
+        picture,
+    })
 }
 
 #[cfg(target_arch = "wasm32")]

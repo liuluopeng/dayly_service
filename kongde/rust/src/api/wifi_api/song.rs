@@ -6,7 +6,7 @@ use crate::api::wifi_api::init::get_client_clone;
 pub use common::api::{
     base::{ApiError, ApiResponse, PaginatedResponse},
     client::ApiClient,
-    songs::{SongWithUrl, get_all_songs, get_all_lyrics, get_song_file},
+    songs::{get_all_lyrics, get_all_songs, get_song_file, SongWithUrl},
 };
 
 pub struct SongWithUrlForDart {

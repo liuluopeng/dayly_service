@@ -24,5 +24,8 @@ pub fn read_metadata_batch(file_paths: Vec<String>) -> Vec<Result<AudioMetadata,
 #[cfg(target_arch = "wasm32")]
 #[flutter_rust_bridge::frb]
 pub fn read_metadata_batch(file_paths: Vec<String>) -> Vec<Result<AudioMetadata, String>> {
-    file_paths.iter().map(|p| common_meta::read_metadata(p)).collect()
+    file_paths
+        .iter()
+        .map(|p| common_meta::read_metadata(p))
+        .collect()
 }

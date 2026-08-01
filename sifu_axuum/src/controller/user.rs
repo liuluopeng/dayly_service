@@ -1,17 +1,17 @@
 use crate::middleware::{AuthBody, AuthError, AuthPayload, Claims, JwtSecret};
 use anyhow;
-use chrono;
 use axum::Json;
 use axum::Router;
 use axum::extract::Extension;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::{get, post, put};
+use chrono;
 use common::api::base::{ApiError, ApiResponse, ApiResult};
 use common::api::user::{LoginRequest, LoginResponse};
 use jsonwebtoken::{EncodingKey, Header, encode};
-use redis::aio::ConnectionManager;
 use redis::AsyncCommands;
+use redis::aio::ConnectionManager;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
@@ -31,11 +31,14 @@ pub async fn user_login(
     Json(payload): Json<LoginRequest>,
 ) -> ApiResult<ApiResponse<LoginResponse>> {
     if payload.username.is_empty() || payload.password.is_empty() {
-        return Err(ApiError::bad_request(ApiError::EMPTY_CREDENTIALS, "用户名和密码不能为空"));
+        return Err(ApiError::bad_request(
+            ApiError::EMPTY_CREDENTIALS,
+            "用户名和密码不能为空",
+        ));
     }
 
     let user = sqlx::query_as::<_, User>(
-        "SELECT id, username, password, is_admin, hash FROM users WHERE username = $1"
+        "SELECT id, username, password, is_admin, hash FROM users WHERE username = $1",
     )
     .bind(&payload.username)
     .fetch_optional(&pg_pool)
@@ -47,9 +50,11 @@ pub async fn user_login(
         let password_ok = match user.hash {
             Some(hash) => {
                 let password = payload.password.clone();
-                tokio::task::spawn_blocking(move || bcrypt::verify(&password, &hash).unwrap_or(false))
-                    .await
-                    .unwrap_or(false)
+                tokio::task::spawn_blocking(move || {
+                    bcrypt::verify(&password, &hash).unwrap_or(false)
+                })
+                .await
+                .unwrap_or(false)
             }
             None => false,
         };
@@ -91,9 +96,7 @@ pub async fn user_logout(
     };
 
     let blacklist_key = format!("token:blacklist:{}", claims.jti);
-    let _: Result<(), _> = redis_conn
-        .set_ex(&blacklist_key, "1", ttl)
-        .await;
+    let _: Result<(), _> = redis_conn.set_ex(&blacklist_key, "1", ttl).await;
 
     StatusCode::OK
 }
@@ -111,7 +114,10 @@ pub async fn list_users(
     Extension(pg_pool): Extension<PgPool>,
 ) -> ApiResult<ApiResponse<Vec<UserListItem>>> {
     if !claims.is_admin {
-        return Err(ApiError::forbidden(ApiError::ADMIN_REQUIRED, "需要管理员权限"));
+        return Err(ApiError::forbidden(
+            ApiError::ADMIN_REQUIRED,
+            "需要管理员权限",
+        ));
     }
 
     let users = sqlx::query_as::<_, (Uuid, String, bool)>(
@@ -123,7 +129,11 @@ pub async fn list_users(
 
     let items: Vec<UserListItem> = users
         .into_iter()
-        .map(|(id, username, is_admin)| UserListItem { id, username, is_admin })
+        .map(|(id, username, is_admin)| UserListItem {
+            id,
+            username,
+            is_admin,
+        })
         .collect();
 
     Ok(ApiResponse::ok(items))
@@ -209,17 +219,17 @@ async fn debug_redis(
     Extension(mut redis_conn): Extension<ConnectionManager>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     if !claims.is_admin {
-        return Err(ApiError::forbidden(ApiError::ADMIN_REQUIRED, "需要管理员权限"));
+        return Err(ApiError::forbidden(
+            ApiError::ADMIN_REQUIRED,
+            "需要管理员权限",
+        ));
     }
     use redis::AsyncCommands;
 
     let mut result = serde_json::Map::new();
 
     // 获取所有 key
-    let keys: Vec<String> = redis_conn
-        .keys("*")
-        .await
-        .unwrap_or_default();
+    let keys: Vec<String> = redis_conn.keys("*").await.unwrap_or_default();
 
     for key in &keys {
         // 获取类型
@@ -372,7 +382,9 @@ mod tests {
 
         // 验证持久化：再次 GET
         let claims2 = test_claims(user_id, false);
-        let get_result = get_user_settings(claims2, Extension(pool.clone())).await.unwrap();
+        let get_result = get_user_settings(claims2, Extension(pool.clone()))
+            .await
+            .unwrap();
         let s = get_result.data.unwrap();
         assert_eq!(s.language, "en");
         assert_eq!(s.flutter_theme, "light");

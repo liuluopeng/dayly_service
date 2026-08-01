@@ -23,8 +23,8 @@ async fn main() {
 
     // redis
     let redis_config = RedisConfig::parse();
-    let redis_client = redis::Client::open(redis_config.redis_url.clone())
-        .expect("Redis 客户端创建失败");
+    let redis_client =
+        redis::Client::open(redis_config.redis_url.clone()).expect("Redis 客户端创建失败");
     let redis_conn = redis::aio::ConnectionManager::new(redis_client)
         .await
         .expect("Redis 连接失败");
@@ -62,7 +62,10 @@ async fn main() {
     info!("========================================");
     info!("Environment: {:?}", app_env);
     info!("HTTP  server listening on {}:{}", server_config.host, port);
-    info!("gRPC  server listening on {}:{}", server_config.host, grpc_port);
+    info!(
+        "gRPC  server listening on {}:{}",
+        server_config.host, grpc_port
+    );
     info!("========================================");
 
     // 词典 SQLite 数据库
@@ -94,8 +97,10 @@ async fn main() {
 
     // gRPC 服务（tonic，独立端口）
     let hello_svc = lx_dayly_service::grpc::hello_grpc_service();
-    let clipboard_svc = lx_dayly_service::grpc::clipboard_grpc_service(pg_pool.clone(), jwt_secret.clone());
-    let clipboard_sync_svc = lx_dayly_service::grpc::clipboard_sync_grpc_service(pg_pool.clone(), jwt_secret.clone());
+    let clipboard_svc =
+        lx_dayly_service::grpc::clipboard_grpc_service(pg_pool.clone(), jwt_secret.clone());
+    let clipboard_sync_svc =
+        lx_dayly_service::grpc::clipboard_sync_grpc_service(pg_pool.clone(), jwt_secret.clone());
     let reflection_svc = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(lx_dayly_service::grpc::HELLO_DESCRIPTOR)
         .register_encoded_file_descriptor_set(lx_dayly_service::grpc::CLIPBOARD_DESCRIPTOR)
@@ -110,16 +115,18 @@ async fn main() {
 
     tokio::try_join!(
         async {
-            let listener = tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, port))
-                .await
-                .unwrap();
+            let listener =
+                tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, port))
+                    .await
+                    .unwrap();
             axum::serve(listener, app).await.unwrap();
             Ok::<_, std::convert::Infallible>(())
         },
         async {
-            let listener = tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, grpc_port))
-                .await
-                .unwrap();
+            let listener =
+                tokio::net::TcpListener::bind(format!("{}:{}", server_config.host, grpc_port))
+                    .await
+                    .unwrap();
             axum::serve(listener, grpc_router).await.unwrap();
             Ok::<_, std::convert::Infallible>(())
         },

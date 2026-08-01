@@ -32,9 +32,12 @@ fn safe_resource_path(subdir: &str, resource: &str) -> Option<std::path::PathBuf
     let base = STATIC_BASE.get().map(|s| s.as_str()).unwrap_or("static");
     let resource_path = std::path::Path::new(resource);
     if resource_path.is_absolute()
-        || resource_path
-            .components()
-            .any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::RootDir))
+        || resource_path.components().any(|c| {
+            matches!(
+                c,
+                std::path::Component::ParentDir | std::path::Component::RootDir
+            )
+        })
     {
         return None;
     }
@@ -51,18 +54,35 @@ fn safe_resource_path(subdir: &str, resource: &str) -> Option<std::path::PathBuf
 
 /// 初始化词典 SQLite — 按表名映射到独立 DB 文件
 pub async fn init_dict_db(base_dir: &str) {
-    let map: Vec<(String, sqlx::SqlitePool)> = futures::future::join_all([
-        ("collins_words", format!("{}/collins_words.db", base_dir)),
-        ("collins_resources", format!("{}/collins_resources.db", base_dir)),
-        ("ldoce_words", format!("{}/ldoce_words.db", base_dir)),
-        ("ldoce_resources", format!("{}/ldoce_resources.db", base_dir)),
-        ("modern_chinese_words", format!("{}/modern_chinese_words.db", base_dir)),
-        ("ggtt_codes", format!("{}/ggtt_codes.db", base_dir)),
-    ].iter().map(|(table, path)| async move {
-        let pool = SqlitePoolOptions::new().max_connections(2).connect(path).await
-            .unwrap_or_else(|e| panic!("连接 {} 失败: {}", path, e));
-        (table.to_string(), pool)
-    })).await;
+    let map: Vec<(String, sqlx::SqlitePool)> = futures::future::join_all(
+        [
+            ("collins_words", format!("{}/collins_words.db", base_dir)),
+            (
+                "collins_resources",
+                format!("{}/collins_resources.db", base_dir),
+            ),
+            ("ldoce_words", format!("{}/ldoce_words.db", base_dir)),
+            (
+                "ldoce_resources",
+                format!("{}/ldoce_resources.db", base_dir),
+            ),
+            (
+                "modern_chinese_words",
+                format!("{}/modern_chinese_words.db", base_dir),
+            ),
+            ("ggtt_codes", format!("{}/ggtt_codes.db", base_dir)),
+        ]
+        .iter()
+        .map(|(table, path)| async move {
+            let pool = SqlitePoolOptions::new()
+                .max_connections(2)
+                .connect(path)
+                .await
+                .unwrap_or_else(|e| panic!("连接 {} 失败: {}", path, e));
+            (table.to_string(), pool)
+        }),
+    )
+    .await;
     DICT_POOLS.set(Mutex::new(map.into_iter().collect())).ok();
     info!("词典 SQLite 已初始化 ({} 文件)", 5);
 }
@@ -71,22 +91,57 @@ async fn lookup_word(table: &str, word: &str) -> Option<String> {
     let pools = DICT_POOLS.get()?.lock().await;
     let pool = pools.get(table)?;
     let sql = format!("SELECT explanation FROM {} WHERE word = ? LIMIT 1", table);
-    sqlx::query_scalar::<_, String>(&sql).bind(word).fetch_optional(pool).await.ok().flatten()
+    sqlx::query_scalar::<_, String>(&sql)
+        .bind(word)
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
 }
 
-pub async fn lookup_ggtt_char(ch: &str) -> Option<(String, Option<String>, Option<String>, Option<String>, Option<String>, bool)> {
+pub async fn lookup_ggtt_char(
+    ch: &str,
+) -> Option<(
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    bool,
+)> {
     let pools = DICT_POOLS.get()?.lock().await;
     let pool = pools.get("ggtt_codes")?;
-    sqlx::query_as::<_, (String, Option<String>, Option<String>, Option<String>, Option<String>, bool)>(
-        "SELECT code_86, svg1, svg2, svg3, svg4, has_diagram FROM ggtt_codes WHERE char = ?"
-    ).bind(ch).fetch_optional(pool).await.ok().flatten()
+    sqlx::query_as::<
+        _,
+        (
+            String,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            bool,
+        ),
+    >("SELECT code_86, svg1, svg2, svg3, svg4, has_diagram FROM ggtt_codes WHERE char = ?")
+    .bind(ch)
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
 }
 
 async fn lookup_resource(table: &str, path: &str) -> Option<Vec<u8>> {
     let pools = DICT_POOLS.get()?.lock().await;
     let pool = pools.get(table)?;
-    let sql = format!("SELECT resource_data FROM {} WHERE resource_path = ? LIMIT 1", table);
-    sqlx::query_scalar::<_, Vec<u8>>(&sql).bind(path).fetch_optional(pool).await.ok().flatten()
+    let sql = format!(
+        "SELECT resource_data FROM {} WHERE resource_path = ? LIMIT 1",
+        table
+    );
+    sqlx::query_scalar::<_, Vec<u8>>(&sql)
+        .bind(path)
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
 }
 // 定义响应结构体
 fn get_server_base_url() -> String {
@@ -386,7 +441,10 @@ pub async fn search_xiandaihanyu(
     let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
 
     let explanation = lookup_word("modern_chinese_words", word).await;
-    let xiandaihanyu_result = explanation.map(|e| ModernChineseWord { word: word.to_string(), explanation: e });
+    let xiandaihanyu_result = explanation.map(|e| ModernChineseWord {
+        word: word.to_string(),
+        explanation: e,
+    });
 
     let base_url = server_config.get_base_url();
 
@@ -414,8 +472,10 @@ pub async fn search_collins(
     let word = query.search.trim().to_lowercase();
     let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
 
-    let collins_result = lookup_word("collins_words", &word).await
-        .map(|e| DictWord { word: word.clone(), explanation: e });
+    let collins_result = lookup_word("collins_words", &word).await.map(|e| DictWord {
+        word: word.clone(),
+        explanation: e,
+    });
 
     let base_url = server_config.get_base_url();
 
@@ -501,7 +561,7 @@ pub async fn collins_resource(
             return Err(ApiError::not_found(
                 ApiError::RESOURCE_NOT_FOUND,
                 "Resource not found",
-            ))
+            ));
         }
     };
 
@@ -522,19 +582,22 @@ pub async fn collins_resource(
     }
 
     if let Some(data) = lookup_resource("collins_resources", &resource_path).await {
-            let content_type = get_content_type(&resource_path);
-            let mut response = Response::new(axum::body::Body::from(data));
-            response.headers_mut().insert(
-                axum::http::header::CONTENT_TYPE,
-                axum::http::HeaderValue::from_static(content_type),
-            );
-            response.headers_mut().insert(
-                axum::http::header::CACHE_CONTROL,
-                axum::http::HeaderValue::from_static("public, max-age=31536000"),
-            );
-            return Ok(response);
-        }
-    Err(ApiError::not_found(ApiError::RESOURCE_NOT_FOUND, "Resource not found"))
+        let content_type = get_content_type(&resource_path);
+        let mut response = Response::new(axum::body::Body::from(data));
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static(content_type),
+        );
+        response.headers_mut().insert(
+            axum::http::header::CACHE_CONTROL,
+            axum::http::HeaderValue::from_static("public, max-age=31536000"),
+        );
+        return Ok(response);
+    }
+    Err(ApiError::not_found(
+        ApiError::RESOURCE_NOT_FOUND,
+        "Resource not found",
+    ))
 }
 
 pub async fn search_ldoce(
@@ -546,8 +609,10 @@ pub async fn search_ldoce(
     let word = query.search.trim().to_lowercase();
     let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
 
-    let ldoce_result = lookup_word("ldoce_words", &word).await
-        .map(|e| DictWord { word: word.clone(), explanation: e });
+    let ldoce_result = lookup_word("ldoce_words", &word).await.map(|e| DictWord {
+        word: word.clone(),
+        explanation: e,
+    });
 
     let base_url = server_config.get_base_url();
 
@@ -632,7 +697,7 @@ pub async fn ldoce_resource(
             return Err(ApiError::not_found(
                 ApiError::RESOURCE_NOT_FOUND,
                 "Resource not found",
-            ))
+            ));
         }
     };
 
@@ -665,7 +730,10 @@ pub async fn ldoce_resource(
         );
         return Ok(response);
     }
-    Err(ApiError::not_found(ApiError::RESOURCE_NOT_FOUND, "Resource not found"))
+    Err(ApiError::not_found(
+        ApiError::RESOURCE_NOT_FOUND,
+        "Resource not found",
+    ))
 }
 
 pub async fn xiandaihanyu_resource(Path(resource_path): Path<String>) -> ApiResult<Response> {
@@ -682,7 +750,7 @@ pub async fn xiandaihanyu_resource(Path(resource_path): Path<String>) -> ApiResu
             return Err(ApiError::not_found(
                 ApiError::RESOURCE_NOT_FOUND,
                 "Resource not found",
-            ))
+            ));
         }
     };
 
@@ -716,7 +784,10 @@ pub async fn xiandaihanyu_resource(Path(resource_path): Path<String>) -> ApiResu
         return Ok(response);
     }
 
-    Err(ApiError::not_found(ApiError::RESOURCE_NOT_FOUND, "Resource not found"))
+    Err(ApiError::not_found(
+        ApiError::RESOURCE_NOT_FOUND,
+        "Resource not found",
+    ))
 }
 
 pub async fn get_recent_history(
@@ -757,10 +828,22 @@ pub async fn get_top_words(
 // 资源文件路由，使用绝对路径
 pub fn dict_resource_routes() -> axum::Router {
     axum::Router::new()
-        .route("/collins_resources/{*resource_path}", axum::routing::get(collins_resource))
-        .route("/collins_resource/{*resource_path}", axum::routing::get(collins_resource))
-        .route("/ldoce_resources/{*resource_path}", axum::routing::get(ldoce_resource))
-        .route("/xiandaihanyu_resources/{*resource_path}", axum::routing::get(xiandaihanyu_resource))
+        .route(
+            "/collins_resources/{*resource_path}",
+            axum::routing::get(collins_resource),
+        )
+        .route(
+            "/collins_resource/{*resource_path}",
+            axum::routing::get(collins_resource),
+        )
+        .route(
+            "/ldoce_resources/{*resource_path}",
+            axum::routing::get(ldoce_resource),
+        )
+        .route(
+            "/xiandaihanyu_resources/{*resource_path}",
+            axum::routing::get(xiandaihanyu_resource),
+        )
 }
 
 fn get_content_type(path: &str) -> &'static str {
@@ -800,14 +883,13 @@ pub async fn word_search_count(
     if word.is_empty() {
         return Ok(ApiResponse::ok(0));
     }
-    let count: i32 = sqlx::query_scalar(
-        "SELECT COALESCE(has_searched_times, 0) FROM words WHERE word = $1",
-    )
-    .bind(word)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| ApiError::Internal(e.to_string()))?
-    .unwrap_or(0);
+    let count: i32 =
+        sqlx::query_scalar("SELECT COALESCE(has_searched_times, 0) FROM words WHERE word = $1")
+            .bind(word)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| ApiError::Internal(e.to_string()))?
+            .unwrap_or(0);
 
     Ok(ApiResponse::ok(count as i64))
 }

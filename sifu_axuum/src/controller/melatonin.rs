@@ -14,19 +14,20 @@ use uuid::Uuid;
 
 use common::api::base::{ApiResponse, PaginatedResponse};
 
-
 /// 获取用户的所有授权目录
 async fn get_user_directories(pool: &PgPool, username: &str) -> Result<Vec<String>, ApiError> {
-    let directories: Vec<String> = sqlx::query_scalar(
-        "SELECT path FROM user_directories WHERE $1 = ANY(allow_list)"
-    )
-    .bind(username)
-    .fetch_all(pool)
-    .await
-    .map_err(|e| ApiError::Internal(format!("查询用户目录失败: {}", e)))?;
+    let directories: Vec<String> =
+        sqlx::query_scalar("SELECT path FROM user_directories WHERE $1 = ANY(allow_list)")
+            .bind(username)
+            .fetch_all(pool)
+            .await
+            .map_err(|e| ApiError::Internal(format!("查询用户目录失败: {}", e)))?;
 
     if directories.is_empty() {
-        return Err(ApiError::bad_request(ApiError::NO_AUTHORIZED_DIR, "用户未配置授权目录"));
+        return Err(ApiError::bad_request(
+            ApiError::NO_AUTHORIZED_DIR,
+            "用户未配置授权目录",
+        ));
     }
 
     Ok(directories)
@@ -39,7 +40,10 @@ fn build_file_url(full_path: &str, user_dirs: &[String]) -> Option<String> {
         // 组件级比较，避免 /a/vedio 误匹配 /a/vedio_private
         let base = StdPath::new(dir.trim_end_matches('/'));
         if full.starts_with(base) {
-            return Some(format!("/api/files/serve?path={}", urlencoding::encode(full_path)));
+            return Some(format!(
+                "/api/files/serve?path={}",
+                urlencoding::encode(full_path)
+            ));
         }
     }
     None
@@ -51,7 +55,7 @@ pub async fn scan_melatonin(
 ) -> ApiResult<Json<serde_json::Value>> {
     // 查询该用户所有 dmm 类型的媒体路径
     let mut video_paths: Vec<(Uuid, String)> = sqlx::query_as(
-        "SELECT id, path FROM media_paths WHERE $1 = ANY(allow_list) AND media_type = 'melatonin'"
+        "SELECT id, path FROM media_paths WHERE $1 = ANY(allow_list) AND media_type = 'melatonin'",
     )
     .bind(&claims.username)
     .fetch_all(&pool)
@@ -88,7 +92,14 @@ pub async fn scan_melatonin(
                         let path = entry.path();
 
                         if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
-                            if let Ok(movie) = check_and_add_melatonin_movie(&path, media_path_id, &pool, &existing_dirs).await {
+                            if let Ok(movie) = check_and_add_melatonin_movie(
+                                &path,
+                                media_path_id,
+                                &pool,
+                                &existing_dirs,
+                            )
+                            .await
+                            {
                                 if movie.is_some() {
                                     movies_added += 1;
                                 }
@@ -121,9 +132,12 @@ struct ExistingRecord {
 }
 
 /// 加载已扫描目录 → (db_id, has_video, cover_is_empty)
-async fn load_existing_dirs(pool: &PgPool, media_path_id: Uuid) -> std::collections::HashMap<String, ExistingRecord> {
+async fn load_existing_dirs(
+    pool: &PgPool,
+    media_path_id: Uuid,
+) -> std::collections::HashMap<String, ExistingRecord> {
     let rows: Vec<(Uuid, Vec<String>, String)> = sqlx::query_as(
-        "SELECT id, video_paths, cover_path FROM melatonin_movies WHERE media_path_id = $1"
+        "SELECT id, video_paths, cover_path FROM melatonin_movies WHERE media_path_id = $1",
     )
     .bind(media_path_id)
     .fetch_all(pool)
@@ -133,13 +147,26 @@ async fn load_existing_dirs(pool: &PgPool, media_path_id: Uuid) -> std::collecti
     rows.into_iter()
         .filter_map(|(id, video_paths, cover_path)| {
             let dir_key = if !cover_path.is_empty() {
-                StdPath::new(&cover_path).parent().map(|p| p.to_string_lossy().to_string())
+                StdPath::new(&cover_path)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
             } else if let Some(first_vid) = video_paths.first() {
-                StdPath::new(first_vid).parent().map(|p| p.to_string_lossy().to_string())
+                StdPath::new(first_vid)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
             } else {
                 None
             };
-            dir_key.map(|k| (k, ExistingRecord { id, has_video: !video_paths.is_empty(), cover_is_empty: cover_path.is_empty() }))
+            dir_key.map(|k| {
+                (
+                    k,
+                    ExistingRecord {
+                        id,
+                        has_video: !video_paths.is_empty(),
+                        cover_is_empty: cover_path.is_empty(),
+                    },
+                )
+            })
         })
         .collect()
 }
@@ -303,11 +330,17 @@ fn scan_preview_urls(dir_path: &StdPath, cover_path: &str, user_dirs: &[String])
             let file_name = entry.file_name().to_string_lossy().to_string();
             let path = entry.path().to_string_lossy().to_string();
             // 排除 cover 文件
-            if path == cover_path { continue; }
+            if path == cover_path {
+                continue;
+            }
             if let Some(stem) = StdPath::new(&file_name).file_stem() {
                 if let Ok(n) = stem.to_string_lossy().parse::<u32>() {
                     let lower = file_name.to_lowercase();
-                    if lower.ends_with(".jpg") || lower.ends_with(".jpeg") || lower.ends_with(".png") || lower.ends_with(".webp") {
+                    if lower.ends_with(".jpg")
+                        || lower.ends_with(".jpeg")
+                        || lower.ends_with(".png")
+                        || lower.ends_with(".webp")
+                    {
                         if let Some(url) = build_file_url(&path, user_dirs) {
                             previews.push((n, url));
                         }
@@ -348,7 +381,10 @@ fn row_to_movie_list(row: &sqlx::postgres::PgRow, user_dirs: &[String]) -> Melat
         id: row.get("id"),
         title: row.get("title"),
         cover_url: build_file_url(&cover_path, user_dirs),
-        video_urls: video_paths.iter().filter_map(|p| build_file_url(p, user_dirs)).collect(),
+        video_urls: video_paths
+            .iter()
+            .filter_map(|p| build_file_url(p, user_dirs))
+            .collect(),
         cover_path,
         video_paths,
     }
@@ -374,7 +410,10 @@ fn row_to_movie(row: &sqlx::postgres::PgRow, user_dirs: &[String]) -> MelatoninM
         title: row.get("title"),
         nfo_json: row.get("nfo_json"),
         cover_url: build_file_url(&cover_path, user_dirs),
-        video_urls: video_paths.iter().filter_map(|p| build_file_url(p, user_dirs)).collect(),
+        video_urls: video_paths
+            .iter()
+            .filter_map(|p| build_file_url(p, user_dirs))
+            .collect(),
         cover_path,
         video_paths,
         preview_urls,
@@ -395,14 +434,14 @@ pub async fn get_melatonin_movies(
     let rows = sqlx::query(
         "SELECT id, title, cover_path, video_paths FROM melatonin_movies
          WHERE media_path_id IN (SELECT id FROM media_paths WHERE $1 = ANY(allow_list))
-         ORDER BY title LIMIT $2 OFFSET $3"
+         ORDER BY title LIMIT $2 OFFSET $3",
     )
-        .bind(&claims.username)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&pool)
-        .await
-        .map_err(|e| ApiError::Internal(e.to_string()))?;
+    .bind(&claims.username)
+    .bind(page_size as i64)
+    .bind(offset as i64)
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     let movies: Vec<MelatoninMovieList> = rows
         .iter()
@@ -411,12 +450,12 @@ pub async fn get_melatonin_movies(
 
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM melatonin_movies
-         WHERE media_path_id IN (SELECT id FROM media_paths WHERE $1 = ANY(allow_list))"
+         WHERE media_path_id IN (SELECT id FROM media_paths WHERE $1 = ANY(allow_list))",
     )
-        .bind(&claims.username)
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| ApiError::Internal(e.to_string()))?;
+    .bind(&claims.username)
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     let total_pages = (total + page_size.max(1) as i64 - 1) / page_size.max(1) as i64;
 
@@ -468,12 +507,12 @@ pub async fn get_movies_by_actor(
     let all_movies = sqlx::query(
         "SELECT id, title, cover_path, video_paths, nfo_json FROM melatonin_movies
          WHERE media_path_id IN (SELECT id FROM media_paths WHERE $1 = ANY(allow_list))
-         ORDER BY title"
+         ORDER BY title",
     )
-        .bind(&claims.username)
-        .fetch_all(&pool)
-        .await
-        .map_err(|e| ApiError::Internal(e.to_string()))?;
+    .bind(&claims.username)
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     let mut filtered_movies = Vec::new();
     for movie in all_movies {
@@ -536,13 +575,13 @@ pub async fn get_movies_by_genre(
         "SELECT id, title, cover_path, video_paths, nfo_json FROM melatonin_movies
          WHERE media_path_id IN (SELECT id FROM media_paths WHERE $1 = ANY(allow_list))
          AND nfo_json->'genre' ? $2
-         ORDER BY title"
+         ORDER BY title",
     )
-        .bind(&claims.username)
-        .bind(genre)
-        .fetch_all(&pool)
-        .await
-        .map_err(|e| ApiError::Internal(e.to_string()))?;
+    .bind(&claims.username)
+    .bind(genre)
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     let total = all_movies.len() as i64;
     let paginated_movies = all_movies
@@ -558,7 +597,11 @@ pub async fn get_movies_by_genre(
 
     let total_pages = (total + page_size.max(1) as i64 - 1) / page_size.max(1) as i64;
     Ok(Json(ApiResponse::ok(PaginatedResponse {
-        data: movies, total, page, page_size, total_pages,
+        data: movies,
+        total,
+        page,
+        page_size,
+        total_pages,
     })))
 }
 
@@ -609,7 +652,9 @@ pub async fn get_bt_list(
 
     let items: Vec<serde_json::Value> = lines
         .filter_map(|line| {
-            if line.trim().is_empty() { return None; }
+            if line.trim().is_empty() {
+                return None;
+            }
             let cols: Vec<&str> = line.split(',').collect();
             let name = name_idx.and_then(|i| cols.get(i)).unwrap_or(&"");
             let tags = tags_idx.and_then(|i| cols.get(i)).unwrap_or(&"");

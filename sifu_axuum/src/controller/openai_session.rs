@@ -79,16 +79,17 @@ async fn get_session(
     axum::extract::Path(session_id): axum::extract::Path<Uuid>,
 ) -> ApiResult<ApiResponse<SessionWithMessages>> {
     let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
-    let session =
-        sqlx::query_as::<_, OpenAiSession>(r#"SELECT * FROM openai_sessions WHERE id = $1 AND user_id = $2"#)
-            .bind(&session_id)
-            .bind(user_id)
-            .fetch_one(&pool)
-            .await
-            .map_err(|e| {
-                error!("Database error: {:?}", e);
-                ApiError::not_found(ApiError::SESSION_NOT_FOUND, "会话不存在")
-            })?;
+    let session = sqlx::query_as::<_, OpenAiSession>(
+        r#"SELECT * FROM openai_sessions WHERE id = $1 AND user_id = $2"#,
+    )
+    .bind(&session_id)
+    .bind(user_id)
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| {
+        error!("Database error: {:?}", e);
+        ApiError::not_found(ApiError::SESSION_NOT_FOUND, "会话不存在")
+    })?;
 
     let messages = sqlx::query_as::<_, OpenAiMessage>(
         r#"SELECT * FROM openai_messages WHERE session_id = $1 ORDER BY created_at ASC"#,

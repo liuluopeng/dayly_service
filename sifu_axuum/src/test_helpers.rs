@@ -1,8 +1,8 @@
 #![cfg(test)]
 
-use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use sqlx::Row;
+use sqlx::postgres::PgPoolOptions;
 use uuid::Uuid;
 
 use crate::middleware::Claims;

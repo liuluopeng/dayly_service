@@ -53,7 +53,10 @@ pub fn create_app(
         // GGTT相关路由
         .nest("/api/ggtt", crate::controller::ggtt::ggtt_routers())
         // melatonin相关路由
-        .nest("/api/melatonin", crate::controller::melatonin::melatonin_routes())
+        .nest(
+            "/api/melatonin",
+            crate::controller::melatonin::melatonin_routes(),
+        )
         // ShortNotes相关路由
         .nest(
             "/api/short_notes",
@@ -78,15 +81,24 @@ pub fn create_app(
         // 用户管理路由（需要认证）
         .nest("/api/user", crate::controller::user::secured_user_routes())
         // 管理员：用户目录管理
-        .nest("/api/admin/user-directories", crate::controller::user_directories::admin_user_dir_routes())
+        .nest(
+            "/api/admin/user-directories",
+            crate::controller::user_directories::admin_user_dir_routes(),
+        )
         // 媒体路径管理
-        .nest("/api/media_paths", crate::controller::media_paths::media_paths_routes())
+        .nest(
+            "/api/media_paths",
+            crate::controller::media_paths::media_paths_routes(),
+        )
         // 聊天路由
         .nest("/api/chat", crate::controller::chat::chat_routes())
         // WebRTC 共享路由
         .nest("/api/webrtc", crate::controller::webrtc::webrtc_routes())
         // 剪贴板相关路由
-        .nest("/api/clipboard", crate::controller::clipboard::clipboard_routes())
+        .nest(
+            "/api/clipboard",
+            crate::controller::clipboard::clipboard_routes(),
+        )
         // 添加认证中间件
         .layer(axum_middleware::from_fn(auth_middleware));
 
@@ -148,7 +160,10 @@ pub fn create_app(
                         .precompressed_gzip(),
                 ),
         )
-        .route("/flutter", get(|| async { Redirect::permanent("/flutter/") }))
+        .route(
+            "/flutter",
+            get(|| async { Redirect::permanent("/flutter/") }),
+        )
         .nest_service(
             "/flutter/",
             ServiceBuilder::new()
@@ -220,14 +235,18 @@ pub fn create_app(
         );
 
     router = router
-        .nest("/api/mhtml", crate::controller::mhtml_convert::mhtml_routes())
+        .nest(
+            "/api/mhtml",
+            crate::controller::mhtml_convert::mhtml_routes(),
+        )
         .nest("/api", crate::controller::ocr::ocr_routes());
 
     router
 }
 
 pub async fn root_index() -> axum::response::Html<&'static str> {
-    axum::response::Html(r#"<!DOCTYPE html>
+    axum::response::Html(
+        r#"<!DOCTYPE html>
 <html lang="zh">
 <head><meta charset="utf-8"><title>Dayly Service</title>
 <style>
@@ -247,7 +266,8 @@ h1{margin:0 0 32px;color:#fff}
 <a class="vue" href="/vue/">Vue 前端</a>
 <a class="wasm" href="/wasm/">WASM 演示</a>
 <a class="flutter" href="/flutter/">Flutter Web</a>
-</div></div></body></html>"#)
+</div></div></body></html>"#,
+    )
 }
 
 pub async fn http_logging_middleware(
@@ -315,17 +335,26 @@ pub async fn http_logging_middleware(
 
     if status_code >= 400 {
         let (parts, body) = response.into_parts();
-        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap_or_default();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .unwrap_or_default();
         let body_str = std::str::from_utf8(&body_bytes).unwrap_or("<non-utf8>");
         tracing::error!(
             "HTTP 错误: method={}, path={}, status={}, duration={:?}, body={}",
-            method, uri_str, status_code, duration, body_str
+            method,
+            uri_str,
+            status_code,
+            duration,
+            body_str
         );
         response = Response::from_parts(parts, axum::body::Body::from(body_bytes));
     } else {
         tracing::info!(
             "HTTP 响应: method={}, path={}, status={}, duration={:?}",
-            method, uri_str, status_code, duration
+            method,
+            uri_str,
+            status_code,
+            duration
         );
     }
 

@@ -70,9 +70,7 @@ pub struct ContactItem {
     pub username: String,
 }
 
-pub async fn get_recent_contacts(
-    client: &ApiClient,
-) -> ApiResult<ApiResponse<Vec<RecentContact>>> {
+pub async fn get_recent_contacts(client: &ApiClient) -> ApiResult<ApiResponse<Vec<RecentContact>>> {
     let response = client
         .get("/api/chat/recent-contacts")
         .await
@@ -84,9 +82,7 @@ pub async fn get_recent_contacts(
     Ok(data)
 }
 
-pub async fn get_contacts(
-    client: &ApiClient,
-) -> ApiResult<ApiResponse<Vec<ContactItem>>> {
+pub async fn get_contacts(client: &ApiClient) -> ApiResult<ApiResponse<Vec<ContactItem>>> {
     let response = client
         .get("/api/chat/contacts")
         .await

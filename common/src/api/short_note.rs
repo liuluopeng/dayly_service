@@ -54,8 +54,7 @@ pub async fn list_short_notes(
     if !status.is_success() {
         return Err(ApiError::Internal(format!(
             "Request failed with status {}: {}",
-            status,
-            body
+            status, body
         )));
     }
 
@@ -83,8 +82,7 @@ pub async fn get_short_note(client: &ApiClient, id: Uuid) -> ApiResult<ApiRespon
     if !status.is_success() {
         return Err(ApiError::Internal(format!(
             "Request failed with status {}: {}",
-            status,
-            body
+            status, body
         )));
     }
 
@@ -113,8 +111,7 @@ pub async fn create_short_note(
     if !status.is_success() {
         return Err(ApiError::Internal(format!(
             "Request failed with status {}: {}",
-            status,
-            body
+            status, body
         )));
     }
 
@@ -146,8 +143,7 @@ pub async fn update_short_note(
     if !status.is_success() {
         return Err(ApiError::Internal(format!(
             "Request failed with status {}: {}",
-            status,
-            body
+            status, body
         )));
     }
 
@@ -175,8 +171,7 @@ pub async fn delete_short_note(client: &ApiClient, id: Uuid) -> ApiResult<ApiRes
     if !status.is_success() {
         return Err(ApiError::Internal(format!(
             "Request failed with status {}: {}",
-            status,
-            body
+            status, body
         )));
     }
 

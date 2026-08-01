@@ -1,7 +1,6 @@
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 
-
 // 公开导出 ApiClient 类型，以便生成的代码可以访问它
 pub use common::api::client::ApiClient;
 

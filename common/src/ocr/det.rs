@@ -31,7 +31,11 @@ const DET_MAX_SIDE: u32 = 960;
 /// and dimensions are multiples of 32 (required by PPLCNetV4 backbone).
 fn det_resize(w: u32, h: u32) -> (u32, u32, f32) {
     let max = w.max(h) as f32;
-    let scale = if max <= DET_MAX_SIDE as f32 { 1.0 } else { DET_MAX_SIDE as f32 / max };
+    let scale = if max <= DET_MAX_SIDE as f32 {
+        1.0
+    } else {
+        DET_MAX_SIDE as f32 / max
+    };
     let nw = ((w as f32 * scale).ceil() as u32 + 31) / 32 * 32;
     let nh = ((h as f32 * scale).ceil() as u32 + 31) / 32 * 32;
     (nw.max(32), nh.max(32), scale)
@@ -86,7 +90,9 @@ fn connected_components(map: &[u8], w: usize, h: usize) -> Vec<TextBox> {
     // First pass
     for y in 0..h {
         for x in 0..w {
-            if map[y * w + x] == 0 { continue; }
+            if map[y * w + x] == 0 {
+                continue;
+            }
             let idx = y * w + x;
 
             // Check 4-connected neighbours (up, left)
@@ -122,7 +128,9 @@ fn connected_components(map: &[u8], w: usize, h: usize) -> Vec<TextBox> {
     // Second pass: resolve labels
     for y in 0..h {
         for x in 0..w {
-            if map[y * w + x] == 0 { continue; }
+            if map[y * w + x] == 0 {
+                continue;
+            }
             let idx = y * w + x;
             labels[idx] = find_root(labels[idx], &mut eq);
         }
@@ -134,8 +142,12 @@ fn connected_components(map: &[u8], w: usize, h: usize) -> Vec<TextBox> {
     for y in 0..h {
         for x in 0..w {
             let lab = labels[y * w + x];
-            if lab == 0 { continue; }
-            let e = comps.entry(lab).or_insert((x as u32, y as u32, x as u32, y as u32, 0));
+            if lab == 0 {
+                continue;
+            }
+            let e = comps
+                .entry(lab)
+                .or_insert((x as u32, y as u32, x as u32, y as u32, 0));
             e.0 = e.0.min(x as u32);
             e.1 = e.1.min(y as u32);
             e.2 = e.2.max(x as u32);
@@ -146,12 +158,19 @@ fn connected_components(map: &[u8], w: usize, h: usize) -> Vec<TextBox> {
 
     // Filter small components and convert to TextBox
     let min_area = 9; // 3x3 pixels minimum
-    let mut boxes: Vec<TextBox> = comps.into_iter()
+    let mut boxes: Vec<TextBox> = comps
+        .into_iter()
         .filter(|(_, (_, _, _, _, area))| *area >= min_area)
         .map(|(_, (x1, y1, x2, y2, _))| {
             let bw = x2 - x1 + 1;
             let bh = y2 - y1 + 1;
-            TextBox { x: x1, y: y1, w: bw, h: bh, score: 0.0 }
+            TextBox {
+                x: x1,
+                y: y1,
+                w: bw,
+                h: bh,
+                score: 0.0,
+            }
         })
         .collect();
 
@@ -171,7 +190,9 @@ fn find_root(mut lab: u32, eq: &mut [u32]) -> u32 {
 
 /// Merge boxes that overlap significantly.
 fn merge_overlapping(boxes: &mut Vec<TextBox>) {
-    if boxes.len() < 2 { return; }
+    if boxes.len() < 2 {
+        return;
+    }
     loop {
         let mut merged = false;
         let mut i = 0;
@@ -188,17 +209,23 @@ fn merge_overlapping(boxes: &mut Vec<TextBox>) {
                 let area_a = (a.w * a.h) as f32;
                 let area_b = (b.w * b.h) as f32;
                 // Merge if overlap > 40% of either box or if vertically close & horizontally overlapping
-                let vert_close = (a.y.max(b.y) as i32 - (a.y as i32 + a.h as i32).min(b.y as i32 + b.h as i32)).abs() < (a.h.max(b.h) as i32 / 2);
+                let vert_close = (a.y.max(b.y) as i32
+                    - (a.y as i32 + a.h as i32).min(b.y as i32 + b.h as i32))
+                .abs()
+                    < (a.h.max(b.h) as i32 / 2);
                 let horiz_overlap = iw > 0;
-                if overlap > area_a * 0.4 || overlap > area_b * 0.4 || (vert_close && horiz_overlap) {
+                if overlap > area_a * 0.4 || overlap > area_b * 0.4 || (vert_close && horiz_overlap)
+                {
                     // Merge j into i
                     let new_x = boxes[i].x.min(boxes[j].x);
                     let new_y = boxes[i].y.min(boxes[j].y);
                     let new_x2 = (boxes[i].x + boxes[i].w).max(boxes[j].x + boxes[j].w);
                     let new_y2 = (boxes[i].y + boxes[i].h).max(boxes[j].y + boxes[j].h);
                     boxes[i] = TextBox {
-                        x: new_x, y: new_y,
-                        w: new_x2 - new_x, h: new_y2 - new_y,
+                        x: new_x,
+                        y: new_y,
+                        w: new_x2 - new_x,
+                        h: new_y2 - new_y,
                         score: boxes[i].score.max(boxes[j].score),
                     };
                     boxes.remove(j);
@@ -209,7 +236,9 @@ fn merge_overlapping(boxes: &mut Vec<TextBox>) {
             }
             i += 1;
         }
-        if !merged { break; }
+        if !merged {
+            break;
+        }
     }
 }
 
@@ -218,7 +247,10 @@ fn merge_overlapping(boxes: &mut Vec<TextBox>) {
 pub fn detect_text_regions(pixels: &[u8], width: u32, height: u32) -> Result<Vec<TextBox>, String> {
     let session = det_session();
     let (input_tensor, _nw, _nh, _scale) = det_preprocess(pixels, width, height);
-    eprintln!("[det] input {}x{} resized to {}x{} scale={:.3}", width, height, _nw, _nh, _scale);
+    eprintln!(
+        "[det] input {}x{} resized to {}x{} scale={:.3}",
+        width, height, _nw, _nh, _scale
+    );
 
     let input = TensorRef::from_array_view(&input_tensor)
         .map_err(|e| format!("构建检测输入失败: {}", e))?;
@@ -244,22 +276,37 @@ pub fn detect_text_regions(pixels: &[u8], width: u32, height: u32) -> Result<Vec
     for y in 0..oh {
         for x in 0..ow {
             let v = arr[[0, 0, y, x]];
-            if v > max_prob { max_prob = v; }
-            if v > thresh { nonzero += 1; }
+            if v > max_prob {
+                max_prob = v;
+            }
+            if v > thresh {
+                nonzero += 1;
+            }
             binmap[y * ow + x] = if v > thresh { 1 } else { 0 };
         }
     }
-    eprintln!("[det] output {}x{}, max_prob={:.4}, pixels_above_thresh={}/{}", ow, oh, max_prob, nonzero, ow * oh);
+    eprintln!(
+        "[det] output {}x{}, max_prob={:.4}, pixels_above_thresh={}/{}",
+        ow,
+        oh,
+        max_prob,
+        nonzero,
+        ow * oh
+    );
 
     // Find connected components
     let boxes_downscaled = connected_components(&binmap, ow, oh);
-    eprintln!("[det] connected components before filter: {}", boxes_downscaled.len());
+    eprintln!(
+        "[det] connected components before filter: {}",
+        boxes_downscaled.len()
+    );
 
     // Scale boxes back to original image coordinates
     let ups_x = width as f32 / ow as f32;
     let ups_y = height as f32 / oh as f32;
 
-    let mut text_boxes: Vec<TextBox> = boxes_downscaled.into_iter()
+    let mut text_boxes: Vec<TextBox> = boxes_downscaled
+        .into_iter()
         .filter(|b| {
             // Filter by aspect ratio (typical text is wider than tall)
             b.w >= b.h / 2
@@ -269,7 +316,13 @@ pub fn detect_text_regions(pixels: &[u8], width: u32, height: u32) -> Result<Vec
             let by = (b.y as f32 * ups_y).floor() as u32;
             let bw = ((b.x + b.w) as f32 * ups_x).ceil() as u32 - bx;
             let bh = ((b.y + b.h) as f32 * ups_y).ceil() as u32 - by;
-            TextBox { x: bx, y: by, w: bw, h: bh, score: b.score }
+            TextBox {
+                x: bx,
+                y: by,
+                w: bw,
+                h: bh,
+                score: b.score,
+            }
         })
         .collect();
 
@@ -305,7 +358,9 @@ pub fn detect_and_recognize(pixels: &[u8], width: u32, height: u32) -> Result<St
         let y = tb.y.saturating_sub(pad);
         let w = (tb.w + pad * 2).min(width - x);
         let h = (tb.h + pad * 2).min(height - y);
-        if w < 4 || h < 4 { continue; }
+        if w < 4 || h < 4 {
+            continue;
+        }
 
         let crop = crop_pixels(pixels, width, x, y, w, h);
         let text = rec::recognize(&crop, w, h)?;

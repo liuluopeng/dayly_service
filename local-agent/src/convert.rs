@@ -2,25 +2,24 @@
 
 use std::path::Path;
 
-use common::mhtml::html::{apply_image_replacements, build_image_map, clean_body_html, extract_article_body};
+use common::mhtml::html::{
+    apply_image_replacements, build_image_map, clean_body_html, extract_article_body,
+};
 use common::mhtml::markdown::html_to_markdown;
 use common::mhtml::mhtml::parse_mhtml;
 
 /// 将 MHTML 文件转换为 MD + 图片，保存到固定目录
 pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
-    let content = std::fs::read_to_string(input)
-        .map_err(|e| format!("读取文件失败: {}", e))?;
+    let content = std::fs::read_to_string(input).map_err(|e| format!("读取文件失败: {}", e))?;
 
     // 1. 解析 MHTML
-    let doc = parse_mhtml(&content)
-        .map_err(|e| format!("解析 MHTML 失败: {}", e))?;
+    let doc = parse_mhtml(&content).map_err(|e| format!("解析 MHTML 失败: {}", e))?;
 
     // 2. 提取正文（DOM 去广告）
-    let body = extract_article_body(&doc.html)
-        .unwrap_or_else(|| {
-            eprintln!("  [警告] 使用完整 HTML 作为正文");
-            doc.html.clone()
-        });
+    let body = extract_article_body(&doc.html).unwrap_or_else(|| {
+        eprintln!("  [警告] 使用完整 HTML 作为正文");
+        doc.html.clone()
+    });
 
     // 3. 构建原始图片映射（原 URL → 图片数据 + MIME）
     let raw_mappings = build_image_map(&body, &doc.resources);
@@ -54,8 +53,7 @@ pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
     let markdown = html_to_markdown(&cleaned);
 
     // 8. 确保输出目录和附件目录存在
-    std::fs::create_dir_all(out_dir)
-        .map_err(|e| format!("创建输出目录失败: {}", e))?;
+    std::fs::create_dir_all(out_dir).map_err(|e| format!("创建输出目录失败: {}", e))?;
     std::fs::create_dir_all(out_dir.join("attachment"))
         .map_err(|e| format!("创建附件目录失败: {}", e))?;
 
@@ -68,7 +66,8 @@ pub fn convert_mhtml(input: &Path, out_dir: &Path) -> Result<(), String> {
     }
 
     // 11. 写入 .md
-    let stem = input.file_stem()
+    let stem = input
+        .file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "output".to_string());
     let md_path = out_dir.join(format!("{}.md", stem));

@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use web_sys::{WebSocket, MessageEvent, CloseEvent, ErrorEvent};
+use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 
 use crate::api::init::get_api_client;
 

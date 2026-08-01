@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use common::api::{
     client::ApiClient,
     clipboard::get_clipboard_history,
@@ -9,18 +8,20 @@ use common::api::{
     songs::{get_all_songs, scan_songs},
     user::user_login,
 };
-use my_type::dto::SongWithUrl;
 use common::front_can_do::{
     base64::{base64_decode, base64_encode},
     password::{generate_password, generate_strong_password},
     qrcode::{generate_qr_unicode, qr_info},
-    timestamp,
-    uuid,
+    timestamp, uuid,
 };
+use my_type::dto::SongWithUrl;
+use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{Document, HtmlElement, HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement, Storage};
+use web_sys::{
+    Document, HtmlElement, HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement, Storage,
+};
 
 const TOKEN_KEY: &str = "wasm_demo_token";
 
@@ -40,78 +41,134 @@ fn storage() -> Option<Storage> {
 }
 
 fn save_token(token: &str) {
-    if let Some(s) = storage() { s.set_item(TOKEN_KEY, token).ok(); }
+    if let Some(s) = storage() {
+        s.set_item(TOKEN_KEY, token).ok();
+    }
     set_token_inner(token);
 }
 
 fn load_token() -> Option<String> {
     let s = storage()?;
     let token = s.get_item(TOKEN_KEY).ok()??;
-    if token.is_empty() { None } else { Some(token) }
+    if token.is_empty() {
+        None
+    } else {
+        Some(token)
+    }
 }
 
 fn clear_token() {
-    if let Some(s) = storage() { s.remove_item(TOKEN_KEY).ok(); }
+    if let Some(s) = storage() {
+        s.remove_item(TOKEN_KEY).ok();
+    }
     set_token_inner("");
 }
 
-fn doc() -> Document { web_sys::window().unwrap().document().unwrap() }
+fn doc() -> Document {
+    web_sys::window().unwrap().document().unwrap()
+}
 
 fn el(id: &str) -> HtmlElement {
-    doc().get_element_by_id(id).unwrap().dyn_into::<HtmlElement>().unwrap()
+    doc()
+        .get_element_by_id(id)
+        .unwrap()
+        .dyn_into::<HtmlElement>()
+        .unwrap()
 }
 
 fn input(id: &str) -> String {
-    doc().get_element_by_id(id).unwrap()
-        .dyn_into::<HtmlInputElement>().unwrap()
+    doc()
+        .get_element_by_id(id)
+        .unwrap()
+        .dyn_into::<HtmlInputElement>()
+        .unwrap()
         .value()
 }
 
 fn select_val(id: &str) -> String {
-    doc().get_element_by_id(id).unwrap()
-        .dyn_into::<HtmlSelectElement>().unwrap()
+    doc()
+        .get_element_by_id(id)
+        .unwrap()
+        .dyn_into::<HtmlSelectElement>()
+        .unwrap()
         .value()
 }
 
 fn textarea(id: &str) -> String {
-    doc().get_element_by_id(id).unwrap()
-        .dyn_into::<HtmlTextAreaElement>().unwrap()
+    doc()
+        .get_element_by_id(id)
+        .unwrap()
+        .dyn_into::<HtmlTextAreaElement>()
+        .unwrap()
         .value()
 }
 
-fn set_html(id: &str, html: &str) { doc().get_element_by_id(id).unwrap().set_inner_html(html); }
-fn set_text(id: &str, text: &str) { doc().get_element_by_id(id).unwrap().set_text_content(Some(text)); }
-fn hide(id: &str) { el(id).set_attribute("style", "display:none").ok(); }
-fn unhide(id: &str) { el(id).set_attribute("style", "display:block").ok(); }
+fn set_html(id: &str, html: &str) {
+    doc().get_element_by_id(id).unwrap().set_inner_html(html);
+}
+fn set_text(id: &str, text: &str) {
+    doc()
+        .get_element_by_id(id)
+        .unwrap()
+        .set_text_content(Some(text));
+}
+fn hide(id: &str) {
+    el(id).set_attribute("style", "display:none").ok();
+}
+fn unhide(id: &str) {
+    el(id).set_attribute("style", "display:block").ok();
+}
 
 fn disable_btn(id: &str, disabled: bool) {
-    if disabled { el(id).set_attribute("disabled", "true").ok(); }
-    else { el(id).remove_attribute("disabled").ok(); }
+    if disabled {
+        el(id).set_attribute("disabled", "true").ok();
+    } else {
+        el(id).remove_attribute("disabled").ok();
+    }
 }
 
 fn on_keydown(id: &str, key: &str, mut f: impl FnMut() + 'static) {
     let cb = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
-        if &e.key() == key { f(); }
+        if &e.key() == key {
+            f();
+        }
     }) as Box<dyn FnMut(_)>);
-    doc().get_element_by_id(id).unwrap()
-        .add_event_listener_with_callback("keydown", cb.as_ref().dyn_ref().unwrap()).ok();
+    doc()
+        .get_element_by_id(id)
+        .unwrap()
+        .add_event_listener_with_callback("keydown", cb.as_ref().dyn_ref().unwrap())
+        .ok();
     cb.forget();
 }
 
 fn on_click(id: &str, f: impl FnMut() + 'static) {
     let cb = Closure::wrap(Box::new(f) as Box<dyn FnMut()>);
-    doc().get_element_by_id(id).unwrap()
-        .add_event_listener_with_callback("click", cb.as_ref().dyn_ref().unwrap()).ok();
+    doc()
+        .get_element_by_id(id)
+        .unwrap()
+        .add_event_listener_with_callback("click", cb.as_ref().dyn_ref().unwrap())
+        .ok();
     cb.forget();
 }
 
 // ==================== NAVIGATION ====================
 
 const ALL_PAGES: &[&str] = &[
-    "page-login", "page-ggtt", "page-dict", "page-qrcode",
-    "page-password", "page-uuid", "page-base64", "page-timestamp",
-    "page-clipboard", "page-notes", "page-zici-chars", "page-zici-words",
-    "page-search-history", "page-short-notes", "page-songs",
+    "page-login",
+    "page-ggtt",
+    "page-dict",
+    "page-qrcode",
+    "page-password",
+    "page-uuid",
+    "page-base64",
+    "page-timestamp",
+    "page-clipboard",
+    "page-notes",
+    "page-zici-chars",
+    "page-zici-words",
+    "page-search-history",
+    "page-short-notes",
+    "page-songs",
 ];
 
 const PAGE_TITLES: &[(&str, &str)] = &[
@@ -133,15 +190,29 @@ const PAGE_TITLES: &[(&str, &str)] = &[
 ];
 
 const SIDEBAR_IDS: &[&str] = &[
-    "snav-ggtt", "snav-dict", "snav-qrcode", "snav-password",
-    "snav-uuid", "snav-base64", "snav-timestamp", "snav-songs",
-    "snav-zici-chars", "snav-zici-words", "snav-search-history",
-    "snav-clipboard", "snav-notes", "snav-short-notes",
+    "snav-ggtt",
+    "snav-dict",
+    "snav-qrcode",
+    "snav-password",
+    "snav-uuid",
+    "snav-base64",
+    "snav-timestamp",
+    "snav-songs",
+    "snav-zici-chars",
+    "snav-zici-words",
+    "snav-search-history",
+    "snav-clipboard",
+    "snav-notes",
+    "snav-short-notes",
 ];
 
 fn show_page(page_id: &str) {
     for id in ALL_PAGES {
-        if *id == page_id { unhide(id); } else { hide(id); }
+        if *id == page_id {
+            unhide(id);
+        } else {
+            hide(id);
+        }
     }
     // update title
     for (id, title) in PAGE_TITLES {
@@ -171,7 +242,11 @@ fn navigate(hash: &str) {
 }
 
 fn route() {
-    let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
+    let hash = web_sys::window()
+        .unwrap()
+        .location()
+        .hash()
+        .unwrap_or_default();
     let has_token = load_token().is_some();
 
     if !has_token {
@@ -191,7 +266,9 @@ fn route() {
         "#/notes" => show_page("page-notes"),
         "#/zici-chars" | "#/zici/chars" => show_page("page-zici-chars"),
         "#/zici-words" | "#/zici/words" => show_page("page-zici-words"),
-        "#/songs" => { show_page("page-songs"); }
+        "#/songs" => {
+            show_page("page-songs");
+        }
         "#/search-history" => show_page("page-search-history"),
         "#/short-notes" => show_page("page-short-notes"),
         _ => {
@@ -221,13 +298,18 @@ fn set_token_inner(token: &str) {
     CLIENT.with(|c| {
         let mut b = c.borrow_mut();
         let client = b.get_or_insert_with(|| ApiClient::new("http://localhost:23001"));
-        if token.is_empty() { client.clear_token(); }
-        else { client.set_token(token); }
+        if token.is_empty() {
+            client.clear_token();
+        } else {
+            client.set_token(token);
+        }
     });
 }
 
 #[wasm_bindgen]
-pub fn set_token(token: &str) { set_token_inner(token); }
+pub fn set_token(token: &str) {
+    set_token_inner(token);
+}
 
 // ==================== LOGIN ====================
 
@@ -244,7 +326,9 @@ async fn login_impl(user: &str, pass: &str) -> Result<String, String> {
 async fn do_wubi_search() {
     disable_btn("wubi-btn", true);
     set_html("wubi-result", "");
-    let req = SearchRequest { search: input("wubi-input") };
+    let req = SearchRequest {
+        search: input("wubi-input"),
+    };
     let client = get_client();
     match search_ggtt_code(&client, req).await {
         Ok(resp) => {
@@ -257,14 +341,21 @@ async fn do_wubi_search() {
                         }
                     }
                 }
-                let svg_section = if svgs.is_empty() { String::new() } else {
+                let svg_section = if svgs.is_empty() {
+                    String::new()
+                } else {
                     format!("<div style='margin-top:12px'>{}</div>", svgs)
                 };
-                set_html("wubi-result", &format!(
-                    "<div style='color:#0078D4;font-size:18px;font-weight:600'>{} → {}</div>{}",
-                    d.char, d.code_86, svg_section,
-                ));
-            } else { set_text("wubi-result", "无结果"); }
+                set_html(
+                    "wubi-result",
+                    &format!(
+                        "<div style='color:#0078D4;font-size:18px;font-weight:600'>{} → {}</div>{}",
+                        d.char, d.code_86, svg_section,
+                    ),
+                );
+            } else {
+                set_text("wubi-result", "无结果");
+            }
         }
         Err(e) => set_text("wubi-result", &format!("失败: {}", e)),
     }
@@ -277,41 +368,57 @@ async fn do_dict_search() {
     disable_btn("dict-btn", true);
     set_html("dict-result", "<div style='color:#888'>搜索中...</div>");
     let word = input("dict-input");
-    if word.is_empty() { set_text("dict-result", "请输入搜索词语"); disable_btn("dict-btn", false); return; }
+    if word.is_empty() {
+        set_text("dict-result", "请输入搜索词语");
+        disable_btn("dict-btn", false);
+        return;
+    }
     let dict_type = select_val("dict-select");
     let client = get_client();
 
     let result = match dict_type.as_str() {
-        "xiandai" => {
-            match dict::search_xiandaihanyu(&client, &word).await {
-                Ok(r) => format!("【现代汉语词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default()),
-                Err(e) => format!("失败: {}", e),
-            }
-        }
-        "collins" => {
-            match dict::search_collins(&client, &word).await {
-                Ok(r) => format!("【柯林斯词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default()),
-                Err(e) => format!("失败: {}", e),
-            }
-        }
-        "ldoce" => {
-            match dict::search_ldoce(&client, &word).await {
-                Ok(r) => format!("【朗文词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default()),
-                Err(e) => format!("失败: {}", e),
-            }
-        }
+        "xiandai" => match dict::search_xiandaihanyu(&client, &word).await {
+            Ok(r) => format!(
+                "【现代汉语词典】\n{}",
+                serde_json::to_string_pretty(&r.data).unwrap_or_default()
+            ),
+            Err(e) => format!("失败: {}", e),
+        },
+        "collins" => match dict::search_collins(&client, &word).await {
+            Ok(r) => format!(
+                "【柯林斯词典】\n{}",
+                serde_json::to_string_pretty(&r.data).unwrap_or_default()
+            ),
+            Err(e) => format!("失败: {}", e),
+        },
+        "ldoce" => match dict::search_ldoce(&client, &word).await {
+            Ok(r) => format!(
+                "【朗文词典】\n{}",
+                serde_json::to_string_pretty(&r.data).unwrap_or_default()
+            ),
+            Err(e) => format!("失败: {}", e),
+        },
         _ => {
             let mut out = String::new();
             match dict::search_xiandaihanyu(&client, &word).await {
-                Ok(r) => out.push_str(&format!("【现代汉语词典】\n{}\n\n", serde_json::to_string_pretty(&r.data).unwrap_or_default())),
+                Ok(r) => out.push_str(&format!(
+                    "【现代汉语词典】\n{}\n\n",
+                    serde_json::to_string_pretty(&r.data).unwrap_or_default()
+                )),
                 Err(e) => out.push_str(&format!("【现代汉语词典】失败: {}\n\n", e)),
             }
             match dict::search_collins(&client, &word).await {
-                Ok(r) => out.push_str(&format!("【柯林斯词典】\n{}\n\n", serde_json::to_string_pretty(&r.data).unwrap_or_default())),
+                Ok(r) => out.push_str(&format!(
+                    "【柯林斯词典】\n{}\n\n",
+                    serde_json::to_string_pretty(&r.data).unwrap_or_default()
+                )),
                 Err(e) => out.push_str(&format!("【柯林斯词典】失败: {}\n\n", e)),
             }
             match dict::search_ldoce(&client, &word).await {
-                Ok(r) => out.push_str(&format!("【朗文词典】\n{}", serde_json::to_string_pretty(&r.data).unwrap_or_default())),
+                Ok(r) => out.push_str(&format!(
+                    "【朗文词典】\n{}",
+                    serde_json::to_string_pretty(&r.data).unwrap_or_default()
+                )),
                 Err(e) => out.push_str(&format!("【朗文词典】失败: {}", e)),
             }
             out
@@ -326,7 +433,10 @@ async fn do_dict_search() {
 
 fn do_qr_generate() {
     let text = textarea("qr-input");
-    if text.is_empty() { set_text("qr-result", "请输入文本"); return; }
+    if text.is_empty() {
+        set_text("qr-result", "请输入文本");
+        return;
+    }
     match generate_qr_unicode(&text) {
         Ok(qr_unicode) => {
             set_html("qr-result", &format!("<pre style='font-size:10px;line-height:1;font-family:monospace;background:#1A1A1A;padding:8px;overflow:auto;text-align:center'>{}</pre>", qr_unicode));
@@ -335,7 +445,8 @@ fn do_qr_generate() {
     }
     match qr_info(&text) {
         Ok((version, size)) => {
-            el("qr-info").set_text_content(Some(&format!("版本: {}, 尺寸: {}x{}", version, size, size)));
+            el("qr-info")
+                .set_text_content(Some(&format!("版本: {}, 尺寸: {}x{}", version, size, size)));
         }
         // 生成失败时同样给出提示，而不是展示残留的旧信息
         Err(e) => el("qr-info").set_text_content(Some(&format!("生成失败: {}", e))),
@@ -355,22 +466,41 @@ fn do_password_strong() {
 
 // ==================== UUID ====================
 
-fn do_uuid_v4() { set_text("uuid-result", &uuid::generate_uuid_v4()); }
-fn do_uuid_v5() { set_text("uuid-result", &uuid::generate_uuid_v5("6ba7b810-9dad-11d1-80b4-00c04fd430c8", "wasm-demo")); }
-fn do_uuid_v6() { set_text("uuid-result", &uuid::generate_uuid_v6()); }
-fn do_uuid_v7() { set_text("uuid-result", &uuid::generate_uuid_v7()); }
+fn do_uuid_v4() {
+    set_text("uuid-result", &uuid::generate_uuid_v4());
+}
+fn do_uuid_v5() {
+    set_text(
+        "uuid-result",
+        &uuid::generate_uuid_v5("6ba7b810-9dad-11d1-80b4-00c04fd430c8", "wasm-demo"),
+    );
+}
+fn do_uuid_v6() {
+    set_text("uuid-result", &uuid::generate_uuid_v6());
+}
+fn do_uuid_v7() {
+    set_text("uuid-result", &uuid::generate_uuid_v7());
+}
 fn do_uuid_validate() {
     let u = input("uuid-validate-input");
     if uuid::validate_uuid(&u) {
-        set_html("uuid-validate-result", "<span style='color:#4CAF50'>✓ 有效的 UUID</span>");
+        set_html(
+            "uuid-validate-result",
+            "<span style='color:#4CAF50'>✓ 有效的 UUID</span>",
+        );
     } else {
-        set_html("uuid-validate-result", "<span style='color:#f44336'>✗ 无效的 UUID</span>");
+        set_html(
+            "uuid-validate-result",
+            "<span style='color:#f44336'>✗ 无效的 UUID</span>",
+        );
     }
 }
 
 // ==================== BASE64 ====================
 
-fn do_b64_encode() { set_text("b64-result", &base64_encode(&textarea("b64-input"))); }
+fn do_b64_encode() {
+    set_text("b64-result", &base64_encode(&textarea("b64-input")));
+}
 fn do_b64_decode() {
     match base64_decode(&textarea("b64-input")) {
         Some(d) => set_text("b64-result", &d),
@@ -384,12 +514,20 @@ fn do_ts_now() {
     let local = timestamp::get_current_local_time();
     let utc = timestamp::get_current_utc_time();
     let ts = timestamp::get_current_timestamp();
-    set_html("ts-result", &format!(
-        "<div>本地时间: {}</div><div>UTC 时间: {}</div><div>时间戳: {}</div>", local, utc, ts
-    ));
+    set_html(
+        "ts-result",
+        &format!(
+            "<div>本地时间: {}</div><div>UTC 时间: {}</div><div>时间戳: {}</div>",
+            local, utc, ts
+        ),
+    );
 }
-fn do_ts_utc() { set_text("ts-result", &timestamp::get_current_utc_time()); }
-fn do_ts_timestamp() { set_text("ts-result", &timestamp::get_current_timestamp().to_string()); }
+fn do_ts_utc() {
+    set_text("ts-result", &timestamp::get_current_utc_time());
+}
+fn do_ts_timestamp() {
+    set_text("ts-result", &timestamp::get_current_timestamp().to_string());
+}
 fn do_ts_to_local() {
     let ts: i64 = input("ts-input").parse().unwrap_or(0);
     set_text("ts-result", &timestamp::timestamp_to_local(ts));
@@ -413,18 +551,29 @@ async fn do_clipboard_refresh() {
     let client = get_client();
     match get_clipboard_history(&client, Some(30), None, None).await {
         Ok(entries) => {
-            if entries.is_empty() { set_text("clip-result", "暂无记录"); }
-            else {
+            if entries.is_empty() {
+                set_text("clip-result", "暂无记录");
+            } else {
                 let mut html = String::from("<div style='font-size:13px'>");
                 for (i, e) in entries.iter().enumerate() {
                     let content = e.text_content.as_deref().unwrap_or("");
-                    let preview = if content.len() > 100 { format!("{}...", &content[..content.floor_char_boundary(100)]) } else { content.to_string() };
-                    let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                    let preview = if content.len() > 100 {
+                        format!("{}...", &content[..content.floor_char_boundary(100)])
+                    } else {
+                        content.to_string()
+                    };
+                    let escaped = preview
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;");
                     html.push_str(&format!(
                         "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\
                          <div style='color:#888;font-size:11px'>#{} | {} | {}</div>\
                          <div style='margin-top:4px;word-break:break-all'>{}</div></div>",
-                        i + 1, e.entry_type, e.created_at, escaped,
+                        i + 1,
+                        e.entry_type,
+                        e.created_at,
+                        escaped,
                     ));
                 }
                 html.push_str("</div>");
@@ -445,13 +594,25 @@ async fn do_notes_refresh() {
     match list_notes(&client, Some(1), Some(30)).await {
         Ok(resp) => {
             if let Some(notes) = resp.data {
-                if notes.is_empty() { set_text("notes-result", "暂无笔记"); }
-                else {
+                if notes.is_empty() {
+                    set_text("notes-result", "暂无笔记");
+                } else {
                     let mut html = String::from("<div style='font-size:13px'>");
                     for (i, note) in notes.iter().enumerate() {
-                        let content = note.text.as_deref().or(note.simple_text.as_deref()).unwrap_or("");
-                        let preview = if content.len() > 80 { format!("{}...", &content[..content.floor_char_boundary(80)]) } else { content.to_string() };
-                        let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                        let content = note
+                            .text
+                            .as_deref()
+                            .or(note.simple_text.as_deref())
+                            .unwrap_or("");
+                        let preview = if content.len() > 80 {
+                            format!("{}...", &content[..content.floor_char_boundary(80)])
+                        } else {
+                            content.to_string()
+                        };
+                        let escaped = preview
+                            .replace("&", "&amp;")
+                            .replace("<", "&lt;")
+                            .replace(">", "&gt;");
                         let created = note.created_at.format("%Y-%m-%d %H:%M").to_string();
                         html.push_str(&format!(
                             "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\
@@ -463,7 +624,9 @@ async fn do_notes_refresh() {
                     html.push_str("</div>");
                     set_html("notes-result", &html);
                 }
-            } else { set_text("notes-result", "暂无数据"); }
+            } else {
+                set_text("notes-result", "暂无数据");
+            }
         }
         Err(e) => set_text("notes-result", &format!("获取失败: {}", e)),
     }
@@ -489,233 +652,2202 @@ static NEW_CHARS_DATA: [&str; 12] = [
 
 fn do_zici_show_chars(grade: usize, term: usize) {
     let index = (grade - 1) * 2 + (term - 1);
-    if index >= NEW_CHARS_DATA.len() { set_text("zici-char-display", "无数据"); return; }
+    if index >= NEW_CHARS_DATA.len() {
+        set_text("zici-char-display", "无数据");
+        return;
+    }
     let chars: String = NEW_CHARS_DATA[index].chars().map(|c| format!("<span style='display:inline-block;padding:4px 6px;margin:2px;background:#2D2D2D;border-radius:4px;font-size:20px'>{}</span>", c)).collect();
-    set_html("zici-char-display", &format!("<div style='line-height:2.5'>{}</div>", chars));
+    set_html(
+        "zici-char-display",
+        &format!("<div style='line-height:2.5'>{}</div>", chars),
+    );
 }
 
 // ==================== ZICI WORDS ====================
 
 static NEW_WORDS_DATA: [&str; 2182] = [
-    "看见", "哪里", "那边", "头顶", "眼睛", "雪白", "肚皮", "孩子", "天空", "傍晚",
-    "人们", "冬天", "花朵", "平常", "江河", "海洋", "田地", "工作", "办法", "如果",
-    "长大", "四海为家", "娃娃", "只要", "皮毛", "那里", "知识", "花园", "石桥", "队旗",
-    "铜号", "红领巾", "欢笑", "杨树", "树叶", "枫树", "松柏", "木棉", "水杉", "化石",
-    "金桂", "写字", "丛林", "深处", "竹林", "熊猫", "朋友", "四季", "农事", "月光",
-    "辛苦", "棉衣", "一同", "柱子", "一边", "到底", "秤杆", "力气", "出来", "船身",
-    "石头", "地方", "果然", "评奖", "时间", "报纸", "来不及", "事情", "坏事", "好事",
-    "出国", "今天", "圆珠笔", "开心", "以前", "还有", "台灯", "这时", "阳光", "电影",
-    "明亮", "故事", "头发", "窗外", "黄山", "南部", "那些", "山顶", "一动不动", "云海",
-    "巨石", "前方", "每当", "金光闪闪", "它们", "群山", "树木", "名胜古迹", "中央", "美丽",
-    "灯光", "中午", "展现", "风光", "出产", "水果", "月份", "山坡", "枝叶", "展开",
-    "五光十色", "好客", "老乡", "城市", "空气", "水分", "坐井观天", "井沿", "回答", "口渴",
-    "大话", "井口", "无边无际", "山脚", "当作", "前面", "晴朗", "枯草", "正好", "清早",
-    "现在", "将来", "难过", "大雪纷飞", "枝头", "从前", "细长", "可爱", "每天", "自言自语",
-    "南瓜", "邻居", "奇怪", "八角楼", "深夜", "军衣", "星星之火", "沉思", "胜利", "扁担",
-    "同志", "带领", "队伍", "会师", "红军", "来回", "战士", "白天", "起来", "难忘",
-    "泼水节", "一年一度", "四面八方", "龙船", "花炮", "欢呼", "人群", "欢乐", "开始", "柏树枝",
-    "多么", "年轻", "村子", "知道", "广场", "民兵", "于是", "无论", "船只", "连同",
-    "岸边", "同时", "房屋", "一切", "不久", "出现", "散步", "空地", "唱歌", "回家",
-    "赶快", "旁边", "火星", "连忙", "浑身", "时候", "谢谢", "水汽", "食物", "身边",
-    "为什么", "爪子", "面前", "神气活现", "野猪", "往常", "身后", "信以为真", "纸船", "松果",
-    "纸条", "可是", "但是", "屋顶", "和好", "田野", "风车", "飞快", "秧苗", "不住",
-    "点头", "急忙", "伤心", "路边", "生气", "春天", "寻找", "姑娘", "仔细", "野花",
-    "柳枝", "秋千", "桃花", "杏花", "鲜花", "邮递员", "先生", "原来", "大叔", "邮局",
-    "太太", "做客", "惊奇", "快活", "美好", "礼物", "爷爷", "植树", "碧空如洗", "万里无云",
-    "公园", "格外", "引人注目", "已经", "汗珠", "休息", "树苗", "小心", "笔直", "叔叔",
-    "足迹", "昨天", "迷路", "温暖", "春风", "爱心", "也许", "桌子", "平时", "难道",
-    "味道", "就是", "农民", "加工", "种子", "农具", "甜菜", "工具", "劳动", "经过",
-    "出色", "妹妹", "河水", "碧绿", "波纹", "河岸", "柳叶", "非常", "景色", "恋恋不舍",
-    "柳树", "枝条", "高兴", "识字", "神州", "中华", "山川", "黄河", "长江", "长城",
-    "台湾岛", "海峡", "民族", "情谊", "奋发", "节日", "春节", "花灯", "清明节", "先人",
-    "龙舟", "中秋", "转眼", "团圆", "热闹", "动物", "贝壳", "自己", "身体", "甲骨文",
-    "样子", "可以", "钱币", "钱财", "有关", "比如", "美食", "红烧", "茄子", "烤鸭",
-    "羊肉", "蛋炒饭", "课文", "彩色", "脚尖", "森林", "雪松", "歌声", "苹果", "精灵",
-    "季节", "好像", "一直", "说话", "童话", "称呼", "对岸", "发现", "弟弟", "游戏",
-    "发明", "字母", "周围", "补充", "公主", "伙伴", "飞机", "地道", "火药", "合力",
-    "忘记", "屁股", "苍耳", "留神", "只是", "干净", "从来", "幸运", "快乐", "使劲",
-    "夜晚", "听见", "草地", "亡羊补牢", "劝告", "禾苗", "筋疲力尽", "明白", "图画", "老师",
-    "讲桌", "同学", "座位", "教室", "哈哈大笑", "五角星", "然后", "画纸", "神情", "角度",
-    "愿意", "麦子", "为难", "四周", "伯伯", "立刻", "突然", "吃惊", "认真", "脚步",
-    "难为情", "雷雨", "乌云", "闪电", "雷声", "房子", "窗户", "清新", "迎面", "野外",
-    "大自然", "天然", "指南针", "帮助", "方向", "向导", "指点", "北极星", "永远", "黑夜",
-    "帮忙", "特别", "积雪", "太空", "生活", "别处", "活动", "主要", "方便", "杯子",
-    "喝水", "使用", "洗澡", "容易", "浴桶", "大象", "耳朵", "扇子", "遇到", "兔子",
-    "毛病", "后来", "不安", "头痛", "最后", "人家", "决定", "商店", "工夫", "终于",
-    "围巾", "星期", "青蛙", "草籽", "野鸭", "泉水", "竹子", "应该", "花丛", "尽情",
-    "道路", "毛虫", "叶子", "目光", "周游", "纺织", "编织", "怎样", "声音", "色彩",
-    "花纹", "消失", "祖先", "原始", "意思", "浓绿", "一望无边", "蓝天", "野果", "野兔",
-    "赛跑", "回忆", "世界", "学习", "成功", "月亮", "主意", "反反复复", "变化", "方式",
-    "简单", "自由", "生长", "相当", "结局", "开头", "光明", "觉得", "值日", "人类",
-    "艰难", "决心", "苦海", "炎热", "害怕", "从此", "花草树木", "生机", "早晨", "穿戴",
-    "鲜艳", "服装", "打扮", "敬爱", "国旗", "敬礼", "安静", "树枝", "好奇", "孔雀",
-    "招引", "粗壮", "枝干", "影子", "阵雨", "荒野", "跳舞", "狂欢", "功课", "放假",
-    "互相", "狂风", "急急忙忙", "自然", "能够", "双臂", "水泥", "放晴", "明朗", "亮晶晶",
-    "金黄", "雨珠", "院墙", "落叶", "闪闪发光", "尽头", "平展", "排列", "规则", "歌唱",
-    "迟到", "清凉", "留意", "颜料", "枫叶", "邮票", "果树", "菊花", "仙子", "气味",
-    "香甜", "香味", "加紧", "过冬", "丰收", "火柴", "围裙", "可怜", "哪怕", "暖和",
-    "蜡烛", "亮光", "忽然", "地板", "烛光", "温和", "赶紧", "痛苦", "清晨", "旅行",
-    "要好", "咱们", "草堆", "作声", "偷偷", "答应", "做梦", "来得及", "救命", "拼命",
-    "大吃一惊", "消化", "当然", "几乎", "知觉", "光亮", "眼泪", "变成", "门板", "准备",
-    "暴风雨", "安心", "睡觉", "主人", "墙壁", "母鸡", "注意", "根本", "蜘蛛", "漂亮",
-    "因此", "母亲", "外祖父", "雨点", "船夫", "用力", "船头", "羽毛", "翠绿", "静悄悄",
-    "翠鸟", "捕鱼", "窗前", "蒲公英", "盛开", "玩耍", "一本正经", "绒毛", "假装", "哈欠",
-    "钓鱼", "观察", "合拢", "手掌", "有趣", "喜爱", "位于", "部分", "风景", "优美",
-    "物产", "丰富", "相互", "交错", "成群结队", "游动", "堆积", "宝贵", "肥料", "祖国",
-    "事业", "发展", "海滨", "街道", "交界", "来来往往", "渔民", "遍地", "远处", "汽笛",
-    "船队", "满载", "银光闪闪", "靠岸", "初夏", "散发", "除了", "整洁", "东北", "脑袋",
-    "严严实实", "挡住", "视线", "花坛", "显得", "苍翠", "飞舞", "名贵", "药材", "雪花",
-    "巨大", "宝库", "美妙", "音乐家", "演奏", "感受", "激动", "合奏", "乐曲", "充满",
-    "乐器", "雨滴", "滴答", "所有", "河流", "轻快", "告诉", "高远", "麻雀", "蚂蚁",
-    "搬家", "井然", "勇敢", "精神", "趣味", "鲜美", "如同", "温柔", "摇摆", "倒影",
-    "无穷", "无尽", "乐趣", "父亲", "童年", "雾蒙蒙", "轻声", "生怕", "惊动", "气息",
-    "总是", "抖动", "露水", "呼吸", "时刻", "猎人", "翅膀", "沉重", "郊外", "养病",
-    "跳动", "欢快", "谷粒", "男孩", "或者", "严寒", "本来", "可惜", "肯定", "诚实",
-    "手术台", "阵地", "战斗", "打响", "气焰", "刚刚", "不断", "激烈", "眼球", "血丝",
-    "烟雾", "仍然", "取出", "匆匆", "离开", "危险", "转告", "乌黑", "活泼", "春日",
-    "轻风", "吹拂", "洒落", "赶集", "聚拢", "形成", "加入", "春光", "湖面", "偶尔",
-    "闲散", "纤细", "荷花", "清香", "圆盘", "花瓣", "莲蓬", "破裂", "姿势", "眼前",
-    "本领", "仿佛", "随风", "飘动", "舞蹈", "停止", "国王", "骄傲", "傲慢", "谦虚",
-    "懦弱", "神气", "住嘴", "相提并论", "王朝", "尘土", "惊讶", "光洁", "美观", "古代",
-    "价值", "动手", "池塘", "痛快", "倒映", "欣赏", "匀称", "精美", "别致", "没精打采",
-    "机灵", "哎呀", "狮子", "机会", "叹气", "造纸术", "伟大", "记录", "保存", "大约",
-    "吸收", "经验", "原料", "满足", "朝鲜", "半岛", "日本", "阿拉伯", "欧洲", "社会",
-    "赵州桥", "石匠", "设计", "创举", "冲击", "节省", "不但", "而且", "各自", "似乎",
-    "体现", "人民", "智慧", "才干", "历史", "争奇斗艳", "芬芳", "迷人", "艳丽", "睡莲",
-    "醒来", "万寿菊", "欣然", "苏醒", "含笑", "展示", "昆虫", "修建", "组成", "蜜蜂",
-    "辨认", "能力", "阻力", "将近", "包括", "检查", "迷失", "准确", "无误", "尽管",
-    "沿途", "陌生", "确实", "记忆", "本能", "宇宙", "星空", "流淌", "秘密", "楼梯",
-    "相遇", "铃声", "万物", "乘法", "思绪", "形状", "狐狸", "担心", "丁零", "失望",
-    "背包", "巧克力", "香肠", "面包", "花生", "牛奶", "继续", "饭菜", "排骨", "抬头",
-    "麻烦", "水墨画", "垂柳", "钓竿", "扑腾", "扇动", "戏耍", "拨动", "浪花", "葫芦",
-    "松树", "清爽", "松针", "蘑菇", "大师", "表弟", "胆小", "中药", "姑父", "理发",
-    "欢迎", "仇人", "摆布", "双倍", "过年", "央求", "虽然", "天分", "电灯泡", "肥皂泡",
-    "种类", "其中", "网球", "透明", "分裂", "形式", "圆满", "轻悠悠", "飞越", "婴儿",
-    "目送", "希望", "奇妙", "呈现", "变幻", "群星", "奇迹", "诱人", "圆润", "感叹",
-    "光芒", "冰柱", "锋利", "刀剑", "普通", "模型", "存在", "海底", "宁静", "器官",
-    "行进", "海参", "攻击", "反推力", "迅速", "后退", "轮船", "长途", "石油", "天然气",
-    "火烧云", "晚饭", "胡子", "金灿灿", "凶猛", "接着", "威武", "镇静", "性子", "布料",
-    "交货", "笑话", "大方", "夸奖", "道理", "实在", "提前", "服务", "衬衫", "负责",
-    "名声", "手艺", "感动", "里屋", "莫非", "厉害", "发抖", "松手", "跟前", "甘心",
-    "奇观", "农历", "据说", "宽阔", "人山人海", "滚动", "顿时", "逐渐", "犹如", "齐头并进",
-    "山崩地裂", "霎时", "余波", "依旧", "柔和", "鹅卵石", "河床", "新鲜", "修补", "坑坑洼洼",
-    "庄稼", "风俗", "葡萄", "满意", "水稻", "成熟", "招待", "传说", "豌豆", "按照",
-    "暖洋洋", "舒适", "黑暗", "恐怕", "僵硬", "丰满", "等待", "强壮", "虚弱", "耐心",
-    "愉快", "兴奋", "曾经", "水沟", "感激", "蚊子", "即使", "灵巧", "科学家", "横七竖八",
-    "绳子", "苍蝇", "证明", "研究", "雷达", "显示", "驾驶员", "呼风唤雨", "世纪", "技术",
-    "改变", "程度", "超过", "腾云驾雾", "幻想", "原子核", "奥秘", "日益", "联系", "物质",
-    "哲学", "任何", "创造", "改善", "爬山虎", "操场", "嫩红", "舒服", "均匀", "重叠",
-    "空隙", "叶柄", "反面", "触角", "弯曲", "细小", "痕迹", "瞧不起", "牢固", "休想",
-    "住宅", "临时", "功夫", "随遇而安", "慎重", "选择", "住址", "优良", "洞穴", "大厅",
-    "卧室", "专家", "平整", "清洁", "卫生", "疲劳", "睁眼", "黑乎乎", "翻身", "斧头",
-    "缓缓", "上升", "下降", "精疲力竭", "血液", "奔流不息", "汗毛", "茂盛", "滋润", "雨露",
-    "人间", "悲惨", "情景", "危害", "猛兽", "严厉", "敬佩", "悄悄", "坚定", "违抗",
-    "狠心", "尖利", "著名", "愤愤不平", "获得", "打猎", "猛烈", "无可奈何", "拍打", "嘴角",
-    "分明", "牙齿", "绝望", "尖叫", "身躯", "掩护", "幼儿", "搏斗", "庞大", "安然",
-    "强大", "力量", "假日", "云彩", "石级", "发颤", "年纪", "奋力", "猴子", "纪念",
-    "辫子", "笑呵呵", "鼓舞", "居然", "甚至", "顽皮", "故意", "脖子", "扑打", "忙乱",
-    "大概", "助威", "昏乱", "结实", "汉子", "可笑", "无缘无故", "平白", "文艺", "表演",
-    "班级", "角色", "殷切", "期待", "排练", "危机", "通情达理", "充分", "自信", "提示",
-    "撤换", "紧张", "哄堂大笑", "砸锅", "至今", "冰天雪地", "否则", "旋转", "重整旗鼓", "况且",
-    "得心应手", "椅子", "尤其", "手舞足蹈", "恨不得", "预料", "不动声色", "顽强", "溃败", "自豪",
-    "严肃", "默默", "清晰", "抱负", "胸怀", "赞叹", "表情", "忘怀", "果真", "非凡",
-    "左顾右盼", "指望", "训斥", "体会", "分量", "响亮", "管理", "人烟", "媳妇", "新娘",
-    "眼睁睁", "干旱", "迎接", "徒弟", "面如土色", "求饶", "灌溉", "收成", "屋檐", "构成",
-    "装饰", "顺序", "华丽", "独特", "照例", "率领", "踏步", "倘若", "和谐", "催眠曲",
-    "甜蜜", "梦乡", "慰藉", "扫荡", "威力", "锐利", "河滩", "帐子", "闪烁", "奇幻",
-    "蝙蝠", "霸气", "猫头鹰", "复杂", "怒吼", "松脂", "拂拭", "灰尘", "美餐", "晌午",
-    "热辣辣", "淹没", "挣扎", "成千上万", "冲刷", "断绝", "推测", "详细", "情形", "恐龙",
-    "笨重", "迟钝", "鸽子", "凌空", "根据", "末期", "描绘", "隧道", "形态", "膨大",
-    "前肢", "具备", "开辟", "脱离", "纳米", "无能为力", "拥有", "冰箱", "功能", "蔬菜",
-    "材料", "钢铁", "隐形", "健康", "细胞", "疾病", "预防", "病灶", "需要", "深刻",
-    "繁星", "藤萝", "波涛", "墨绿", "嫩绿", "集中", "交叉", "教练", "指挥", "整齐",
-    "节拍", "白桦", "毛茸茸", "潇洒", "朦胧", "寂静", "朝霞", "呼唤", "响动", "尽职",
-    "屏息", "稿纸", "梅花", "解闷", "勇猛", "满月", "淘气", "讨厌", "理由", "心事",
-    "反抗", "忠厚", "毒手", "成绩", "警戒", "预备", "汤圆", "即将", "姿态", "高傲",
-    "狂吠", "局促", "京剧", "一丝不苟", "譬如", "侍候", "饭馆", "附近", "脾气", "敏捷",
-    "空空如也", "昂首", "供养", "清静", "扩大", "范围", "努力", "刹那", "夺目", "分辨",
-    "灿烂", "不仅", "杜鹃", "气势", "聚集", "拥挤", "心情", "脚跟", "移动", "昏暗",
-    "挤压", "额角", "登陆", "宽广", "石钟乳", "石笋", "观赏", "芦花", "发愣", "铅笔",
-    "枪栓", "胳膊", "劫难", "鬼脸", "戒指", "绸子", "敌人", "尸首", "防备", "慌忙",
-    "行驶", "凌晨", "窟窿", "混乱", "维持", "秩序", "岗位", "主宰", "调遣", "践行",
-    "介绍", "声明", "妖怪", "规矩", "劈面", "幸福", "向日葵", "柔嫩", "丰硕", "允许",
-    "禁止", "踪迹", "呼啸", "始终", "吼叫", "自私", "举动", "脸颊", "凶狠", "拆除",
-    "精巧", "配合", "身段", "适宜", "白鹤", "生硬", "寻常", "忘却", "镜匣", "孤独",
-    "悠然", "黄昏", "恩惠", "美中不足", "播种", "浇水", "吩咐", "榨油", "爱慕", "体面",
-    "桂花", "懂得", "糕饼", "茶叶", "汛期", "山洪", "暴发", "间隔", "唯独", "懒惰",
-    "平稳", "保持", "平衡", "协调", "美感", "示意", "家常", "假如", "理所当然", "联结",
-    "无价之宝", "召集", "大臣", "商议", "解决", "完好无缺", "称赞", "商量", "允诺", "典礼",
-    "得罪", "胆怯", "示弱", "拒绝", "职位", "同心协力", "猎豹", "冠军", "陆地", "俯冲",
-    "高速公路", "搭乘", "火箭", "发动机", "手电筒", "赤道", "难以置信", "侵略", "修筑", "粉碎",
-    "领导", "不计其数", "打击", "坚持", "游击", "隐蔽", "陷坑", "拐弯", "无穷无尽", "猎物",
-    "酬谢", "珍宝", "叮嘱", "复活", "议论", "崩塌", "焦急", "发誓", "千真万确", "谎话",
-    "迟延", "镇定", "后悔", "悲痛", "震天动地", "嫂子", "剩饭", "床铺", "亲密", "笑嘻嘻",
-    "成家立业", "好歹", "稀罕", "妻子", "晚霞", "一辈子", "结婚", "相依为命", "毁灭", "不可估量",
-    "举世闻名", "众星拱月", "金碧辉煌", "殿堂", "象征", "仿照", "诗情画意", "建筑", "漫游", "天南海北",
-    "饱览", "风景名胜", "境界", "宏伟", "奇珍异宝", "博物馆", "统统", "搬运", "销毁", "罪证",
-    "奉命", "寸草不生", "摄氏度", "繁殖", "粮食", "煤炭", "飘浮", "地区", "杀菌", "治疗",
-    "松鼠", "乖巧", "清秀", "玲珑", "歇凉", "追逐", "警觉", "触动", "光滑", "狭窄",
-    "勉强", "脱落", "梳理", "长篇", "连续", "广播", "铁路", "辞退", "挣钱", "压抑",
-    "潮湿", "忙碌", "阴暗", "酷暑", "炎夏", "噪声", "瘦弱", "脊背", "口罩", "忍心",
-    "机械", "数落", "权利", "渔船", "报考", "教训", "心疼", "席子", "庙会", "彩排",
-    "糖果", "抽象", "启迪", "毕业", "寄宿", "师范", "路费", "轮换", "领略", "意境",
-    "磨灭", "精致", "黎明", "红晕", "漆黑", "萤火虫", "大雁", "夜幕", "降临", "心旷神怡",
-    "炭火", "火盆", "走廊", "闲逸", "未免", "陆续", "白茫茫", "榕树", "纠正", "不可计数",
-    "照耀", "涨潮", "树梢", "应接不暇", "画眉", "舅父", "津津有味", "英雄", "无限", "一知半解",
-    "述说", "厌烦", "荒唐", "辛酸", "访问", "书刊", "烦琐", "真情实感", "质朴", "刊物",
-    "蝴蝶", "蜻蜓", "蚂蚱", "圆滚滚", "明晃晃", "樱桃", "瞎闹", "锄头", "承认", "随意",
-    "妒忌", "委托", "照办", "预计", "紧急", "军令状", "探听", "私自", "布置", "调度",
-    "呐喊", "神机妙算", "半夜三更", "寻思", "耻笑", "胸膛", "武艺", "拟定", "参谋", "损失",
-    "锻炼", "情不自禁", "慰问", "眷恋", "奔赴", "繁忙", "特殊", "尊重", "签字", "下意识",
-    "诊所", "年龄", "熟练", "审视", "一针见血", "施行", "清醒", "颤抖", "一声不吭", "崭新",
-    "由衷", "苍白", "慈祥", "肃然起敬", "荣幸", "摔跤", "手疾眼快", "欺负", "脚腕子", "挺脱",
-    "肢体", "格局", "威严", "侄子", "喉咙", "粉刷", "师傅", "绝活", "派头", "包袱",
-    "手法", "鼓点", "衔接", "屏障", "芝麻", "神圣", "侵犯", "露馅儿", "轰然", "难堪",
-    "发怔", "赏识", "脚力", "胸有成竹", "摩拳擦掌", "跃跃欲试", "兴致勃勃", "出谋划策", "引荐", "航行",
-    "风平浪静", "取乐", "放肆", "桅杆", "哭笑不得", "眼巴巴", "吓唬", "船舱", "海鸥", "瞄准",
-    "心惊胆战", "纵横", "船艄", "垫子", "窗帘", "操纵", "手忙脚乱", "保姆", "簇拥", "沉寂",
-    "停泊", "码头", "笼罩", "仪态", "端庄", "远眺", "骏马", "遮掩", "阻挡", "飞驰",
-    "辽阔", "赞许", "板凳", "吆喝", "铃铛", "恢复", "沉睡", "牲畜", "灯塔", "拇指",
-    "接触", "纽扣", "相貌", "养尊处优", "渺小", "享乐", "附庸", "团结", "绿毯", "线条",
-    "柔美", "惊叹", "回味", "目的地", "洒脱", "玻璃", "衣裳", "彩虹", "马蹄", "热乎乎",
-    "礼貌", "拘束", "举杯", "感人", "会心", "微笑", "宅院", "幽雅", "伏案", "浑浊",
-    "笨拙", "眼帘", "参差", "单薄", "文思", "梦想", "迷蒙", "模糊", "花蕾", "恰如",
-    "衣襟", "恍然", "愁怨", "顺心", "平淡", "日寇", "奋战", "险要", "手榴弹", "全神贯注",
-    "悬崖", "斩钉截铁", "热血沸腾", "攀登", "居高临下", "山涧", "粉身碎骨", "雹子", "屹立", "眺望",
-    "喜悦", "壮烈", "豪迈", "不屈", "惊天动地", "政府", "外宾", "汇集", "预定", "爆发",
-    "排山倒海", "就位", "宣告", "雄伟", "肃静", "语调", "完毕", "检阅", "制服", "坦克",
-    "一致", "距离", "高潮", "次序", "威风凛凛", "疙瘩", "疲倦", "呆头呆脑", "冰棍", "别出心裁",
-    "技高一筹", "橡皮", "跺脚", "大步流星", "颓然", "暴露无遗", "沮丧", "抽屉", "念念有词", "忘乎所以",
-    "心满意足", "发达", "理论", "类似", "猜测", "起源", "适当", "氧气", "提供", "能源",
-    "昼夜", "神秘", "观测", "拍摄", "斑点", "枯萎", "干燥", "沙漠", "磁场", "因素",
-    "考察", "培养", "咆哮", "惊慌", "嗓子", "跌跌撞撞", "拥戴", "沙哑", "党员", "呻吟",
-    "废话", "吞没", "猛然", "渔夫", "汹涌澎湃", "风暴", "轰鸣", "心惊肉跳", "抱怨", "倾听",
-    "探望", "照顾", "困难", "阴冷", "自作自受", "湿淋淋", "渔网", "糟糕", "忧虑", "后脑勺",
-    "活生生", "苔藓", "草坪", "甘蔗", "瀑布", "增加", "缝隙", "软绵绵", "谚语", "农作物",
-    "尽量", "斗篷", "情况", "袖子", "瓦蓝", "衣柜", "预报", "喧闹", "遮盖", "讲座",
-    "酱油", "逗引", "嘴唇", "晶莹", "摇篮", "壮观", "和蔼", "资源", "有限", "矿产",
-    "无私", "慷慨", "节制", "枯竭", "贡献", "毁坏", "滥用", "生态", "设想", "例如",
-    "基地", "目睹", "子孙", "谱写", "钢琴", "幽静", "断断续续", "茅屋", "失明", "纯熟",
-    "清幽", "琴键", "景象", "陶醉", "一望无际", "家景", "郑重", "供品", "祭器", "讲究",
-    "盼望", "厨房", "毡帽", "项圈", "刺猬", "伶俐", "经历", "潮汛", "预告", "昏沉",
-    "错综", "澄碧", "荡漾", "解散", "退缩", "瘦削", "浮动", "瞬间", "凝视", "骤然",
-    "凌乱", "陡然", "热情", "自傲", "饺子", "万象更新", "鞭炮", "眨眼", "通宵", "间断",
-    "万不得已", "截然", "燃放", "小贩", "摆摊儿", "彼此", "贺年", "骆驼", "恰好", "一律",
-    "彩绘", "分外", "腊八粥", "感觉", "沸腾", "何况", "搅和", "资格", "可靠", "罢了",
-    "要不然", "猜想", "肿胀", "惊异", "总之", "染缸", "解释", "筷子", "浪漫", "奈何",
-    "流落", "凄凉", "防御", "寂寞", "宴会", "恐惧", "倒霉", "忧伤", "书籍", "缺乏",
-    "处境", "理智", "控制", "心平气和", "抛弃", "重见天日", "侵袭", "倾覆", "宽慰", "深重",
-    "困境", "焉知非福", "确乎", "空虚", "不禁", "挪移", "觉察", "叹息", "徘徊", "微风",
-    "何曾", "游丝", "赤裸裸", "明媚", "时光", "拨弄", "草丛", "画报", "翻箱倒柜", "念叨",
-    "停顿", "晃动", "耽搁", "沉郁", "漫长", "休止", "惊惶", "亲吻", "依偎", "挽回",
-    "荒凉", "埋头", "幼稚", "含糊", "避免", "局势", "严峻", "轻易", "尖锐", "僻静",
-    "魔鬼", "苦刑", "冷笑", "残暴", "匪徒", "法庭", "安定", "占据", "会意", "执行",
-    "过度", "革命", "解放", "彻底", "利益", "意义", "剥削", "压迫", "批评", "兴旺",
-    "五湖四海", "目标", "责任", "牺牲", "死得其所", "制度", "寄托", "哀思", "真理", "领域",
-    "建树", "司空见惯", "疑问", "敏感", "提取", "明显", "无聊", "不可思议", "吻合", "偶然",
-    "文献", "证据", "系统", "整理", "见微知著", "灵感", "机遇", "机器", "钟楼", "洪亮",
-    "街心", "盲人", "坚硬", "清脆", "单调", "请求", "加速", "齿轮", "唯恐", "丑恶",
-    "恐怖", "证实",
+    "看见",
+    "哪里",
+    "那边",
+    "头顶",
+    "眼睛",
+    "雪白",
+    "肚皮",
+    "孩子",
+    "天空",
+    "傍晚",
+    "人们",
+    "冬天",
+    "花朵",
+    "平常",
+    "江河",
+    "海洋",
+    "田地",
+    "工作",
+    "办法",
+    "如果",
+    "长大",
+    "四海为家",
+    "娃娃",
+    "只要",
+    "皮毛",
+    "那里",
+    "知识",
+    "花园",
+    "石桥",
+    "队旗",
+    "铜号",
+    "红领巾",
+    "欢笑",
+    "杨树",
+    "树叶",
+    "枫树",
+    "松柏",
+    "木棉",
+    "水杉",
+    "化石",
+    "金桂",
+    "写字",
+    "丛林",
+    "深处",
+    "竹林",
+    "熊猫",
+    "朋友",
+    "四季",
+    "农事",
+    "月光",
+    "辛苦",
+    "棉衣",
+    "一同",
+    "柱子",
+    "一边",
+    "到底",
+    "秤杆",
+    "力气",
+    "出来",
+    "船身",
+    "石头",
+    "地方",
+    "果然",
+    "评奖",
+    "时间",
+    "报纸",
+    "来不及",
+    "事情",
+    "坏事",
+    "好事",
+    "出国",
+    "今天",
+    "圆珠笔",
+    "开心",
+    "以前",
+    "还有",
+    "台灯",
+    "这时",
+    "阳光",
+    "电影",
+    "明亮",
+    "故事",
+    "头发",
+    "窗外",
+    "黄山",
+    "南部",
+    "那些",
+    "山顶",
+    "一动不动",
+    "云海",
+    "巨石",
+    "前方",
+    "每当",
+    "金光闪闪",
+    "它们",
+    "群山",
+    "树木",
+    "名胜古迹",
+    "中央",
+    "美丽",
+    "灯光",
+    "中午",
+    "展现",
+    "风光",
+    "出产",
+    "水果",
+    "月份",
+    "山坡",
+    "枝叶",
+    "展开",
+    "五光十色",
+    "好客",
+    "老乡",
+    "城市",
+    "空气",
+    "水分",
+    "坐井观天",
+    "井沿",
+    "回答",
+    "口渴",
+    "大话",
+    "井口",
+    "无边无际",
+    "山脚",
+    "当作",
+    "前面",
+    "晴朗",
+    "枯草",
+    "正好",
+    "清早",
+    "现在",
+    "将来",
+    "难过",
+    "大雪纷飞",
+    "枝头",
+    "从前",
+    "细长",
+    "可爱",
+    "每天",
+    "自言自语",
+    "南瓜",
+    "邻居",
+    "奇怪",
+    "八角楼",
+    "深夜",
+    "军衣",
+    "星星之火",
+    "沉思",
+    "胜利",
+    "扁担",
+    "同志",
+    "带领",
+    "队伍",
+    "会师",
+    "红军",
+    "来回",
+    "战士",
+    "白天",
+    "起来",
+    "难忘",
+    "泼水节",
+    "一年一度",
+    "四面八方",
+    "龙船",
+    "花炮",
+    "欢呼",
+    "人群",
+    "欢乐",
+    "开始",
+    "柏树枝",
+    "多么",
+    "年轻",
+    "村子",
+    "知道",
+    "广场",
+    "民兵",
+    "于是",
+    "无论",
+    "船只",
+    "连同",
+    "岸边",
+    "同时",
+    "房屋",
+    "一切",
+    "不久",
+    "出现",
+    "散步",
+    "空地",
+    "唱歌",
+    "回家",
+    "赶快",
+    "旁边",
+    "火星",
+    "连忙",
+    "浑身",
+    "时候",
+    "谢谢",
+    "水汽",
+    "食物",
+    "身边",
+    "为什么",
+    "爪子",
+    "面前",
+    "神气活现",
+    "野猪",
+    "往常",
+    "身后",
+    "信以为真",
+    "纸船",
+    "松果",
+    "纸条",
+    "可是",
+    "但是",
+    "屋顶",
+    "和好",
+    "田野",
+    "风车",
+    "飞快",
+    "秧苗",
+    "不住",
+    "点头",
+    "急忙",
+    "伤心",
+    "路边",
+    "生气",
+    "春天",
+    "寻找",
+    "姑娘",
+    "仔细",
+    "野花",
+    "柳枝",
+    "秋千",
+    "桃花",
+    "杏花",
+    "鲜花",
+    "邮递员",
+    "先生",
+    "原来",
+    "大叔",
+    "邮局",
+    "太太",
+    "做客",
+    "惊奇",
+    "快活",
+    "美好",
+    "礼物",
+    "爷爷",
+    "植树",
+    "碧空如洗",
+    "万里无云",
+    "公园",
+    "格外",
+    "引人注目",
+    "已经",
+    "汗珠",
+    "休息",
+    "树苗",
+    "小心",
+    "笔直",
+    "叔叔",
+    "足迹",
+    "昨天",
+    "迷路",
+    "温暖",
+    "春风",
+    "爱心",
+    "也许",
+    "桌子",
+    "平时",
+    "难道",
+    "味道",
+    "就是",
+    "农民",
+    "加工",
+    "种子",
+    "农具",
+    "甜菜",
+    "工具",
+    "劳动",
+    "经过",
+    "出色",
+    "妹妹",
+    "河水",
+    "碧绿",
+    "波纹",
+    "河岸",
+    "柳叶",
+    "非常",
+    "景色",
+    "恋恋不舍",
+    "柳树",
+    "枝条",
+    "高兴",
+    "识字",
+    "神州",
+    "中华",
+    "山川",
+    "黄河",
+    "长江",
+    "长城",
+    "台湾岛",
+    "海峡",
+    "民族",
+    "情谊",
+    "奋发",
+    "节日",
+    "春节",
+    "花灯",
+    "清明节",
+    "先人",
+    "龙舟",
+    "中秋",
+    "转眼",
+    "团圆",
+    "热闹",
+    "动物",
+    "贝壳",
+    "自己",
+    "身体",
+    "甲骨文",
+    "样子",
+    "可以",
+    "钱币",
+    "钱财",
+    "有关",
+    "比如",
+    "美食",
+    "红烧",
+    "茄子",
+    "烤鸭",
+    "羊肉",
+    "蛋炒饭",
+    "课文",
+    "彩色",
+    "脚尖",
+    "森林",
+    "雪松",
+    "歌声",
+    "苹果",
+    "精灵",
+    "季节",
+    "好像",
+    "一直",
+    "说话",
+    "童话",
+    "称呼",
+    "对岸",
+    "发现",
+    "弟弟",
+    "游戏",
+    "发明",
+    "字母",
+    "周围",
+    "补充",
+    "公主",
+    "伙伴",
+    "飞机",
+    "地道",
+    "火药",
+    "合力",
+    "忘记",
+    "屁股",
+    "苍耳",
+    "留神",
+    "只是",
+    "干净",
+    "从来",
+    "幸运",
+    "快乐",
+    "使劲",
+    "夜晚",
+    "听见",
+    "草地",
+    "亡羊补牢",
+    "劝告",
+    "禾苗",
+    "筋疲力尽",
+    "明白",
+    "图画",
+    "老师",
+    "讲桌",
+    "同学",
+    "座位",
+    "教室",
+    "哈哈大笑",
+    "五角星",
+    "然后",
+    "画纸",
+    "神情",
+    "角度",
+    "愿意",
+    "麦子",
+    "为难",
+    "四周",
+    "伯伯",
+    "立刻",
+    "突然",
+    "吃惊",
+    "认真",
+    "脚步",
+    "难为情",
+    "雷雨",
+    "乌云",
+    "闪电",
+    "雷声",
+    "房子",
+    "窗户",
+    "清新",
+    "迎面",
+    "野外",
+    "大自然",
+    "天然",
+    "指南针",
+    "帮助",
+    "方向",
+    "向导",
+    "指点",
+    "北极星",
+    "永远",
+    "黑夜",
+    "帮忙",
+    "特别",
+    "积雪",
+    "太空",
+    "生活",
+    "别处",
+    "活动",
+    "主要",
+    "方便",
+    "杯子",
+    "喝水",
+    "使用",
+    "洗澡",
+    "容易",
+    "浴桶",
+    "大象",
+    "耳朵",
+    "扇子",
+    "遇到",
+    "兔子",
+    "毛病",
+    "后来",
+    "不安",
+    "头痛",
+    "最后",
+    "人家",
+    "决定",
+    "商店",
+    "工夫",
+    "终于",
+    "围巾",
+    "星期",
+    "青蛙",
+    "草籽",
+    "野鸭",
+    "泉水",
+    "竹子",
+    "应该",
+    "花丛",
+    "尽情",
+    "道路",
+    "毛虫",
+    "叶子",
+    "目光",
+    "周游",
+    "纺织",
+    "编织",
+    "怎样",
+    "声音",
+    "色彩",
+    "花纹",
+    "消失",
+    "祖先",
+    "原始",
+    "意思",
+    "浓绿",
+    "一望无边",
+    "蓝天",
+    "野果",
+    "野兔",
+    "赛跑",
+    "回忆",
+    "世界",
+    "学习",
+    "成功",
+    "月亮",
+    "主意",
+    "反反复复",
+    "变化",
+    "方式",
+    "简单",
+    "自由",
+    "生长",
+    "相当",
+    "结局",
+    "开头",
+    "光明",
+    "觉得",
+    "值日",
+    "人类",
+    "艰难",
+    "决心",
+    "苦海",
+    "炎热",
+    "害怕",
+    "从此",
+    "花草树木",
+    "生机",
+    "早晨",
+    "穿戴",
+    "鲜艳",
+    "服装",
+    "打扮",
+    "敬爱",
+    "国旗",
+    "敬礼",
+    "安静",
+    "树枝",
+    "好奇",
+    "孔雀",
+    "招引",
+    "粗壮",
+    "枝干",
+    "影子",
+    "阵雨",
+    "荒野",
+    "跳舞",
+    "狂欢",
+    "功课",
+    "放假",
+    "互相",
+    "狂风",
+    "急急忙忙",
+    "自然",
+    "能够",
+    "双臂",
+    "水泥",
+    "放晴",
+    "明朗",
+    "亮晶晶",
+    "金黄",
+    "雨珠",
+    "院墙",
+    "落叶",
+    "闪闪发光",
+    "尽头",
+    "平展",
+    "排列",
+    "规则",
+    "歌唱",
+    "迟到",
+    "清凉",
+    "留意",
+    "颜料",
+    "枫叶",
+    "邮票",
+    "果树",
+    "菊花",
+    "仙子",
+    "气味",
+    "香甜",
+    "香味",
+    "加紧",
+    "过冬",
+    "丰收",
+    "火柴",
+    "围裙",
+    "可怜",
+    "哪怕",
+    "暖和",
+    "蜡烛",
+    "亮光",
+    "忽然",
+    "地板",
+    "烛光",
+    "温和",
+    "赶紧",
+    "痛苦",
+    "清晨",
+    "旅行",
+    "要好",
+    "咱们",
+    "草堆",
+    "作声",
+    "偷偷",
+    "答应",
+    "做梦",
+    "来得及",
+    "救命",
+    "拼命",
+    "大吃一惊",
+    "消化",
+    "当然",
+    "几乎",
+    "知觉",
+    "光亮",
+    "眼泪",
+    "变成",
+    "门板",
+    "准备",
+    "暴风雨",
+    "安心",
+    "睡觉",
+    "主人",
+    "墙壁",
+    "母鸡",
+    "注意",
+    "根本",
+    "蜘蛛",
+    "漂亮",
+    "因此",
+    "母亲",
+    "外祖父",
+    "雨点",
+    "船夫",
+    "用力",
+    "船头",
+    "羽毛",
+    "翠绿",
+    "静悄悄",
+    "翠鸟",
+    "捕鱼",
+    "窗前",
+    "蒲公英",
+    "盛开",
+    "玩耍",
+    "一本正经",
+    "绒毛",
+    "假装",
+    "哈欠",
+    "钓鱼",
+    "观察",
+    "合拢",
+    "手掌",
+    "有趣",
+    "喜爱",
+    "位于",
+    "部分",
+    "风景",
+    "优美",
+    "物产",
+    "丰富",
+    "相互",
+    "交错",
+    "成群结队",
+    "游动",
+    "堆积",
+    "宝贵",
+    "肥料",
+    "祖国",
+    "事业",
+    "发展",
+    "海滨",
+    "街道",
+    "交界",
+    "来来往往",
+    "渔民",
+    "遍地",
+    "远处",
+    "汽笛",
+    "船队",
+    "满载",
+    "银光闪闪",
+    "靠岸",
+    "初夏",
+    "散发",
+    "除了",
+    "整洁",
+    "东北",
+    "脑袋",
+    "严严实实",
+    "挡住",
+    "视线",
+    "花坛",
+    "显得",
+    "苍翠",
+    "飞舞",
+    "名贵",
+    "药材",
+    "雪花",
+    "巨大",
+    "宝库",
+    "美妙",
+    "音乐家",
+    "演奏",
+    "感受",
+    "激动",
+    "合奏",
+    "乐曲",
+    "充满",
+    "乐器",
+    "雨滴",
+    "滴答",
+    "所有",
+    "河流",
+    "轻快",
+    "告诉",
+    "高远",
+    "麻雀",
+    "蚂蚁",
+    "搬家",
+    "井然",
+    "勇敢",
+    "精神",
+    "趣味",
+    "鲜美",
+    "如同",
+    "温柔",
+    "摇摆",
+    "倒影",
+    "无穷",
+    "无尽",
+    "乐趣",
+    "父亲",
+    "童年",
+    "雾蒙蒙",
+    "轻声",
+    "生怕",
+    "惊动",
+    "气息",
+    "总是",
+    "抖动",
+    "露水",
+    "呼吸",
+    "时刻",
+    "猎人",
+    "翅膀",
+    "沉重",
+    "郊外",
+    "养病",
+    "跳动",
+    "欢快",
+    "谷粒",
+    "男孩",
+    "或者",
+    "严寒",
+    "本来",
+    "可惜",
+    "肯定",
+    "诚实",
+    "手术台",
+    "阵地",
+    "战斗",
+    "打响",
+    "气焰",
+    "刚刚",
+    "不断",
+    "激烈",
+    "眼球",
+    "血丝",
+    "烟雾",
+    "仍然",
+    "取出",
+    "匆匆",
+    "离开",
+    "危险",
+    "转告",
+    "乌黑",
+    "活泼",
+    "春日",
+    "轻风",
+    "吹拂",
+    "洒落",
+    "赶集",
+    "聚拢",
+    "形成",
+    "加入",
+    "春光",
+    "湖面",
+    "偶尔",
+    "闲散",
+    "纤细",
+    "荷花",
+    "清香",
+    "圆盘",
+    "花瓣",
+    "莲蓬",
+    "破裂",
+    "姿势",
+    "眼前",
+    "本领",
+    "仿佛",
+    "随风",
+    "飘动",
+    "舞蹈",
+    "停止",
+    "国王",
+    "骄傲",
+    "傲慢",
+    "谦虚",
+    "懦弱",
+    "神气",
+    "住嘴",
+    "相提并论",
+    "王朝",
+    "尘土",
+    "惊讶",
+    "光洁",
+    "美观",
+    "古代",
+    "价值",
+    "动手",
+    "池塘",
+    "痛快",
+    "倒映",
+    "欣赏",
+    "匀称",
+    "精美",
+    "别致",
+    "没精打采",
+    "机灵",
+    "哎呀",
+    "狮子",
+    "机会",
+    "叹气",
+    "造纸术",
+    "伟大",
+    "记录",
+    "保存",
+    "大约",
+    "吸收",
+    "经验",
+    "原料",
+    "满足",
+    "朝鲜",
+    "半岛",
+    "日本",
+    "阿拉伯",
+    "欧洲",
+    "社会",
+    "赵州桥",
+    "石匠",
+    "设计",
+    "创举",
+    "冲击",
+    "节省",
+    "不但",
+    "而且",
+    "各自",
+    "似乎",
+    "体现",
+    "人民",
+    "智慧",
+    "才干",
+    "历史",
+    "争奇斗艳",
+    "芬芳",
+    "迷人",
+    "艳丽",
+    "睡莲",
+    "醒来",
+    "万寿菊",
+    "欣然",
+    "苏醒",
+    "含笑",
+    "展示",
+    "昆虫",
+    "修建",
+    "组成",
+    "蜜蜂",
+    "辨认",
+    "能力",
+    "阻力",
+    "将近",
+    "包括",
+    "检查",
+    "迷失",
+    "准确",
+    "无误",
+    "尽管",
+    "沿途",
+    "陌生",
+    "确实",
+    "记忆",
+    "本能",
+    "宇宙",
+    "星空",
+    "流淌",
+    "秘密",
+    "楼梯",
+    "相遇",
+    "铃声",
+    "万物",
+    "乘法",
+    "思绪",
+    "形状",
+    "狐狸",
+    "担心",
+    "丁零",
+    "失望",
+    "背包",
+    "巧克力",
+    "香肠",
+    "面包",
+    "花生",
+    "牛奶",
+    "继续",
+    "饭菜",
+    "排骨",
+    "抬头",
+    "麻烦",
+    "水墨画",
+    "垂柳",
+    "钓竿",
+    "扑腾",
+    "扇动",
+    "戏耍",
+    "拨动",
+    "浪花",
+    "葫芦",
+    "松树",
+    "清爽",
+    "松针",
+    "蘑菇",
+    "大师",
+    "表弟",
+    "胆小",
+    "中药",
+    "姑父",
+    "理发",
+    "欢迎",
+    "仇人",
+    "摆布",
+    "双倍",
+    "过年",
+    "央求",
+    "虽然",
+    "天分",
+    "电灯泡",
+    "肥皂泡",
+    "种类",
+    "其中",
+    "网球",
+    "透明",
+    "分裂",
+    "形式",
+    "圆满",
+    "轻悠悠",
+    "飞越",
+    "婴儿",
+    "目送",
+    "希望",
+    "奇妙",
+    "呈现",
+    "变幻",
+    "群星",
+    "奇迹",
+    "诱人",
+    "圆润",
+    "感叹",
+    "光芒",
+    "冰柱",
+    "锋利",
+    "刀剑",
+    "普通",
+    "模型",
+    "存在",
+    "海底",
+    "宁静",
+    "器官",
+    "行进",
+    "海参",
+    "攻击",
+    "反推力",
+    "迅速",
+    "后退",
+    "轮船",
+    "长途",
+    "石油",
+    "天然气",
+    "火烧云",
+    "晚饭",
+    "胡子",
+    "金灿灿",
+    "凶猛",
+    "接着",
+    "威武",
+    "镇静",
+    "性子",
+    "布料",
+    "交货",
+    "笑话",
+    "大方",
+    "夸奖",
+    "道理",
+    "实在",
+    "提前",
+    "服务",
+    "衬衫",
+    "负责",
+    "名声",
+    "手艺",
+    "感动",
+    "里屋",
+    "莫非",
+    "厉害",
+    "发抖",
+    "松手",
+    "跟前",
+    "甘心",
+    "奇观",
+    "农历",
+    "据说",
+    "宽阔",
+    "人山人海",
+    "滚动",
+    "顿时",
+    "逐渐",
+    "犹如",
+    "齐头并进",
+    "山崩地裂",
+    "霎时",
+    "余波",
+    "依旧",
+    "柔和",
+    "鹅卵石",
+    "河床",
+    "新鲜",
+    "修补",
+    "坑坑洼洼",
+    "庄稼",
+    "风俗",
+    "葡萄",
+    "满意",
+    "水稻",
+    "成熟",
+    "招待",
+    "传说",
+    "豌豆",
+    "按照",
+    "暖洋洋",
+    "舒适",
+    "黑暗",
+    "恐怕",
+    "僵硬",
+    "丰满",
+    "等待",
+    "强壮",
+    "虚弱",
+    "耐心",
+    "愉快",
+    "兴奋",
+    "曾经",
+    "水沟",
+    "感激",
+    "蚊子",
+    "即使",
+    "灵巧",
+    "科学家",
+    "横七竖八",
+    "绳子",
+    "苍蝇",
+    "证明",
+    "研究",
+    "雷达",
+    "显示",
+    "驾驶员",
+    "呼风唤雨",
+    "世纪",
+    "技术",
+    "改变",
+    "程度",
+    "超过",
+    "腾云驾雾",
+    "幻想",
+    "原子核",
+    "奥秘",
+    "日益",
+    "联系",
+    "物质",
+    "哲学",
+    "任何",
+    "创造",
+    "改善",
+    "爬山虎",
+    "操场",
+    "嫩红",
+    "舒服",
+    "均匀",
+    "重叠",
+    "空隙",
+    "叶柄",
+    "反面",
+    "触角",
+    "弯曲",
+    "细小",
+    "痕迹",
+    "瞧不起",
+    "牢固",
+    "休想",
+    "住宅",
+    "临时",
+    "功夫",
+    "随遇而安",
+    "慎重",
+    "选择",
+    "住址",
+    "优良",
+    "洞穴",
+    "大厅",
+    "卧室",
+    "专家",
+    "平整",
+    "清洁",
+    "卫生",
+    "疲劳",
+    "睁眼",
+    "黑乎乎",
+    "翻身",
+    "斧头",
+    "缓缓",
+    "上升",
+    "下降",
+    "精疲力竭",
+    "血液",
+    "奔流不息",
+    "汗毛",
+    "茂盛",
+    "滋润",
+    "雨露",
+    "人间",
+    "悲惨",
+    "情景",
+    "危害",
+    "猛兽",
+    "严厉",
+    "敬佩",
+    "悄悄",
+    "坚定",
+    "违抗",
+    "狠心",
+    "尖利",
+    "著名",
+    "愤愤不平",
+    "获得",
+    "打猎",
+    "猛烈",
+    "无可奈何",
+    "拍打",
+    "嘴角",
+    "分明",
+    "牙齿",
+    "绝望",
+    "尖叫",
+    "身躯",
+    "掩护",
+    "幼儿",
+    "搏斗",
+    "庞大",
+    "安然",
+    "强大",
+    "力量",
+    "假日",
+    "云彩",
+    "石级",
+    "发颤",
+    "年纪",
+    "奋力",
+    "猴子",
+    "纪念",
+    "辫子",
+    "笑呵呵",
+    "鼓舞",
+    "居然",
+    "甚至",
+    "顽皮",
+    "故意",
+    "脖子",
+    "扑打",
+    "忙乱",
+    "大概",
+    "助威",
+    "昏乱",
+    "结实",
+    "汉子",
+    "可笑",
+    "无缘无故",
+    "平白",
+    "文艺",
+    "表演",
+    "班级",
+    "角色",
+    "殷切",
+    "期待",
+    "排练",
+    "危机",
+    "通情达理",
+    "充分",
+    "自信",
+    "提示",
+    "撤换",
+    "紧张",
+    "哄堂大笑",
+    "砸锅",
+    "至今",
+    "冰天雪地",
+    "否则",
+    "旋转",
+    "重整旗鼓",
+    "况且",
+    "得心应手",
+    "椅子",
+    "尤其",
+    "手舞足蹈",
+    "恨不得",
+    "预料",
+    "不动声色",
+    "顽强",
+    "溃败",
+    "自豪",
+    "严肃",
+    "默默",
+    "清晰",
+    "抱负",
+    "胸怀",
+    "赞叹",
+    "表情",
+    "忘怀",
+    "果真",
+    "非凡",
+    "左顾右盼",
+    "指望",
+    "训斥",
+    "体会",
+    "分量",
+    "响亮",
+    "管理",
+    "人烟",
+    "媳妇",
+    "新娘",
+    "眼睁睁",
+    "干旱",
+    "迎接",
+    "徒弟",
+    "面如土色",
+    "求饶",
+    "灌溉",
+    "收成",
+    "屋檐",
+    "构成",
+    "装饰",
+    "顺序",
+    "华丽",
+    "独特",
+    "照例",
+    "率领",
+    "踏步",
+    "倘若",
+    "和谐",
+    "催眠曲",
+    "甜蜜",
+    "梦乡",
+    "慰藉",
+    "扫荡",
+    "威力",
+    "锐利",
+    "河滩",
+    "帐子",
+    "闪烁",
+    "奇幻",
+    "蝙蝠",
+    "霸气",
+    "猫头鹰",
+    "复杂",
+    "怒吼",
+    "松脂",
+    "拂拭",
+    "灰尘",
+    "美餐",
+    "晌午",
+    "热辣辣",
+    "淹没",
+    "挣扎",
+    "成千上万",
+    "冲刷",
+    "断绝",
+    "推测",
+    "详细",
+    "情形",
+    "恐龙",
+    "笨重",
+    "迟钝",
+    "鸽子",
+    "凌空",
+    "根据",
+    "末期",
+    "描绘",
+    "隧道",
+    "形态",
+    "膨大",
+    "前肢",
+    "具备",
+    "开辟",
+    "脱离",
+    "纳米",
+    "无能为力",
+    "拥有",
+    "冰箱",
+    "功能",
+    "蔬菜",
+    "材料",
+    "钢铁",
+    "隐形",
+    "健康",
+    "细胞",
+    "疾病",
+    "预防",
+    "病灶",
+    "需要",
+    "深刻",
+    "繁星",
+    "藤萝",
+    "波涛",
+    "墨绿",
+    "嫩绿",
+    "集中",
+    "交叉",
+    "教练",
+    "指挥",
+    "整齐",
+    "节拍",
+    "白桦",
+    "毛茸茸",
+    "潇洒",
+    "朦胧",
+    "寂静",
+    "朝霞",
+    "呼唤",
+    "响动",
+    "尽职",
+    "屏息",
+    "稿纸",
+    "梅花",
+    "解闷",
+    "勇猛",
+    "满月",
+    "淘气",
+    "讨厌",
+    "理由",
+    "心事",
+    "反抗",
+    "忠厚",
+    "毒手",
+    "成绩",
+    "警戒",
+    "预备",
+    "汤圆",
+    "即将",
+    "姿态",
+    "高傲",
+    "狂吠",
+    "局促",
+    "京剧",
+    "一丝不苟",
+    "譬如",
+    "侍候",
+    "饭馆",
+    "附近",
+    "脾气",
+    "敏捷",
+    "空空如也",
+    "昂首",
+    "供养",
+    "清静",
+    "扩大",
+    "范围",
+    "努力",
+    "刹那",
+    "夺目",
+    "分辨",
+    "灿烂",
+    "不仅",
+    "杜鹃",
+    "气势",
+    "聚集",
+    "拥挤",
+    "心情",
+    "脚跟",
+    "移动",
+    "昏暗",
+    "挤压",
+    "额角",
+    "登陆",
+    "宽广",
+    "石钟乳",
+    "石笋",
+    "观赏",
+    "芦花",
+    "发愣",
+    "铅笔",
+    "枪栓",
+    "胳膊",
+    "劫难",
+    "鬼脸",
+    "戒指",
+    "绸子",
+    "敌人",
+    "尸首",
+    "防备",
+    "慌忙",
+    "行驶",
+    "凌晨",
+    "窟窿",
+    "混乱",
+    "维持",
+    "秩序",
+    "岗位",
+    "主宰",
+    "调遣",
+    "践行",
+    "介绍",
+    "声明",
+    "妖怪",
+    "规矩",
+    "劈面",
+    "幸福",
+    "向日葵",
+    "柔嫩",
+    "丰硕",
+    "允许",
+    "禁止",
+    "踪迹",
+    "呼啸",
+    "始终",
+    "吼叫",
+    "自私",
+    "举动",
+    "脸颊",
+    "凶狠",
+    "拆除",
+    "精巧",
+    "配合",
+    "身段",
+    "适宜",
+    "白鹤",
+    "生硬",
+    "寻常",
+    "忘却",
+    "镜匣",
+    "孤独",
+    "悠然",
+    "黄昏",
+    "恩惠",
+    "美中不足",
+    "播种",
+    "浇水",
+    "吩咐",
+    "榨油",
+    "爱慕",
+    "体面",
+    "桂花",
+    "懂得",
+    "糕饼",
+    "茶叶",
+    "汛期",
+    "山洪",
+    "暴发",
+    "间隔",
+    "唯独",
+    "懒惰",
+    "平稳",
+    "保持",
+    "平衡",
+    "协调",
+    "美感",
+    "示意",
+    "家常",
+    "假如",
+    "理所当然",
+    "联结",
+    "无价之宝",
+    "召集",
+    "大臣",
+    "商议",
+    "解决",
+    "完好无缺",
+    "称赞",
+    "商量",
+    "允诺",
+    "典礼",
+    "得罪",
+    "胆怯",
+    "示弱",
+    "拒绝",
+    "职位",
+    "同心协力",
+    "猎豹",
+    "冠军",
+    "陆地",
+    "俯冲",
+    "高速公路",
+    "搭乘",
+    "火箭",
+    "发动机",
+    "手电筒",
+    "赤道",
+    "难以置信",
+    "侵略",
+    "修筑",
+    "粉碎",
+    "领导",
+    "不计其数",
+    "打击",
+    "坚持",
+    "游击",
+    "隐蔽",
+    "陷坑",
+    "拐弯",
+    "无穷无尽",
+    "猎物",
+    "酬谢",
+    "珍宝",
+    "叮嘱",
+    "复活",
+    "议论",
+    "崩塌",
+    "焦急",
+    "发誓",
+    "千真万确",
+    "谎话",
+    "迟延",
+    "镇定",
+    "后悔",
+    "悲痛",
+    "震天动地",
+    "嫂子",
+    "剩饭",
+    "床铺",
+    "亲密",
+    "笑嘻嘻",
+    "成家立业",
+    "好歹",
+    "稀罕",
+    "妻子",
+    "晚霞",
+    "一辈子",
+    "结婚",
+    "相依为命",
+    "毁灭",
+    "不可估量",
+    "举世闻名",
+    "众星拱月",
+    "金碧辉煌",
+    "殿堂",
+    "象征",
+    "仿照",
+    "诗情画意",
+    "建筑",
+    "漫游",
+    "天南海北",
+    "饱览",
+    "风景名胜",
+    "境界",
+    "宏伟",
+    "奇珍异宝",
+    "博物馆",
+    "统统",
+    "搬运",
+    "销毁",
+    "罪证",
+    "奉命",
+    "寸草不生",
+    "摄氏度",
+    "繁殖",
+    "粮食",
+    "煤炭",
+    "飘浮",
+    "地区",
+    "杀菌",
+    "治疗",
+    "松鼠",
+    "乖巧",
+    "清秀",
+    "玲珑",
+    "歇凉",
+    "追逐",
+    "警觉",
+    "触动",
+    "光滑",
+    "狭窄",
+    "勉强",
+    "脱落",
+    "梳理",
+    "长篇",
+    "连续",
+    "广播",
+    "铁路",
+    "辞退",
+    "挣钱",
+    "压抑",
+    "潮湿",
+    "忙碌",
+    "阴暗",
+    "酷暑",
+    "炎夏",
+    "噪声",
+    "瘦弱",
+    "脊背",
+    "口罩",
+    "忍心",
+    "机械",
+    "数落",
+    "权利",
+    "渔船",
+    "报考",
+    "教训",
+    "心疼",
+    "席子",
+    "庙会",
+    "彩排",
+    "糖果",
+    "抽象",
+    "启迪",
+    "毕业",
+    "寄宿",
+    "师范",
+    "路费",
+    "轮换",
+    "领略",
+    "意境",
+    "磨灭",
+    "精致",
+    "黎明",
+    "红晕",
+    "漆黑",
+    "萤火虫",
+    "大雁",
+    "夜幕",
+    "降临",
+    "心旷神怡",
+    "炭火",
+    "火盆",
+    "走廊",
+    "闲逸",
+    "未免",
+    "陆续",
+    "白茫茫",
+    "榕树",
+    "纠正",
+    "不可计数",
+    "照耀",
+    "涨潮",
+    "树梢",
+    "应接不暇",
+    "画眉",
+    "舅父",
+    "津津有味",
+    "英雄",
+    "无限",
+    "一知半解",
+    "述说",
+    "厌烦",
+    "荒唐",
+    "辛酸",
+    "访问",
+    "书刊",
+    "烦琐",
+    "真情实感",
+    "质朴",
+    "刊物",
+    "蝴蝶",
+    "蜻蜓",
+    "蚂蚱",
+    "圆滚滚",
+    "明晃晃",
+    "樱桃",
+    "瞎闹",
+    "锄头",
+    "承认",
+    "随意",
+    "妒忌",
+    "委托",
+    "照办",
+    "预计",
+    "紧急",
+    "军令状",
+    "探听",
+    "私自",
+    "布置",
+    "调度",
+    "呐喊",
+    "神机妙算",
+    "半夜三更",
+    "寻思",
+    "耻笑",
+    "胸膛",
+    "武艺",
+    "拟定",
+    "参谋",
+    "损失",
+    "锻炼",
+    "情不自禁",
+    "慰问",
+    "眷恋",
+    "奔赴",
+    "繁忙",
+    "特殊",
+    "尊重",
+    "签字",
+    "下意识",
+    "诊所",
+    "年龄",
+    "熟练",
+    "审视",
+    "一针见血",
+    "施行",
+    "清醒",
+    "颤抖",
+    "一声不吭",
+    "崭新",
+    "由衷",
+    "苍白",
+    "慈祥",
+    "肃然起敬",
+    "荣幸",
+    "摔跤",
+    "手疾眼快",
+    "欺负",
+    "脚腕子",
+    "挺脱",
+    "肢体",
+    "格局",
+    "威严",
+    "侄子",
+    "喉咙",
+    "粉刷",
+    "师傅",
+    "绝活",
+    "派头",
+    "包袱",
+    "手法",
+    "鼓点",
+    "衔接",
+    "屏障",
+    "芝麻",
+    "神圣",
+    "侵犯",
+    "露馅儿",
+    "轰然",
+    "难堪",
+    "发怔",
+    "赏识",
+    "脚力",
+    "胸有成竹",
+    "摩拳擦掌",
+    "跃跃欲试",
+    "兴致勃勃",
+    "出谋划策",
+    "引荐",
+    "航行",
+    "风平浪静",
+    "取乐",
+    "放肆",
+    "桅杆",
+    "哭笑不得",
+    "眼巴巴",
+    "吓唬",
+    "船舱",
+    "海鸥",
+    "瞄准",
+    "心惊胆战",
+    "纵横",
+    "船艄",
+    "垫子",
+    "窗帘",
+    "操纵",
+    "手忙脚乱",
+    "保姆",
+    "簇拥",
+    "沉寂",
+    "停泊",
+    "码头",
+    "笼罩",
+    "仪态",
+    "端庄",
+    "远眺",
+    "骏马",
+    "遮掩",
+    "阻挡",
+    "飞驰",
+    "辽阔",
+    "赞许",
+    "板凳",
+    "吆喝",
+    "铃铛",
+    "恢复",
+    "沉睡",
+    "牲畜",
+    "灯塔",
+    "拇指",
+    "接触",
+    "纽扣",
+    "相貌",
+    "养尊处优",
+    "渺小",
+    "享乐",
+    "附庸",
+    "团结",
+    "绿毯",
+    "线条",
+    "柔美",
+    "惊叹",
+    "回味",
+    "目的地",
+    "洒脱",
+    "玻璃",
+    "衣裳",
+    "彩虹",
+    "马蹄",
+    "热乎乎",
+    "礼貌",
+    "拘束",
+    "举杯",
+    "感人",
+    "会心",
+    "微笑",
+    "宅院",
+    "幽雅",
+    "伏案",
+    "浑浊",
+    "笨拙",
+    "眼帘",
+    "参差",
+    "单薄",
+    "文思",
+    "梦想",
+    "迷蒙",
+    "模糊",
+    "花蕾",
+    "恰如",
+    "衣襟",
+    "恍然",
+    "愁怨",
+    "顺心",
+    "平淡",
+    "日寇",
+    "奋战",
+    "险要",
+    "手榴弹",
+    "全神贯注",
+    "悬崖",
+    "斩钉截铁",
+    "热血沸腾",
+    "攀登",
+    "居高临下",
+    "山涧",
+    "粉身碎骨",
+    "雹子",
+    "屹立",
+    "眺望",
+    "喜悦",
+    "壮烈",
+    "豪迈",
+    "不屈",
+    "惊天动地",
+    "政府",
+    "外宾",
+    "汇集",
+    "预定",
+    "爆发",
+    "排山倒海",
+    "就位",
+    "宣告",
+    "雄伟",
+    "肃静",
+    "语调",
+    "完毕",
+    "检阅",
+    "制服",
+    "坦克",
+    "一致",
+    "距离",
+    "高潮",
+    "次序",
+    "威风凛凛",
+    "疙瘩",
+    "疲倦",
+    "呆头呆脑",
+    "冰棍",
+    "别出心裁",
+    "技高一筹",
+    "橡皮",
+    "跺脚",
+    "大步流星",
+    "颓然",
+    "暴露无遗",
+    "沮丧",
+    "抽屉",
+    "念念有词",
+    "忘乎所以",
+    "心满意足",
+    "发达",
+    "理论",
+    "类似",
+    "猜测",
+    "起源",
+    "适当",
+    "氧气",
+    "提供",
+    "能源",
+    "昼夜",
+    "神秘",
+    "观测",
+    "拍摄",
+    "斑点",
+    "枯萎",
+    "干燥",
+    "沙漠",
+    "磁场",
+    "因素",
+    "考察",
+    "培养",
+    "咆哮",
+    "惊慌",
+    "嗓子",
+    "跌跌撞撞",
+    "拥戴",
+    "沙哑",
+    "党员",
+    "呻吟",
+    "废话",
+    "吞没",
+    "猛然",
+    "渔夫",
+    "汹涌澎湃",
+    "风暴",
+    "轰鸣",
+    "心惊肉跳",
+    "抱怨",
+    "倾听",
+    "探望",
+    "照顾",
+    "困难",
+    "阴冷",
+    "自作自受",
+    "湿淋淋",
+    "渔网",
+    "糟糕",
+    "忧虑",
+    "后脑勺",
+    "活生生",
+    "苔藓",
+    "草坪",
+    "甘蔗",
+    "瀑布",
+    "增加",
+    "缝隙",
+    "软绵绵",
+    "谚语",
+    "农作物",
+    "尽量",
+    "斗篷",
+    "情况",
+    "袖子",
+    "瓦蓝",
+    "衣柜",
+    "预报",
+    "喧闹",
+    "遮盖",
+    "讲座",
+    "酱油",
+    "逗引",
+    "嘴唇",
+    "晶莹",
+    "摇篮",
+    "壮观",
+    "和蔼",
+    "资源",
+    "有限",
+    "矿产",
+    "无私",
+    "慷慨",
+    "节制",
+    "枯竭",
+    "贡献",
+    "毁坏",
+    "滥用",
+    "生态",
+    "设想",
+    "例如",
+    "基地",
+    "目睹",
+    "子孙",
+    "谱写",
+    "钢琴",
+    "幽静",
+    "断断续续",
+    "茅屋",
+    "失明",
+    "纯熟",
+    "清幽",
+    "琴键",
+    "景象",
+    "陶醉",
+    "一望无际",
+    "家景",
+    "郑重",
+    "供品",
+    "祭器",
+    "讲究",
+    "盼望",
+    "厨房",
+    "毡帽",
+    "项圈",
+    "刺猬",
+    "伶俐",
+    "经历",
+    "潮汛",
+    "预告",
+    "昏沉",
+    "错综",
+    "澄碧",
+    "荡漾",
+    "解散",
+    "退缩",
+    "瘦削",
+    "浮动",
+    "瞬间",
+    "凝视",
+    "骤然",
+    "凌乱",
+    "陡然",
+    "热情",
+    "自傲",
+    "饺子",
+    "万象更新",
+    "鞭炮",
+    "眨眼",
+    "通宵",
+    "间断",
+    "万不得已",
+    "截然",
+    "燃放",
+    "小贩",
+    "摆摊儿",
+    "彼此",
+    "贺年",
+    "骆驼",
+    "恰好",
+    "一律",
+    "彩绘",
+    "分外",
+    "腊八粥",
+    "感觉",
+    "沸腾",
+    "何况",
+    "搅和",
+    "资格",
+    "可靠",
+    "罢了",
+    "要不然",
+    "猜想",
+    "肿胀",
+    "惊异",
+    "总之",
+    "染缸",
+    "解释",
+    "筷子",
+    "浪漫",
+    "奈何",
+    "流落",
+    "凄凉",
+    "防御",
+    "寂寞",
+    "宴会",
+    "恐惧",
+    "倒霉",
+    "忧伤",
+    "书籍",
+    "缺乏",
+    "处境",
+    "理智",
+    "控制",
+    "心平气和",
+    "抛弃",
+    "重见天日",
+    "侵袭",
+    "倾覆",
+    "宽慰",
+    "深重",
+    "困境",
+    "焉知非福",
+    "确乎",
+    "空虚",
+    "不禁",
+    "挪移",
+    "觉察",
+    "叹息",
+    "徘徊",
+    "微风",
+    "何曾",
+    "游丝",
+    "赤裸裸",
+    "明媚",
+    "时光",
+    "拨弄",
+    "草丛",
+    "画报",
+    "翻箱倒柜",
+    "念叨",
+    "停顿",
+    "晃动",
+    "耽搁",
+    "沉郁",
+    "漫长",
+    "休止",
+    "惊惶",
+    "亲吻",
+    "依偎",
+    "挽回",
+    "荒凉",
+    "埋头",
+    "幼稚",
+    "含糊",
+    "避免",
+    "局势",
+    "严峻",
+    "轻易",
+    "尖锐",
+    "僻静",
+    "魔鬼",
+    "苦刑",
+    "冷笑",
+    "残暴",
+    "匪徒",
+    "法庭",
+    "安定",
+    "占据",
+    "会意",
+    "执行",
+    "过度",
+    "革命",
+    "解放",
+    "彻底",
+    "利益",
+    "意义",
+    "剥削",
+    "压迫",
+    "批评",
+    "兴旺",
+    "五湖四海",
+    "目标",
+    "责任",
+    "牺牲",
+    "死得其所",
+    "制度",
+    "寄托",
+    "哀思",
+    "真理",
+    "领域",
+    "建树",
+    "司空见惯",
+    "疑问",
+    "敏感",
+    "提取",
+    "明显",
+    "无聊",
+    "不可思议",
+    "吻合",
+    "偶然",
+    "文献",
+    "证据",
+    "系统",
+    "整理",
+    "见微知著",
+    "灵感",
+    "机遇",
+    "机器",
+    "钟楼",
+    "洪亮",
+    "街心",
+    "盲人",
+    "坚硬",
+    "清脆",
+    "单调",
+    "请求",
+    "加速",
+    "齿轮",
+    "唯恐",
+    "丑恶",
+    "恐怖",
+    "证实",
 ];
 
 fn do_zici_word_search() {
@@ -729,8 +2861,11 @@ fn do_zici_word_search() {
             format!("<span style='display:inline-block;padding:4px 8px;margin:3px;background:#2D2D2D;border-radius:4px;font-size:14px'>{} <span style='color:#888'>({})</span></span>", w, i + 1)
         }).collect::<Vec<_>>().join("")
     };
-    if html.is_empty() { set_text("zici-word-display", "无匹配结果"); }
-    else { set_html("zici-word-display", &html); }
+    if html.is_empty() {
+        set_text("zici-word-display", "无匹配结果");
+    } else {
+        set_html("zici-word-display", &html);
+    }
 }
 
 // ==================== SEARCH HISTORY ====================
@@ -742,11 +2877,16 @@ async fn do_search_history() {
     match dict::get_recent_history(&client, 30).await {
         Ok(resp) => {
             if let Some(history) = resp.data {
-                if history.is_empty() { set_text("shistory-result", "暂无搜索历史"); }
-                else {
+                if history.is_empty() {
+                    set_text("shistory-result", "暂无搜索历史");
+                } else {
                     let mut html = String::from("<div style='font-size:13px'>");
                     for (_i, h) in history.iter().enumerate() {
-                        let escaped = h.word.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                        let escaped = h
+                            .word
+                            .replace("&", "&amp;")
+                            .replace("<", "&lt;")
+                            .replace(">", "&gt;");
                         let time_str = h.time.format("%Y-%m-%d %H:%M").to_string();
                         html.push_str(&format!(
                             "<div style='padding:6px 8px;margin-bottom:3px;border-bottom:1px solid #333'>\
@@ -758,7 +2898,9 @@ async fn do_search_history() {
                     html.push_str("</div>");
                     set_html("shistory-result", &html);
                 }
-            } else { set_text("shistory-result", "暂无数据"); }
+            } else {
+                set_text("shistory-result", "暂无数据");
+            }
         }
         Err(e) => set_text("shistory-result", &format!("获取失败: {}", e)),
     }
@@ -774,13 +2916,21 @@ async fn do_short_notes_refresh() {
     match list_short_notes(&client, Some(1), Some(30)).await {
         Ok(resp) => {
             if let Some(notes) = resp.data {
-                if notes.is_empty() { set_text("sn-result", "暂无短笔记"); }
-                else {
+                if notes.is_empty() {
+                    set_text("sn-result", "暂无短笔记");
+                } else {
                     let mut html = String::from("<div style='font-size:13px'>");
                     for (i, note) in notes.iter().enumerate() {
                         let content = note.content.as_deref().unwrap_or("");
-                        let preview = if content.len() > 80 { format!("{}...", &content[..content.floor_char_boundary(80)]) } else { content.to_string() };
-                        let escaped = preview.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+                        let preview = if content.len() > 80 {
+                            format!("{}...", &content[..content.floor_char_boundary(80)])
+                        } else {
+                            content.to_string()
+                        };
+                        let escaped = preview
+                            .replace("&", "&amp;")
+                            .replace("<", "&lt;")
+                            .replace(">", "&gt;");
                         html.push_str(&format!(
                             "<div style='padding:8px;margin-bottom:4px;border-bottom:1px solid #333'>\
                              <div style='color:#888;font-size:11px'>#{} | {}</div>\
@@ -791,7 +2941,9 @@ async fn do_short_notes_refresh() {
                     html.push_str("</div>");
                     set_html("sn-result", &html);
                 }
-            } else { set_text("sn-result", "暂无数据"); }
+            } else {
+                set_text("sn-result", "暂无数据");
+            }
         }
         Err(e) => set_text("sn-result", &format!("获取失败: {}", e)),
     }
@@ -800,14 +2952,23 @@ async fn do_short_notes_refresh() {
 
 async fn do_short_note_create() {
     let content = textarea("sn-content");
-    if content.trim().is_empty() { set_text("sn-result", "请输入内容"); return; }
+    if content.trim().is_empty() {
+        set_text("sn-result", "请输入内容");
+        return;
+    }
     disable_btn("sn-create-btn", true);
     let client = get_client();
-    let req = CreateShortNoteRequest { content: Some(content), view_name: None };
+    let req = CreateShortNoteRequest {
+        content: Some(content),
+        view_name: None,
+    };
     match create_short_note(&client, req).await {
         Ok(resp) => {
             set_text("sn-result", &format!("创建成功: {}", resp.msg));
-            el("sn-content").dyn_into::<HtmlTextAreaElement>().ok().map(|e| e.set_value(""));
+            el("sn-content")
+                .dyn_into::<HtmlTextAreaElement>()
+                .ok()
+                .map(|e| e.set_value(""));
             do_short_notes_refresh().await;
         }
         Err(e) => set_text("sn-result", &format!("创建失败: {}", e)),
@@ -829,9 +2990,7 @@ fn do_sidebar_toggle() {
 // ==================== SONGS ====================
 
 fn songs_base_url() -> String {
-    let url = CLIENT.with(|rc| {
-        rc.borrow().as_ref().map(|c| c.base_url().to_string())
-    });
+    let url = CLIENT.with(|rc| rc.borrow().as_ref().map(|c| c.base_url().to_string()));
     url.unwrap_or_else(|| "http://localhost:23001".to_string())
 }
 
@@ -923,7 +3082,9 @@ async fn do_songs_scan() {
 fn do_song_play_by_index(index: usize) {
     SONG_LIST.with(|sl| {
         let list = sl.borrow();
-        if index >= list.len() { return; }
+        if index >= list.len() {
+            return;
+        }
         let song = &list[index];
         SONG_INDEX.with(|si| *si.borrow_mut() = index);
 
@@ -974,7 +3135,9 @@ fn do_song_play_pause() {
 fn do_song_prev() {
     SONG_INDEX.with(|si| {
         let idx = si.borrow();
-        if *idx > 0 { do_song_play_by_index(*idx - 1); }
+        if *idx > 0 {
+            do_song_play_by_index(*idx - 1);
+        }
     });
 }
 
@@ -983,7 +3146,9 @@ fn do_song_next() {
         let idx = *si.borrow();
         SONG_LIST.with(|sl| {
             let len = sl.borrow().len();
-            if idx + 1 < len { do_song_play_by_index(idx + 1); }
+            if idx + 1 < len {
+                do_song_play_by_index(idx + 1);
+            }
         });
     });
 }
@@ -999,15 +3164,23 @@ thread_local! {
 }
 
 fn ensure_spectrum() {
-    if SPECTRUM_CTX.with(|c| c.borrow().is_some()) { return; }
+    if SPECTRUM_CTX.with(|c| c.borrow().is_some()) {
+        return;
+    }
 
     let ctx = match web_sys::AudioContext::new() {
         Ok(c) => c,
-        Err(_) => { log("AudioContext 创建失败"); return; }
+        Err(_) => {
+            log("AudioContext 创建失败");
+            return;
+        }
     };
     let analyser = match ctx.create_analyser() {
         Ok(a) => a,
-        Err(_) => { log("AnalyserNode 创建失败"); return; }
+        Err(_) => {
+            log("AnalyserNode 创建失败");
+            return;
+        }
     };
     analyser.set_fft_size(256);
     analyser.set_smoothing_time_constant(0.5);
@@ -1041,7 +3214,9 @@ fn ensure_spectrum() {
 
 fn start_spectrum() {
     // Ensure analyser exists
-    if SPECTRUM_ANALYSER.with(|a| a.borrow().is_none()) { return; }
+    if SPECTRUM_ANALYSER.with(|a| a.borrow().is_none()) {
+        return;
+    }
     stop_spectrum();
 
     let cb = Closure::wrap(Box::new(|| {
@@ -1071,7 +3246,8 @@ fn stop_spectrum() {
     // Reset bars to zero
     for i in 0..48 {
         if let Some(bar) = doc().get_element_by_id(&format!("spb-{}", i)) {
-            bar.set_attribute("style", "height:1%;background:hsl(260,80%,55%);opacity:0.4").ok();
+            bar.set_attribute("style", "height:1%;background:hsl(260,80%,55%);opacity:0.4")
+                .ok();
         }
     }
 }
@@ -1082,7 +3258,9 @@ fn spectrum_tick() {
         None => return,
     };
     let bins = SPECTRUM_BINS.with(|b| b.borrow().clone());
-    if bins.is_empty() { return; }
+    if bins.is_empty() {
+        return;
+    }
 
     let buf_len = analyser.frequency_bin_count() as usize;
     let mut data = vec![0u8; buf_len];
@@ -1096,10 +3274,14 @@ fn spectrum_tick() {
         let lightness = 55.0 + val * 35.0;
         let opacity = 0.4 + val * 0.6;
         if let Some(bar) = doc().get_element_by_id(&format!("spb-{}", i)) {
-            bar.set_attribute("style", &format!(
-                "height:{}%;background:hsl({:.0},80%,{:.0}%);opacity:{:.2}",
-                height, hue, lightness, opacity,
-            )).ok();
+            bar.set_attribute(
+                "style",
+                &format!(
+                    "height:{}%;background:hsl({:.0},80%,{:.0}%);opacity:{:.2}",
+                    height, hue, lightness, opacity,
+                ),
+            )
+            .ok();
         }
     }
 }
@@ -1111,7 +3293,8 @@ fn init_spectrum_bars() {
             if let Ok(bar) = doc().create_element("div") {
                 bar.set_id(&format!("spb-{}", i));
                 bar.set_attribute("class", "flex-1 rounded-sm").ok();
-                bar.set_attribute("style", "height:1%;background:hsl(260,80%,55%);opacity:0.4").ok();
+                bar.set_attribute("style", "height:1%;background:hsl(260,80%,55%);opacity:0.4")
+                    .ok();
                 let _ = container.append_child(&bar);
             }
         }
@@ -1132,14 +3315,21 @@ pub fn start() {
 
     // Restore token
     match load_token() {
-        Some(token) => { log("token 已从 localStorage 恢复"); set_token_inner(&token); }
+        Some(token) => {
+            log("token 已从 localStorage 恢复");
+            set_token_inner(&token);
+        }
         None => log("token 不存在"),
     }
 
     if load_token().is_none() {
         show_page("page-login");
     } else {
-        let hash = web_sys::window().unwrap().location().hash().unwrap_or_default();
+        let hash = web_sys::window()
+            .unwrap()
+            .location()
+            .hash()
+            .unwrap_or_default();
         if hash.is_empty() || hash == "#/login" || hash == "#/" {
             navigate("#/ggtt");
         }
@@ -1164,26 +3354,40 @@ pub fn start() {
     on_click("snav-search-history", || navigate("#/search-history"));
     on_click("snav-short-notes", || navigate("#/short-notes"));
     on_click("snav-songs", || navigate("#/songs"));
-    on_click("snav-logout", || { clear_token(); navigate("#/login"); });
+    on_click("snav-logout", || {
+        clear_token();
+        navigate("#/login");
+    });
 
     // Login
-    on_click("login-btn", || spawn_local(async {
-        disable_btn("login-btn", true);
-        set_text("login-msg", "登录中...");
-        match login_impl(&input("login-user"), &input("login-pass")).await {
-            Ok(t) => { save_token(&t); navigate("#/ggtt"); }
-            Err(e) => set_text("login-msg", &format!("失败: {}", e)),
-        }
-        disable_btn("login-btn", false);
-    }));
-    on_keydown("login-pass", "Enter", || { let _ = el("login-btn").click(); });
+    on_click("login-btn", || {
+        spawn_local(async {
+            disable_btn("login-btn", true);
+            set_text("login-msg", "登录中...");
+            match login_impl(&input("login-user"), &input("login-pass")).await {
+                Ok(t) => {
+                    save_token(&t);
+                    navigate("#/ggtt");
+                }
+                Err(e) => set_text("login-msg", &format!("失败: {}", e)),
+            }
+            disable_btn("login-btn", false);
+        })
+    });
+    on_keydown("login-pass", "Enter", || {
+        let _ = el("login-btn").click();
+    });
 
     // GGTT
-    on_keydown("wubi-input", "Enter", || { let _ = el("wubi-btn").click(); });
+    on_keydown("wubi-input", "Enter", || {
+        let _ = el("wubi-btn").click();
+    });
     on_click("wubi-btn", || spawn_local(do_wubi_search()));
 
     // Dict
-    on_keydown("dict-input", "Enter", || { let _ = el("dict-btn").click(); });
+    on_keydown("dict-input", "Enter", || {
+        let _ = el("dict-btn").click();
+    });
     on_click("dict-btn", || spawn_local(do_dict_search()));
 
     // QR Code
@@ -1219,14 +3423,29 @@ pub fn start() {
     on_click("notes-refresh-btn", || spawn_local(do_notes_refresh()));
 
     // Zici chars — grade/term buttons
-    for (g, t) in [(1,1),(1,2),(2,1),(2,2),(3,1),(3,2),(4,1),(4,2),(5,1),(5,2),(6,1),(6,2)] {
+    for (g, t) in [
+        (1, 1),
+        (1, 2),
+        (2, 1),
+        (2, 2),
+        (3, 1),
+        (3, 2),
+        (4, 1),
+        (4, 2),
+        (5, 1),
+        (5, 2),
+        (6, 1),
+        (6, 2),
+    ] {
         let id = format!("zc-{}-{}", g, t);
         on_click(&id, move || do_zici_show_chars(g, t));
     }
 
     // Zici words
     on_click("zici-word-search-btn", do_zici_word_search);
-    on_keydown("zici-word-search", "Enter", || { let _ = el("zici-word-search-btn").click(); });
+    on_keydown("zici-word-search", "Enter", || {
+        let _ = el("zici-word-search-btn").click();
+    });
 
     // Search history
     on_click("shistory-btn", || spawn_local(do_search_history()));

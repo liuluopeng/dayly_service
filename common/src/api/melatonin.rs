@@ -5,7 +5,9 @@ use super::client::ApiClient;
 use serde_json::Value;
 use uuid::Uuid;
 
-pub use my_type::dto::{ActorMovieQuery, MelatoninListQuery, ScanMelatoninQuery, ScanMelatoninResult};
+pub use my_type::dto::{
+    ActorMovieQuery, MelatoninListQuery, ScanMelatoninQuery, ScanMelatoninResult,
+};
 
 /// 获取 melatonin 电影列表
 pub async fn get_melatonin_movies(
@@ -85,11 +87,18 @@ pub async fn get_movies_by_actor(
 
 /// 获取 bt_list.csv 磁力链接列表
 pub async fn get_bt_list(
-    client: &ApiClient, id: &Uuid,
+    client: &ApiClient,
+    id: &Uuid,
 ) -> ApiResult<ApiResponse<Vec<serde_json::Value>>> {
     let path = format!("/api/melatonin/bt_list/{}", id);
-    let response = client.get(&path).await.map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))?;
-    response.json().await.map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))
+    let response = client
+        .get(&path)
+        .await
+        .map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))?;
+    response
+        .json()
+        .await
+        .map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))
 }
 
 /// 根据类型获取 melatonin 电影列表
@@ -98,10 +107,20 @@ pub async fn get_movies_by_genre(
     query: &ActorMovieQuery,
 ) -> ApiResult<ApiResponse<PaginatedResponse<MelatoninMovieList>>> {
     let mut path = format!("/api/melatonin/genre?actor={}", query.actor);
-    if let Some(page) = query.page { path.push_str(&format!("&page={}", page)); }
-    if let Some(page_size) = query.page_size { path.push_str(&format!("&page_size={}", page_size)); }
-    let response = client.get(&path).await.map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))?;
-    response.json().await.map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))
+    if let Some(page) = query.page {
+        path.push_str(&format!("&page={}", page));
+    }
+    if let Some(page_size) = query.page_size {
+        path.push_str(&format!("&page_size={}", page_size));
+    }
+    let response = client
+        .get(&path)
+        .await
+        .map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))?;
+    response
+        .json()
+        .await
+        .map_err(|e| crate::api::base::ApiError::Internal(format!("{}", e)))
 }
 
 #[cfg(not(target_arch = "wasm32"))]

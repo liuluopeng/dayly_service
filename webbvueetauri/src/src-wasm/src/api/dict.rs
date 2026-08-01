@@ -125,7 +125,7 @@ pub async fn get_recent_history(limit: i64) -> Result<JsValue, JsValue> {
                 for item in data {
                     console_log!("响应数据: {:?}", item);
                 }
-            } 
+            }
             // 将整个响应转换为JavaScript对象
             match to_value(&response) {
                 Ok(js_value) => Ok(js_value),

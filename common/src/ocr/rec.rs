@@ -20,7 +20,9 @@ pub(super) fn model_path(p: &str) -> std::path::PathBuf {
     if let Ok(exe) = std::env::current_exe() {
         let dir = exe.parent().unwrap().join("models");
         let f = dir.join(p);
-        if f.exists() { return f; }
+        if f.exists() {
+            return f;
+        }
     }
     std::path::Path::new("models").join(p)
 }
@@ -29,8 +31,7 @@ fn load_chars() -> Vec<String> {
     let path = model_path("ppocr_v6_dict.json");
     let data = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("Failed to read {}: {}", path.display(), e));
-    serde_json::from_str(&data)
-        .unwrap_or_else(|e| panic!("Failed to parse char dict: {}", e))
+    serde_json::from_str(&data).unwrap_or_else(|e| panic!("Failed to parse char dict: {}", e))
 }
 
 pub(super) fn engine() -> &'static RecEngine {
@@ -39,9 +40,14 @@ pub(super) fn engine() -> &'static RecEngine {
         let session = Session::builder()
             .unwrap()
             .commit_from_file(&model_file)
-            .unwrap_or_else(|e| panic!("Failed to load model from {}: {}", model_file.display(), e));
+            .unwrap_or_else(|e| {
+                panic!("Failed to load model from {}: {}", model_file.display(), e)
+            });
         let chars = load_chars();
-        RecEngine { session: Mutex::new(session), chars }
+        RecEngine {
+            session: Mutex::new(session),
+            chars,
+        }
     })
 }
 
@@ -79,8 +85,8 @@ pub fn recognize(pixels: &[u8], width: u32, height: u32) -> Result<String, Strin
     }
 
     // Inference
-    let input = TensorRef::from_array_view(&array)
-        .map_err(|err| format!("构建识别输入失败: {}", err))?;
+    let input =
+        TensorRef::from_array_view(&array).map_err(|err| format!("构建识别输入失败: {}", err))?;
     // 互斥锁中毒时继续使用内部数据，避免 OCR 服务永久瘫痪
     let mut session = e.session.lock().unwrap_or_else(|p| p.into_inner());
     let outputs = session

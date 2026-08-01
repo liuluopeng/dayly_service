@@ -1,5 +1,5 @@
-use wasm_bindgen::prelude::*;
 use common::front_can_do::timestamp;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn timestamp_to_local(timestamp: i64) -> String {

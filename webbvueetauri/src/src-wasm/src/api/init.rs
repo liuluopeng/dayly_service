@@ -15,11 +15,7 @@ fn current_token() -> Option<String> {
 }
 
 // 初始化 API 客户端（URL/端口变化时重建；否则复用）
-pub fn init_api_client(
-    token: Option<&str>,
-    api_url: Option<&str>,
-    api_port: Option<&str>,
-) {
+pub fn init_api_client(token: Option<&str>, api_url: Option<&str>, api_port: Option<&str>) {
     let api_url = api_url.unwrap_or("http://localhost:23001");
 
     // 如果传入了 token，保存到全局变量
@@ -72,7 +68,8 @@ pub fn get_api_client(token: Option<&str>) -> ApiClient {
         init_api_client(None, Some("http://localhost:23001"), None);
     }
 
-    let mut cloned = API_CLIENT.with(|cell| cell.borrow().as_ref().expect("客户端已初始化").clone());
+    let mut cloned =
+        API_CLIENT.with(|cell| cell.borrow().as_ref().expect("客户端已初始化").clone());
     if let Some(ref t) = token {
         cloned.set_token(t);
     }

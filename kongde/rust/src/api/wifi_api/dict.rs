@@ -4,14 +4,12 @@ use uuid::Uuid;
 
 use crate::api::wifi_api::init::get_client_clone;
 
-pub use common::{
-    api::{
-        base::ApiError,
-        client::ApiClient,
-        dict::{
-            collins_resource, get_recent_history, get_top_words, ldoce_resource, search_collins,
-            search_ldoce, search_xiandaihanyu, xiandaihanyu_resource,
-        },
+pub use common::api::{
+    base::ApiError,
+    client::ApiClient,
+    dict::{
+        collins_resource, get_recent_history, get_top_words, ldoce_resource, search_collins,
+        search_ldoce, search_xiandaihanyu, xiandaihanyu_resource,
     },
 };
 
@@ -54,9 +52,7 @@ pub async fn collins_resource_for_dart(resource_path: String) -> Result<Vec<u8>,
             if let Some(data) = res.data {
                 Ok(data)
             } else {
-                Err(ApiError::Internal(
-                    "No data found in response".to_string()
-                ))
+                Err(ApiError::Internal("No data found in response".to_string()))
             }
         }
 
@@ -86,9 +82,7 @@ pub async fn ldoce_resource_for_dart(resource_path: String) -> Result<Vec<u8>, A
             if let Some(data) = res.data {
                 Ok(data)
             } else {
-                Err(ApiError::Internal(
-                    "No data found in response".to_string()
-                ))
+                Err(ApiError::Internal("No data found in response".to_string()))
             }
         }
 
@@ -103,9 +97,7 @@ pub async fn xiandaihanyu_resource_for_dart(resource_path: String) -> Result<Vec
             if let Some(data) = res.data {
                 Ok(data)
             } else {
-                Err(ApiError::Internal(
-                    "No data found in response".to_string()
-                ))
+                Err(ApiError::Internal("No data found in response".to_string()))
             }
         }
 

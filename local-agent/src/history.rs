@@ -29,8 +29,7 @@ impl ClipboardHistory {
     /// 打开（或创建）历史数据库
     pub async fn open(max_entries: usize) -> Result<Self, String> {
         let db_dir = db_dir();
-        std::fs::create_dir_all(&db_dir)
-            .map_err(|e| format!("创建数据目录失败: {}", e))?;
+        std::fs::create_dir_all(&db_dir).map_err(|e| format!("创建数据目录失败: {}", e))?;
 
         let db_path = db_dir.join("history.db");
         // sqlite:///absolute/path 或 sqlite://相对路径
@@ -162,11 +161,7 @@ impl ClipboardHistory {
     }
 
     /// 搜索文本历史（LIKE 模糊匹配）
-    pub async fn search(
-        &self,
-        keyword: &str,
-        count: usize,
-    ) -> Result<Vec<HistoryEntry>, String> {
+    pub async fn search(&self, keyword: &str, count: usize) -> Result<Vec<HistoryEntry>, String> {
         // 转义 LIKE 通配符：% _ 以及转义符本身
         let escaped = keyword
             .replace('\\', "\\\\")
@@ -190,12 +185,10 @@ impl ClipboardHistory {
 
     /// 获取总条目数
     pub async fn total_count(&self) -> Result<i64, String> {
-        let (count,): (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM clipboard_entries",
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| format!("计数失败: {}", e))?;
+        let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM clipboard_entries")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| format!("计数失败: {}", e))?;
         Ok(count)
     }
 
@@ -221,11 +214,9 @@ impl ClipboardHistory {
 
     /// 淘汰超出上限的旧记录
     async fn prune(&self) {
-        let Ok((count,)) = sqlx::query_as::<_, (i64,)>(
-            "SELECT COUNT(*) FROM clipboard_entries",
-        )
-        .fetch_one(&self.pool)
-        .await
+        let Ok((count,)) = sqlx::query_as::<_, (i64,)>("SELECT COUNT(*) FROM clipboard_entries")
+            .fetch_one(&self.pool)
+            .await
         else {
             return;
         };

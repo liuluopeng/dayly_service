@@ -7,7 +7,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use common::api::base::{ApiError, ApiResponse, ApiResult, PaginatedResponse};
-use fast_image_resize::{images::Image as FirImage, Resizer};
+use fast_image_resize::{Resizer, images::Image as FirImage};
 use image::GenericImageView;
 use my_type::dto::images::ImageWithUrl;
 use my_type::model::images::Image;
@@ -51,12 +51,19 @@ fn generate_thumbnail(path: &Path) -> Option<Vec<u8>> {
     let cropped = img.crop_imm(x, y, side, side).to_rgba8();
 
     // 用 fast_image_resize 缩放到 200x200
-    let src_image = FirImage::from_vec_u8(side, side, cropped.into_raw(), fast_image_resize::PixelType::U8x4).ok()?;
+    let src_image = FirImage::from_vec_u8(
+        side,
+        side,
+        cropped.into_raw(),
+        fast_image_resize::PixelType::U8x4,
+    )
+    .ok()?;
     let mut dst_image = FirImage::new(200, 200, fast_image_resize::PixelType::U8x4);
 
     let mut resizer = Resizer::new();
     let mut opts = fast_image_resize::ResizeOptions::new();
-    opts.algorithm = fast_image_resize::ResizeAlg::Convolution(fast_image_resize::FilterType::Bilinear);
+    opts.algorithm =
+        fast_image_resize::ResizeAlg::Convolution(fast_image_resize::FilterType::Bilinear);
     resizer.resize(&src_image, &mut dst_image, &opts).ok()?;
 
     // 编码为 JPEG
@@ -93,7 +100,18 @@ pub async fn scan_images(
     let pg_pool_clone = pg_pool.clone();
 
     // 使用 channel 实现边扫描边插入
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<Vec<(Uuid, String, String, String, Uuid, i64, Option<String>, Option<Vec<u8>>)>>(4);
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<
+        Vec<(
+            Uuid,
+            String,
+            String,
+            String,
+            Uuid,
+            i64,
+            Option<String>,
+            Option<Vec<u8>>,
+        )>,
+    >(4);
 
     use rayon::prelude::*;
 
@@ -144,12 +162,28 @@ pub async fn scan_images(
 
                 // 攒够一批就立即并行生成缩略图并发送
                 if file_entries.len() >= batch_size {
-                    let results: Vec<_> = file_entries.par_iter().map(|(abs_path, folder_path, ext, mp_id, size)| {
-                        let path = Path::new(abs_path);
-                        let name = path.file_stem().unwrap_or_default().to_string_lossy().to_string();
-                        let thumbnail = generate_thumbnail(path);
-                        (Uuid::now_v7(), name, abs_path.clone(), folder_path.clone(), *mp_id, *size, Some(ext.clone()), thumbnail)
-                    }).collect();
+                    let results: Vec<_> = file_entries
+                        .par_iter()
+                        .map(|(abs_path, folder_path, ext, mp_id, size)| {
+                            let path = Path::new(abs_path);
+                            let name = path
+                                .file_stem()
+                                .unwrap_or_default()
+                                .to_string_lossy()
+                                .to_string();
+                            let thumbnail = generate_thumbnail(path);
+                            (
+                                Uuid::now_v7(),
+                                name,
+                                abs_path.clone(),
+                                folder_path.clone(),
+                                *mp_id,
+                                *size,
+                                Some(ext.clone()),
+                                thumbnail,
+                            )
+                        })
+                        .collect();
 
                     let count = results.len();
                     if tx.blocking_send(results).is_err() {
@@ -164,12 +198,28 @@ pub async fn scan_images(
 
         // 处理剩余不足一批的文件
         if !file_entries.is_empty() {
-            let results: Vec<_> = file_entries.par_iter().map(|(abs_path, folder_path, ext, mp_id, size)| {
-                let path = Path::new(abs_path);
-                let name = path.file_stem().unwrap_or_default().to_string_lossy().to_string();
-                let thumbnail = generate_thumbnail(path);
-                (Uuid::now_v7(), name, abs_path.clone(), folder_path.clone(), *mp_id, *size, Some(ext.clone()), thumbnail)
-            }).collect();
+            let results: Vec<_> = file_entries
+                .par_iter()
+                .map(|(abs_path, folder_path, ext, mp_id, size)| {
+                    let path = Path::new(abs_path);
+                    let name = path
+                        .file_stem()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .to_string();
+                    let thumbnail = generate_thumbnail(path);
+                    (
+                        Uuid::now_v7(),
+                        name,
+                        abs_path.clone(),
+                        folder_path.clone(),
+                        *mp_id,
+                        *size,
+                        Some(ext.clone()),
+                        thumbnail,
+                    )
+                })
+                .collect();
 
             let count = results.len();
             let _ = tx.blocking_send(results);
@@ -223,7 +273,10 @@ pub async fn scan_images(
             }
 
             inserted_total += batch_inserted;
-            info!("图片扫描进度: 已插入 {} 张 (本批 {} 张)", inserted_total, count);
+            info!(
+                "图片扫描进度: 已插入 {} 张 (本批 {} 张)",
+                inserted_total, count
+            );
         }
 
         info!("图片扫描完成，共插入 {} 张", inserted_total);
@@ -350,14 +403,12 @@ pub async fn get_image_thumbnail(
         Err(_) => return StatusCode::BAD_REQUEST.into_response(),
     };
 
-    let result: Option<Vec<u8>> = sqlx::query_scalar(
-        "SELECT thumbnail FROM images WHERE id = $1",
-    )
-    .bind(id)
-    .fetch_optional(&pg_pool)
-    .await
-    .ok()
-    .flatten();
+    let result: Option<Vec<u8>> = sqlx::query_scalar("SELECT thumbnail FROM images WHERE id = $1")
+        .bind(id)
+        .fetch_optional(&pg_pool)
+        .await
+        .ok()
+        .flatten();
 
     match result {
         Some(data) if !data.is_empty() => Response::builder()

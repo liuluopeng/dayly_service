@@ -11,10 +11,7 @@ pub struct AddMediaPathRequest {
     pub label: Option<String>,
 }
 
-pub async fn list_media_paths(
-    client: &ApiClient,
-    media_type: Option<&str>,
-) -> ApiResult<Value> {
+pub async fn list_media_paths(client: &ApiClient, media_type: Option<&str>) -> ApiResult<Value> {
     let url = match media_type {
         Some(mt) => format!("/api/media_paths?media_type={}", mt),
         None => "/api/media_paths".to_string(),

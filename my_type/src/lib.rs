@@ -1,21 +1,21 @@
 pub mod model {
     pub mod admin;
     pub mod basic_model;
+    pub mod chat;
     pub mod dict;
     pub mod ggtt;
     pub mod haiyu_dict;
-    pub mod melatonin_movie;
+    pub mod images;
     pub mod media_paths;
+    pub mod melatonin_movie;
+    pub mod note;
+    pub mod openai;
+    pub mod short_notes;
     pub mod single_char_pinyin;
     pub mod songs;
-    pub mod images;
     pub mod user_directories;
     pub mod videos;
-    pub mod short_notes;
     pub mod view_name;
-    pub mod openai;
-    pub mod note;
-    pub mod chat;
 }
 
 pub mod dto;
@@ -69,4 +69,3 @@ macro_rules! impl_display {
         }
     };
 }
-

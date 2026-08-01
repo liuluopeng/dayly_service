@@ -146,16 +146,15 @@ pub fn synth_piano_note(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32
 
     for i in 0..n {
         let t = i as f64 / sample_rate as f64;
-        let mut v = main_a[i] * 0.55
-            + main_b[i] * 0.55
-            + harm2[i] * 0.22
-            + harm3[i] * 0.08
-            + hammer[i];
+        let mut v =
+            main_a[i] * 0.55 + main_b[i] * 0.55 + harm2[i] * 0.22 + harm3[i] * 0.08 + hammer[i];
 
         // 起音（~2.5ms）防爆音
         let attack = ((t * 400.0).min(1.0)) as f32;
         // 尾部释放（~80ms 平滑归零）
-        let release = (((n - i) as f64 / (sample_rate as f64 * 0.08)).min(1.0).max(0.0)) as f32;
+        let release = (((n - i) as f64 / (sample_rate as f64 * 0.08))
+            .min(1.0)
+            .max(0.0)) as f32;
 
         out[i] = lp.process(v, lp_alpha) * attack * release;
     }
@@ -195,9 +194,27 @@ pub fn synth_piano_bright(freq: f32, duration_ms: u32, sample_rate: u32, seed: u
     let decay_base = 0.9950 - freq / sr * 0.8;
     let main_a = pluck_string(f_a, sample_rate, n, seed, decay_base);
     let main_b = pluck_string(f_b, sample_rate, n, seed ^ 0x1234_5678, decay_base);
-    let harm2 = pluck_string(f_h2, sample_rate, n, seed ^ 0xDEAD_BEEF, (decay_base - 0.002).clamp(0.9, 0.999));
-    let harm3 = pluck_string(f_h3, sample_rate, n, seed ^ 0x0BAD_F00D, (decay_base - 0.004).clamp(0.9, 0.999));
-    let harm4 = pluck_string(f_h4, sample_rate, n, seed ^ 0xFACE_B00C, (decay_base - 0.006).clamp(0.9, 0.999));
+    let harm2 = pluck_string(
+        f_h2,
+        sample_rate,
+        n,
+        seed ^ 0xDEAD_BEEF,
+        (decay_base - 0.002).clamp(0.9, 0.999),
+    );
+    let harm3 = pluck_string(
+        f_h3,
+        sample_rate,
+        n,
+        seed ^ 0x0BAD_F00D,
+        (decay_base - 0.004).clamp(0.9, 0.999),
+    );
+    let harm4 = pluck_string(
+        f_h4,
+        sample_rate,
+        n,
+        seed ^ 0xFACE_B00C,
+        (decay_base - 0.006).clamp(0.9, 0.999),
+    );
 
     let hammer_len = ((sample_rate as f64 * 0.010) as usize).min(n);
     let mut hammer = vec![0f32; n];
@@ -222,7 +239,9 @@ pub fn synth_piano_bright(freq: f32, duration_ms: u32, sample_rate: u32, seed: u
             + hammer[i];
 
         let attack = ((t * 450.0).min(1.0)) as f32;
-        let release = (((n - i) as f64 / (sample_rate as f64 * 0.06)).min(1.0).max(0.0)) as f32;
+        let release = (((n - i) as f64 / (sample_rate as f64 * 0.06))
+            .min(1.0)
+            .max(0.0)) as f32;
 
         out[i] = lp.process(v, lp_alpha) * attack * release;
     }

@@ -1,6 +1,9 @@
-use axum::{Json, Router, extract::Json as ExtractJson, http::StatusCode, response::IntoResponse, routing::post};
+use axum::{
+    Json, Router, extract::Json as ExtractJson, http::StatusCode, response::IntoResponse,
+    routing::post,
+};
+use common::mhtml::{html::extract_article_body, markdown::html_to_markdown, mhtml::parse_mhtml};
 use serde::{Deserialize, Serialize};
-use common::mhtml::{mhtml::parse_mhtml, html::extract_article_body, markdown::html_to_markdown};
 
 #[derive(Deserialize)]
 struct MhtmlRequest {
@@ -19,14 +22,19 @@ async fn convert_mhtml(ExtractJson(req): ExtractJson<MhtmlRequest>) -> impl Into
             let title = extract_title(&doc.html);
             let body = extract_article_body(&doc.html).unwrap_or(doc.html);
             let md = html_to_markdown(&body);
-            Json(MhtmlResponse { markdown: md, title }).into_response()
+            Json(MhtmlResponse {
+                markdown: md,
+                title,
+            })
+            .into_response()
         }
         Err(e) => (StatusCode::BAD_REQUEST, format!("解析 MHTML 失败: {}", e)).into_response(),
     }
 }
 
 fn extract_title(html: &str) -> Option<String> {
-    regex::Regex::new(r"<title>(.*?)</title>").ok()
+    regex::Regex::new(r"<title>(.*?)</title>")
+        .ok()
         .and_then(|re| re.captures(html).map(|c| c[1].to_string()))
 }
 

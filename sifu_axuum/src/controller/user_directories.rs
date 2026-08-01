@@ -27,7 +27,10 @@ pub async fn list_user_directories(
     Extension(pg_pool): Extension<PgPool>,
 ) -> ApiResult<ApiResponse<Vec<UserDirectory>>> {
     if !claims.is_admin {
-        return Err(ApiError::forbidden(ApiError::ADMIN_REQUIRED, "需要管理员权限"));
+        return Err(ApiError::forbidden(
+            ApiError::ADMIN_REQUIRED,
+            "需要管理员权限",
+        ));
     }
 
     let dirs = if let Some(ref username) = query.username {
@@ -57,7 +60,10 @@ pub async fn add_user_directory(
     Json(body): Json<AddUserDirRequest>,
 ) -> ApiResult<ApiResponse<UserDirectory>> {
     if !claims.is_admin {
-        return Err(ApiError::forbidden(ApiError::ADMIN_REQUIRED, "需要管理员权限"));
+        return Err(ApiError::forbidden(
+            ApiError::ADMIN_REQUIRED,
+            "需要管理员权限",
+        ));
     }
 
     if body.path.is_empty() {
@@ -89,16 +95,17 @@ pub async fn delete_user_directory(
     AxumPath(dir_id): AxumPath<Uuid>,
 ) -> ApiResult<ApiResponse<()>> {
     if !claims.is_admin {
-        return Err(ApiError::forbidden(ApiError::ADMIN_REQUIRED, "需要管理员权限"));
+        return Err(ApiError::forbidden(
+            ApiError::ADMIN_REQUIRED,
+            "需要管理员权限",
+        ));
     }
 
-    let result = sqlx::query(
-        "DELETE FROM user_directories WHERE id = $1",
-    )
-    .bind(dir_id)
-    .execute(&pg_pool)
-    .await
-    .map_err(|e| ApiError::Internal(format!("删除目录失败: {}", e)))?;
+    let result = sqlx::query("DELETE FROM user_directories WHERE id = $1")
+        .bind(dir_id)
+        .execute(&pg_pool)
+        .await
+        .map_err(|e| ApiError::Internal(format!("删除目录失败: {}", e)))?;
 
     if result.rows_affected() == 0 {
         return Err(ApiError::not_found(ApiError::DIR_NOT_FOUND, "目录不存在"));
@@ -132,20 +139,24 @@ mod tests {
             label: Some("测试目录".to_string()),
             allow_list: Some(vec!["test_dir_admin".to_string()]),
         };
-        let result = add_user_directory(admin_claims.clone(), Extension(pool.clone()), Json(req)).await;
+        let result =
+            add_user_directory(admin_claims.clone(), Extension(pool.clone()), Json(req)).await;
         assert!(result.is_ok());
         let dir = result.unwrap().data.unwrap();
         assert_eq!(dir.label.as_deref(), Some("测试目录"));
 
         // 列出目录
         let query = ListUserDirsQuery { username: None };
-        let result2 = list_user_directories(admin_claims.clone(), Query(query), Extension(pool.clone())).await;
+        let result2 =
+            list_user_directories(admin_claims.clone(), Query(query), Extension(pool.clone()))
+                .await;
         assert!(result2.is_ok());
         let dirs = result2.unwrap().data.unwrap();
         assert!(dirs.iter().any(|d| d.id == dir.id));
 
         // 删除目录
-        let result3 = delete_user_directory(admin_claims, Extension(pool.clone()), AxumPath(dir.id)).await;
+        let result3 =
+            delete_user_directory(admin_claims, Extension(pool.clone()), AxumPath(dir.id)).await;
         assert!(result3.is_ok());
 
         cleanup_test_user(&pool, admin_id).await;
@@ -158,7 +169,8 @@ mod tests {
         let claims = test_claims(user_id, false); // is_admin = false
 
         let query = ListUserDirsQuery { username: None };
-        let result = list_user_directories(claims.clone(), Query(query), Extension(pool.clone())).await;
+        let result =
+            list_user_directories(claims.clone(), Query(query), Extension(pool.clone())).await;
         assert!(result.is_err());
         match result.unwrap_err() {
             ApiError::Forbidden { .. } => {}

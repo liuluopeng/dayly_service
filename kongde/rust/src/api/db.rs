@@ -71,7 +71,9 @@ pub fn kv_get(key: String) -> Result<Option<String>, String> {
     crate::api::runtime::shared_rt().block_on(async {
         sqlx::query_scalar::<_, String>("SELECT value FROM kv_store WHERE key = ?")
             .bind(&key)
-            .fetch_optional(p).await.map_err(|e| format!("读取失败: {}", e))
+            .fetch_optional(p)
+            .await
+            .map_err(|e| format!("读取失败: {}", e))
     })
 }
 
@@ -81,7 +83,9 @@ pub fn kv_delete(key: String) -> Result<bool, String> {
     crate::api::runtime::shared_rt().block_on(async {
         let rows = sqlx::query("DELETE FROM kv_store WHERE key = ?")
             .bind(&key)
-            .execute(p).await.map_err(|e| format!("删除失败: {}", e))?
+            .execute(p)
+            .await
+            .map_err(|e| format!("删除失败: {}", e))?
             .rows_affected();
         Ok(rows > 0)
     })
@@ -92,7 +96,9 @@ pub fn kv_keys() -> Result<Vec<String>, String> {
     let p = pool()?;
     crate::api::runtime::shared_rt().block_on(async {
         sqlx::query_scalar::<_, String>("SELECT key FROM kv_store ORDER BY updated_at DESC")
-            .fetch_all(p).await.map_err(|e| format!("查询失败: {}", e))
+            .fetch_all(p)
+            .await
+            .map_err(|e| format!("查询失败: {}", e))
     })
 }
 
@@ -100,7 +106,10 @@ pub fn kv_keys() -> Result<Vec<String>, String> {
 #[flutter_rust_bridge::frb]
 pub fn kv_get_int(key: String) -> Result<Option<i64>, String> {
     match kv_get(key)? {
-        Some(s) => s.parse::<i64>().map(Some).map_err(|e| format!("kv 值无法解析为整数: {}", e)),
+        Some(s) => s
+            .parse::<i64>()
+            .map(Some)
+            .map_err(|e| format!("kv 值无法解析为整数: {}", e)),
         None => Ok(None),
     }
 }
@@ -113,7 +122,10 @@ pub fn kv_set_int(key: String, value: i64) -> Result<(), String> {
 #[flutter_rust_bridge::frb]
 pub fn kv_get_double(key: String) -> Result<Option<f64>, String> {
     match kv_get(key)? {
-        Some(s) => s.parse::<f64>().map(Some).map_err(|e| format!("kv 值无法解析为浮点数: {}", e)),
+        Some(s) => s
+            .parse::<f64>()
+            .map(Some)
+            .map_err(|e| format!("kv 值无法解析为浮点数: {}", e)),
         None => Ok(None),
     }
 }
@@ -137,7 +149,10 @@ pub fn kv_json_get(key: String) -> Result<Option<String>, String> {
 pub fn kv_clear() -> Result<(), String> {
     let p = pool()?;
     crate::api::runtime::shared_rt().block_on(async {
-        sqlx::query("DELETE FROM kv_store").execute(p).await.map_err(|e| format!("清空失败: {}", e))?;
+        sqlx::query("DELETE FROM kv_store")
+            .execute(p)
+            .await
+            .map_err(|e| format!("清空失败: {}", e))?;
         Ok(())
     })
 }
@@ -256,7 +271,10 @@ fn simple_hash(s: &str) -> u64 {
 
 /// 扫描并导入歌曲：Rust 读元数据 + 保存封面 + 写入 SQLite
 #[flutter_rust_bridge::frb]
-pub fn import_local_songs(paths: Vec<String>, covers_dir: String) -> Result<Vec<LocalSong>, String> {
+pub fn import_local_songs(
+    paths: Vec<String>,
+    covers_dir: String,
+) -> Result<Vec<LocalSong>, String> {
     // table created by migration in init_db
     let p = pool()?;
     let total = paths.len();
@@ -278,24 +296,44 @@ pub fn import_local_songs(paths: Vec<String>, covers_dir: String) -> Result<Vec<
                 let dir = Path::new(&covers_dir);
                 let _ = std::fs::create_dir_all(dir);
                 let cp = dir.join(format!("{}.jpg", simple_hash(&path)));
-                if std::fs::write(&cp, pic).is_ok() { with_cover += 1; cp.to_string_lossy().to_string() } else { String::new() }
-            } else { String::new() }
-        } else { String::new() };
+                if std::fs::write(&cp, pic).is_ok() {
+                    with_cover += 1;
+                    cp.to_string_lossy().to_string()
+                } else {
+                    String::new()
+                }
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
 
         // 提取封面主色和次色
         let (primary_color, secondary_color) = if !cover_path.is_empty() {
             if let Ok(bytes) = std::fs::read(&cover_path) {
                 common::color_extract::extract_colors(&bytes)
-            } else { (None, None) }
-        } else { (None, None) };
+            } else {
+                (None, None)
+            }
+        } else {
+            (None, None)
+        };
 
         let title = meta.title.filter(|s| !s.is_empty()).unwrap_or_else(|| {
             std::path::Path::new(&path)
-                .file_stem().map(|s| s.to_string_lossy().to_string())
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_default()
         });
-        let artist = meta.artist.filter(|s| !s.is_empty()).unwrap_or_else(|| "未知艺术家".into());
-        let album = meta.album.filter(|s| !s.is_empty()).unwrap_or_else(|| "未知专辑".into());
+        let artist = meta
+            .artist
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "未知艺术家".into());
+        let album = meta
+            .album
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "未知专辑".into());
 
         let rt = crate::api::runtime::shared_rt();
         let result = rt.block_on(async {
@@ -320,8 +358,10 @@ pub fn clear_local_songs() -> Result<(), String> {
     // table created by migration in init_db
     let p = pool()?;
     crate::api::runtime::shared_rt().block_on(async {
-        sqlx::query("DELETE FROM local_songs").execute(p).await.map_err(|e| format!("清空失败: {}", e))?;
+        sqlx::query("DELETE FROM local_songs")
+            .execute(p)
+            .await
+            .map_err(|e| format!("清空失败: {}", e))?;
         Ok(())
     })
 }
-

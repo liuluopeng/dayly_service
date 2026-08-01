@@ -1,16 +1,25 @@
-use common::api::files::{list_files, get_file_info, build_file_url, generate_tree};
+use common::api::files::{build_file_url, generate_tree, get_file_info, list_files};
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
 
 use crate::{api::init::get_api_client, console_log};
 
 #[wasm_bindgen]
-pub async fn list_files_wasm(path: &str, page: Option<usize>, page_size: Option<usize>) -> Result<JsValue, JsValue> {
+pub async fn list_files_wasm(
+    path: &str,
+    page: Option<usize>,
+    page_size: Option<usize>,
+) -> Result<JsValue, JsValue> {
     let client = get_api_client(None);
 
     match list_files(&client, path, page, page_size).await {
         Ok(listing) => {
-            console_log!("列出目录: {} ({} 项, 共 {} 项)", listing.path, listing.entries.len(), listing.total);
+            console_log!(
+                "列出目录: {} ({} 项, 共 {} 项)",
+                listing.path,
+                listing.entries.len(),
+                listing.total
+            );
             to_value(&listing).map_err(|e| JsValue::from_str(&format!("序列化失败: {}", e)))
         }
         Err(error) => {

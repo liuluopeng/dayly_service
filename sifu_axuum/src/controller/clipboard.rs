@@ -16,7 +16,9 @@ pub struct HistoryQuery {
     search: Option<String>,
 }
 
-fn default_count() -> usize { 20 }
+fn default_count() -> usize {
+    20
+}
 
 pub fn clipboard_routes() -> Router {
     let image_dir = dirs::home_dir()
@@ -70,23 +72,31 @@ async fn get_history(
 
     match entries {
         Ok(rows) => {
-            let items: Vec<serde_json::Value> = rows.into_iter().map(|e| {
-                let mut v = json!({
-                    "id": e.id,
-                    "type": e.entry_type,
-                    "text_content": e.text_content,
-                    "content_hash": e.content_hash,
-                    "created_at": e.created_at.to_string(),
-                });
-                if let Some(ref path) = e.image_path {
-                    let filename = std::path::Path::new(path)
-                        .file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-                    v["image_url"] = json!(format!("/api/clipboard/images/{}", filename));
-                    v["image_path"] = json!(path);
-                }
-                v
-            }).collect();
-            (axum::http::StatusCode::OK, Json(json!({"code": 200, "data": items})))
+            let items: Vec<serde_json::Value> = rows
+                .into_iter()
+                .map(|e| {
+                    let mut v = json!({
+                        "id": e.id,
+                        "type": e.entry_type,
+                        "text_content": e.text_content,
+                        "content_hash": e.content_hash,
+                        "created_at": e.created_at.to_string(),
+                    });
+                    if let Some(ref path) = e.image_path {
+                        let filename = std::path::Path::new(path)
+                            .file_name()
+                            .map(|s| s.to_string_lossy().to_string())
+                            .unwrap_or_default();
+                        v["image_url"] = json!(format!("/api/clipboard/images/{}", filename));
+                        v["image_path"] = json!(path);
+                    }
+                    v
+                })
+                .collect();
+            (
+                axum::http::StatusCode::OK,
+                Json(json!({"code": 200, "data": items})),
+            )
         }
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,

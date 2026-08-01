@@ -8,8 +8,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use common::api::base::{ApiError, ApiResult};
 use my_type::model::songs::Song;
-use redis::aio::ConnectionManager;
 use redis::AsyncCommands;
+use redis::aio::ConnectionManager;
 use tracing::{debug, error, info, warn};
 
 use common::api::songs::{LyricsResponse, SongWithUrl};
@@ -75,7 +75,7 @@ pub async fn scan_songs(
         .map_err(|e| ApiError::Internal(format!("查询媒体路径失败: {}", e)))?
     } else {
         sqlx::query_as(
-            "SELECT id, path FROM media_paths WHERE $1 = ANY(allow_list) AND media_type = 'song'"
+            "SELECT id, path FROM media_paths WHERE $1 = ANY(allow_list) AND media_type = 'song'",
         )
         .bind(&claims.username)
         .fetch_all(&pg_pool)
@@ -93,15 +93,14 @@ pub async fn scan_songs(
 
     // 预先查询已入库的歌曲路径，避免重复扫描时重复插入
     let media_path_ids: Vec<Uuid> = media_paths.iter().map(|(id, _)| *id).collect();
-    let existing_paths: std::collections::HashSet<String> = sqlx::query_scalar(
-        "SELECT path FROM songs WHERE media_path_id = ANY($1)",
-    )
-    .bind(&media_path_ids)
-    .fetch_all(&pg_pool)
-    .await
-    .map_err(|e| ApiError::Internal(format!("查询已入库歌曲失败: {}", e)))?
-    .into_iter()
-    .collect();
+    let existing_paths: std::collections::HashSet<String> =
+        sqlx::query_scalar("SELECT path FROM songs WHERE media_path_id = ANY($1)")
+            .bind(&media_path_ids)
+            .fetch_all(&pg_pool)
+            .await
+            .map_err(|e| ApiError::Internal(format!("查询已入库歌曲失败: {}", e)))?
+            .into_iter()
+            .collect();
 
     let pg_pool_clone = pg_pool.clone();
 
@@ -115,9 +114,20 @@ pub async fn scan_songs(
                 media_path_id: Uuid,
                 existing_paths: &std::collections::HashSet<String>,
                 songs: &mut Vec<(
-                    Uuid, String, String, Uuid,
-                    Option<String>, Option<String>, Option<String>, Option<Vec<u8>>,
-                    Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>,
+                    Uuid,
+                    String,
+                    String,
+                    Uuid,
+                    Option<String>,
+                    Option<String>,
+                    Option<String>,
+                    Option<Vec<u8>>,
+                    Option<String>,
+                    Option<String>,
+                    Option<String>,
+                    Option<String>,
+                    Option<String>,
+                    Option<String>,
                 )>,
                 errors: &mut Vec<String>,
             ) {
@@ -130,9 +140,14 @@ pub async fn scan_songs(
                     if !current_path.is_file() {
                         continue;
                     }
-                    let Some(ext) = current_path.extension() else { continue };
+                    let Some(ext) = current_path.extension() else {
+                        continue;
+                    };
                     let ext = ext.to_string_lossy().to_lowercase();
-                    if !matches!(ext.as_str(), "mp3"|"flac"|"wav"|"ogg"|"aac"|"m4a"|"wma"|"opus"|"webm") {
+                    if !matches!(
+                        ext.as_str(),
+                        "mp3" | "flac" | "wav" | "ogg" | "aac" | "m4a" | "wma" | "opus" | "webm"
+                    ) {
                         continue;
                     }
 
@@ -210,7 +225,13 @@ pub async fn scan_songs(
                     errors.push(format!("媒体路径不存在或不是目录: {}", mp_path));
                     continue;
                 }
-                scan_directory(dir, *mp_id, &existing_paths, &mut songs_to_insert, &mut errors);
+                scan_directory(
+                    dir,
+                    *mp_id,
+                    &existing_paths,
+                    &mut songs_to_insert,
+                    &mut errors,
+                );
             }
 
             (songs_to_insert, errors)
@@ -230,7 +251,23 @@ pub async fn scan_songs(
 
         let mut inserted_count = 0;
 
-        for (id, title, song_path, media_path_id, artist, album, cover_path, cover_data, lrc_content, ttml_content, eslrc_content, qrc_content, yrc_content, lys_content) in songs_to_insert {
+        for (
+            id,
+            title,
+            song_path,
+            media_path_id,
+            artist,
+            album,
+            cover_path,
+            cover_data,
+            lrc_content,
+            ttml_content,
+            eslrc_content,
+            qrc_content,
+            yrc_content,
+            lys_content,
+        ) in songs_to_insert
+        {
             let song_path_clone = song_path.clone();
             if let Err(e) = sqlx::query(
                 "INSERT INTO songs (id, title, path, artist, album, cover_path, cover_data, media_path_id, lrc, ttml, eslrc, qrc, yrc, lys)
@@ -268,7 +305,11 @@ pub async fn scan_songs(
         if errors.is_empty() {
             info!("成功扫描并插入 {} 首歌曲", inserted_count);
         } else {
-            warn!("成功插入 {} 首歌曲，{} 个错误", inserted_count, errors.len());
+            warn!(
+                "成功插入 {} 首歌曲，{} 个错误",
+                inserted_count,
+                errors.len()
+            );
         }
 
         // 扫描完成后，自动生成逐字 TTML
@@ -329,7 +370,7 @@ pub async fn get_all_songs(
             (CASE WHEN qrc IS NOT NULL THEN 1 ELSE 0 END) +
             (CASE WHEN yrc IS NOT NULL THEN 1 ELSE 0 END) +
             (CASE WHEN lys IS NOT NULL THEN 1 ELSE 0 END)
-         ) DESC, title ASC LIMIT $2 OFFSET $3"
+         ) DESC, title ASC LIMIT $2 OFFSET $3",
     )
     .bind(&claims.username)
     .bind(query.page_size as i64)
@@ -433,7 +474,10 @@ pub async fn get_song_cover(
                     // 返回封面图片
                     Ok(([(header::CONTENT_TYPE, "image/jpeg")], data).into_response())
                 }
-                None => Err(ApiError::not_found(ApiError::SONG_COVER_NOT_FOUND, "封面图片不存在")),
+                None => Err(ApiError::not_found(
+                    ApiError::SONG_COVER_NOT_FOUND,
+                    "封面图片不存在",
+                )),
             }
         }
         None => Err(ApiError::not_found(ApiError::SONG_NOT_FOUND, "歌曲不存在")),
@@ -509,7 +553,10 @@ pub async fn get_song_lyrics(
                 .join(&lrc_filename);
 
             let lyrics = fs::read_to_string(&lrc_path).map_err(|_| {
-                ApiError::not_found(ApiError::LYRICS_NOT_FOUND, format!("歌词文件不存在: {}", lrc_filename))
+                ApiError::not_found(
+                    ApiError::LYRICS_NOT_FOUND,
+                    format!("歌词文件不存在: {}", lrc_filename),
+                )
             })?;
 
             Ok(ApiResponse::ok(LyricsResponse {
@@ -543,7 +590,10 @@ pub async fn get_song_ttml(
             let ttml: Option<String> = row.get("ttml");
             match ttml {
                 Some(content) if !content.is_empty() => Ok(ApiResponse::ok(content)),
-                _ => Err(ApiError::not_found(ApiError::NO_TTML_LYRICS, "该歌曲没有 TTML 歌词")),
+                _ => Err(ApiError::not_found(
+                    ApiError::NO_TTML_LYRICS,
+                    "该歌曲没有 TTML 歌词",
+                )),
             }
         }
         None => Err(ApiError::not_found(ApiError::SONG_NOT_FOUND, "歌曲不存在")),
@@ -567,7 +617,7 @@ pub async fn get_all_lyrics(
         Some(song) => {
             // 查询所有歌词列
             let row = sqlx::query(
-                "SELECT lrc, ttml, eslrc, qrc, yrc, lys, auto_ttml FROM songs WHERE id = $1"
+                "SELECT lrc, ttml, eslrc, qrc, yrc, lys, auto_ttml FROM songs WHERE id = $1",
             )
             .bind(song_id)
             .fetch_optional(&pg_pool)
@@ -615,14 +665,10 @@ pub async fn record_play(
     let member = song_id.to_string();
 
     // ZADD 添加到有序集合，score 为时间戳
-    let _: Result<(), _> = redis_conn
-        .zadd(&key, &member, now)
-        .await;
+    let _: Result<(), _> = redis_conn.zadd(&key, &member, now).await;
 
     // 只保留最近 100 条
-    let _: Result<(), _> = redis_conn
-        .zremrangebyrank(&key, 0, -101)
-        .await;
+    let _: Result<(), _> = redis_conn.zremrangebyrank(&key, 0, -101).await;
 
     StatusCode::OK
 }
@@ -660,37 +706,35 @@ pub async fn get_play_history(
     }
 
     // 从数据库批量查询歌曲信息
-    let songs = sqlx::query_as::<_, Song>(
-        "SELECT * FROM songs WHERE id = ANY($1)"
-    )
-    .bind(&uuids)
-    .fetch_all(&pg_pool)
-    .await
-    .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
+    let songs = sqlx::query_as::<_, Song>("SELECT * FROM songs WHERE id = ANY($1)")
+        .bind(&uuids)
+        .fetch_all(&pg_pool)
+        .await
+        .map_err(|e| ApiError::Internal(format!("数据库查询失败: {}", e)))?;
 
     // 按播放历史顺序排列
-    let song_map: std::collections::HashMap<Uuid, Song> = songs
-        .into_iter()
-        .map(|s| (s.id, s))
-        .collect();
+    let song_map: std::collections::HashMap<Uuid, Song> =
+        songs.into_iter().map(|s| (s.id, s)).collect();
 
     let base_url = server_config.get_base_url();
     let port = server_config.get_port();
 
     let result: Vec<SongWithUrl> = uuids
         .iter()
-        .filter_map(|id| song_map.get(id).map(|song| {
-            let cover_url = format!("{}/api/songs/cover/{}", base_url, song.id);
-            SongWithUrl {
-                id: song.id,
-                title: song.title.clone(),
-                path: song.path.clone(),
-                album: song.album.clone(),
-                artist: song.artist.clone(),
-                cover_path: song.cover_path.clone(),
-                cover_url: Some(cover_url),
-            }
-        }))
+        .filter_map(|id| {
+            song_map.get(id).map(|song| {
+                let cover_url = format!("{}/api/songs/cover/{}", base_url, song.id);
+                SongWithUrl {
+                    id: song.id,
+                    title: song.title.clone(),
+                    path: song.path.clone(),
+                    album: song.album.clone(),
+                    artist: song.artist.clone(),
+                    cover_path: song.cover_path.clone(),
+                    cover_url: Some(cover_url),
+                }
+            })
+        })
         .collect();
 
     Ok(ApiResponse::ok(result))

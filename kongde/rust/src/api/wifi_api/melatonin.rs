@@ -7,7 +7,8 @@ pub use common::api::{
     base::{ApiError, PaginatedResponse},
     client::ApiClient,
     melatonin::{
-        ActorMovieQuery, MelatoninListQuery, get_bt_list, get_movies_by_actor, get_movies_by_genre, get_melatonin_movie_by_id, get_melatonin_movies,
+        get_bt_list, get_melatonin_movie_by_id, get_melatonin_movies, get_movies_by_actor,
+        get_movies_by_genre, ActorMovieQuery, MelatoninListQuery,
     },
 };
 
@@ -157,24 +158,37 @@ pub async fn get_movies_by_genre_for_dart(
         Ok(melatonin_movies) => {
             if let Some(melatonin_movies) = melatonin_movies.data {
                 let total = melatonin_movies.total;
-                let data = melatonin_movies.data.into_iter().map(|movie| MelatoninMovieListForDart {
-                    id: movie.id, title: movie.title,
-                    cover_path: movie.cover_path, video_paths: movie.video_paths,
-                    cover_url: movie.cover_url, video_urls: movie.video_urls,
-                }).collect();
+                let data = melatonin_movies
+                    .data
+                    .into_iter()
+                    .map(|movie| MelatoninMovieListForDart {
+                        id: movie.id,
+                        title: movie.title,
+                        cover_path: movie.cover_path,
+                        video_paths: movie.video_paths,
+                        cover_url: movie.cover_url,
+                        video_urls: movie.video_urls,
+                    })
+                    .collect();
                 tracing::info!(genre = %genre_clone, total, "类型的电影");
                 Ok(PaginatedResponseForDart {
-                    data, total: melatonin_movies.total,
-                    page: melatonin_movies.page, page_size: melatonin_movies.page_size,
+                    data,
+                    total: melatonin_movies.total,
+                    page: melatonin_movies.page,
+                    page_size: melatonin_movies.page_size,
                     total_pages: melatonin_movies.total_pages,
                 })
-            } else { Err(ApiError::Internal("No data found".to_string())) }
+            } else {
+                Err(ApiError::Internal("No data found".to_string()))
+            }
         }
         Err(err) => Err(err),
     }
 }
 
-pub async fn get_melatonin_movie_by_id_for_dart(id: Uuid) -> Result<MelatoninMovieDetailForDart, ApiError> {
+pub async fn get_melatonin_movie_by_id_for_dart(
+    id: Uuid,
+) -> Result<MelatoninMovieDetailForDart, ApiError> {
     let client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
     match get_melatonin_movie_by_id(&client, &id).await {
         Ok(melatonin_movie) => {
@@ -205,7 +219,9 @@ pub async fn get_bt_list_for_dart(id: Uuid) -> Result<Vec<String>, ApiError> {
         Ok(resp) => {
             if let Some(items) = resp.data {
                 Ok(items.into_iter().map(|v| v.to_string()).collect())
-            } else { Ok(vec![]) }
+            } else {
+                Ok(vec![])
+            }
         }
         Err(err) => Err(err),
     }

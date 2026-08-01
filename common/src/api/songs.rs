@@ -11,7 +11,7 @@ use crate::{
 use my_type::dto;
 use my_type::model::songs::Song;
 
-pub use dto::{LyricsResponse, SongWithUrl, AllLyricsResponse};
+pub use dto::{AllLyricsResponse, LyricsResponse, SongWithUrl};
 
 /// 扫描歌曲
 pub async fn scan_songs(client: &ApiClient) -> ApiResult<ApiResponse<Value>> {
@@ -134,10 +134,7 @@ pub async fn get_song_lyrics(
 }
 
 /// 获取 TTML 逐字歌词（AMLL 格式）
-pub async fn get_song_ttml(
-    client: &ApiClient,
-    song_id: &Uuid,
-) -> ApiResult<ApiResponse<String>> {
+pub async fn get_song_ttml(client: &ApiClient, song_id: &Uuid) -> ApiResult<ApiResponse<String>> {
     let path = format!("/api/songs/{}/ttml", song_id);
     let response = client
         .get(&path)

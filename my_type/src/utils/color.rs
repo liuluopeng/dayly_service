@@ -42,7 +42,9 @@ pub struct TableFormatter {
 impl TableFormatter {
     /// 创建一个新的表格格式化器
     pub fn new(width: usize) -> Self {
-        TableFormatter { width: width.max(12) }
+        TableFormatter {
+            width: width.max(12),
+        }
     }
 
     /// 创建默认宽度的表格格式化器（宽度为 60）
@@ -84,7 +86,10 @@ impl TableFormatter {
         let colored_label = colorize(label, label_color);
         let content_width = self.width.saturating_sub(5 + label.len() + 4);
         let truncated_content = if content.chars().count() > content_width {
-            let chars: Vec<char> = content.chars().take(content_width.saturating_sub(3)).collect();
+            let chars: Vec<char> = content
+                .chars()
+                .take(content_width.saturating_sub(3))
+                .collect();
             format!("{}...", chars.into_iter().collect::<String>())
         } else {
             content.to_string()

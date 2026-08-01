@@ -12,7 +12,7 @@
 //!   [5+H*M .. 5+H*M+M]    整体 RMS 包络（归一化 0..1）
 //!   [5+H*M+M .. +NOISE]   噪声频谱能量（NOISE 段）
 
-use super::synth::{Rng, inharmonicity, OnePole};
+use super::synth::{inharmonicity, OnePole, Rng};
 use wasm_bindgen::prelude::*;
 
 const H: usize = 40; // 最多谐波数
@@ -252,7 +252,12 @@ pub fn synth_analyzed_note(
     sample_rate: u32,
     seed: u32,
 ) -> Vec<f32> {
-    if params.len() < PARAM_HEAD + 1 || !freq.is_finite() || freq <= 0.0 || sample_rate < 8000 || duration_ms == 0 {
+    if params.len() < PARAM_HEAD + 1
+        || !freq.is_finite()
+        || freq <= 0.0
+        || sample_rate < 8000
+        || duration_ms == 0
+    {
         return Vec::new();
     }
 
@@ -290,8 +295,8 @@ pub fn synth_analyzed_note(
 
     for i in 0..n {
         let t = i as f32 / sr;
-        let pos = ((t.max(t0).ln() - t0.ln()) * inv_range * (m as f32 - 1.0))
-            .clamp(0.0, m as f32 - 1.0);
+        let pos =
+            ((t.max(t0).ln() - t0.ln()) * inv_range * (m as f32 - 1.0)).clamp(0.0, m as f32 - 1.0);
         let idx = pos.floor() as usize;
         let frac = pos - idx as f32;
         let idx2 = (idx + 1).min(m - 1);
@@ -327,7 +332,11 @@ pub fn synth_analyzed_note(
     let mut lp = OnePole::new();
     let lp_alpha = (sr * 0.00006).clamp(0.02, 0.12);
     let peak_guard = out.iter().fold(0f32, |a, &b| a.max(b.abs()));
-    let pre_scale = if peak_guard > 0.0001 { (1.0 / peak_guard).min(1.0) } else { 1.0 };
+    let pre_scale = if peak_guard > 0.0001 {
+        (1.0 / peak_guard).min(1.0)
+    } else {
+        1.0
+    };
 
     for i in 0..n {
         let t = i as f32 / sr;

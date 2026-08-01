@@ -35,7 +35,11 @@ pub fn get_client_base_url() -> Result<String, String> {
 
 pub fn get_client_clone() -> Result<ApiClient, String> {
     let base_url = BASE_URL.with(|b| b.borrow().clone());
-    let mut client = ApiClient::new(if base_url.is_empty() { "http://localhost:23001" } else { &base_url });
+    let mut client = ApiClient::new(if base_url.is_empty() {
+        "http://localhost:23001"
+    } else {
+        &base_url
+    });
     if let Some(token) = TOKEN.with(|t| t.borrow().clone()) {
         client.set_token(&token);
     }

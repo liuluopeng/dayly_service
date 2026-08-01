@@ -14,7 +14,10 @@ pub async fn search_xiandaihanyu(
     client: &ApiClient,
     query: &str,
 ) -> ApiResult<ApiResponse<String>> {
-    let path = format!("/api/dict/xiandaihanyu?search={}", urlencoding::encode(query));
+    let path = format!(
+        "/api/dict/xiandaihanyu?search={}",
+        urlencoding::encode(query)
+    );
     let response = client
         .get(&path)
         .await
@@ -135,10 +138,7 @@ pub async fn get_top_words(client: &ApiClient) -> ApiResult<ApiResponse<Vec<Word
     Ok(words)
 }
 
-pub async fn word_search_count(
-    client: &ApiClient,
-    word: &str,
-) -> ApiResult<ApiResponse<i64>> {
+pub async fn word_search_count(client: &ApiClient, word: &str) -> ApiResult<ApiResponse<i64>> {
     let path = format!("/api/dict/word-count?search={}", urlencoding::encode(word));
     let response = client
         .get(&path)

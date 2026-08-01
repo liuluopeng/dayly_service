@@ -48,7 +48,7 @@ impl TableFormatter {
     fn truncate_to_width(s: &str, max_width: usize) -> String {
         let mut width = 0;
         let mut result = String::new();
-        
+
         for c in s.chars() {
             let char_width = if c.is_ascii() { 1 } else { 2 };
             if width + char_width > max_width {
@@ -57,7 +57,7 @@ impl TableFormatter {
             result.push(c);
             width += char_width;
         }
-        
+
         result
     }
 
@@ -66,7 +66,7 @@ impl TableFormatter {
         let colored_label = crate::utils::color::colorize(label, label_color);
         let label_visual_width = Self::visual_width(label);
         let content_max_width = self.width - 5 - label_visual_width - 4;
-        
+
         let content_visual_width = Self::visual_width(content);
         let truncated_content = if content_visual_width > content_max_width {
             let truncated = Self::truncate_to_width(content, content_max_width - 3);
@@ -74,10 +74,10 @@ impl TableFormatter {
         } else {
             content.to_string()
         };
-        
+
         let truncated_visual_width = Self::visual_width(&truncated_content);
         let padding = content_max_width - truncated_visual_width;
-        
+
         format!(
             "│ {} : {}{}│",
             colored_label,

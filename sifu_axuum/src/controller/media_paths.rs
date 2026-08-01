@@ -66,7 +66,10 @@ pub async fn add_media_path(
     }
 
     if !["song", "video", "photo", "book", "melatonin"].contains(&body.media_type.as_str()) {
-        return Err(ApiError::bad_request(ApiError::INVALID_MEDIA_TYPE, "无效的媒体类型"));
+        return Err(ApiError::bad_request(
+            ApiError::INVALID_MEDIA_TYPE,
+            "无效的媒体类型",
+        ));
     }
 
     // 验证当前用户在 directory 的 allow_list 中
@@ -80,7 +83,10 @@ pub async fn add_media_path(
     .map_err(|e| ApiError::Internal(format!("验证目录失败: {}", e)))?;
 
     if !dir_exists {
-        return Err(ApiError::not_found(ApiError::DIR_ACCESS_DENIED, "目录不存在或无权访问"));
+        return Err(ApiError::not_found(
+            ApiError::DIR_ACCESS_DENIED,
+            "目录不存在或无权访问",
+        ));
     }
 
     // 数据库 trigger 会验证 path 必须是 directory 的子路径
@@ -126,7 +132,10 @@ pub async fn delete_media_path(
     .map_err(|e| ApiError::Internal(format!("移除媒体路径权限失败: {}", e)))?;
 
     if result.rows_affected() == 0 {
-        return Err(ApiError::not_found(ApiError::MEDIA_PATH_NOT_FOUND, "媒体路径不存在"));
+        return Err(ApiError::not_found(
+            ApiError::MEDIA_PATH_NOT_FOUND,
+            "媒体路径不存在",
+        ));
     }
 
     // 无人有权限时删除整行

@@ -4,7 +4,7 @@ use crate::api::wifi_api::init::get_client_clone;
 
 pub use common::api::{
     base::ApiError,
-    ggtt::{SearchRequest, search_ggtt_code},
+    ggtt::{search_ggtt_code, SearchRequest},
 };
 
 pub use my_type::model::ggtt::GgttCode;
@@ -30,7 +30,9 @@ pub struct _SearchRequest {
 
 pub async fn search_ggtt_code_for_dart(search: String) -> Result<GgttCode, ApiError> {
     let client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
-    let req = SearchRequest { search: search.clone() };
+    let req = SearchRequest {
+        search: search.clone(),
+    };
     match search_ggtt_code(&client, req).await {
         Ok(res) => {
             if let Some(ggtt_code) = res.data {

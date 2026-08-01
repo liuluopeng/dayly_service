@@ -35,13 +35,8 @@ pub fn detect_format(data: &[u8]) -> Option<&'static str> {
 
 /// 缩放图片
 /// `width`, `height` 为目标尺寸，`filter` 为插值算法
-pub fn resize_image(
-    input: &[u8],
-    width: u32,
-    height: u32,
-) -> Result<Vec<u8>, ConvertError> {
-    let img = image::load_from_memory(input)
-        .map_err(|e| ConvertError::Decode(e.to_string()))?;
+pub fn resize_image(input: &[u8], width: u32, height: u32) -> Result<Vec<u8>, ConvertError> {
+    let img = image::load_from_memory(input).map_err(|e| ConvertError::Decode(e.to_string()))?;
 
     if width == 0 || height == 0 {
         return Err(ConvertError::Encode("目标尺寸不能为 0".into()));
@@ -57,20 +52,18 @@ pub fn resize_image(
 
 /// 裁剪图片
 /// `x`, `y` 为左上角坐标，`w`, `h` 为裁剪区域宽高
-pub fn crop_image(
-    input: &[u8],
-    x: u32,
-    y: u32,
-    w: u32,
-    h: u32,
-) -> Result<Vec<u8>, ConvertError> {
-    let img = image::load_from_memory(input)
-        .map_err(|e| ConvertError::Decode(e.to_string()))?;
+pub fn crop_image(input: &[u8], x: u32, y: u32, w: u32, h: u32) -> Result<Vec<u8>, ConvertError> {
+    let img = image::load_from_memory(input).map_err(|e| ConvertError::Decode(e.to_string()))?;
 
     if x + w > img.width() || y + h > img.height() {
         return Err(ConvertError::Encode(format!(
             "裁剪区域超出图片边界 (图片 {}x{}, 裁剪 {}x{} 偏移 ({},{}))",
-            img.width(), img.height(), w, h, x, y
+            img.width(),
+            img.height(),
+            w,
+            h,
+            x,
+            y
         )));
     }
 
@@ -103,8 +96,7 @@ pub fn convert_image_with_size(
     resize_w: u32,
     resize_h: u32,
 ) -> Result<Vec<u8>, ConvertError> {
-    let img = image::load_from_memory(input)
-        .map_err(|e| ConvertError::Decode(e.to_string()))?;
+    let img = image::load_from_memory(input).map_err(|e| ConvertError::Decode(e.to_string()))?;
 
     let img = if resize_w > 0 && resize_h > 0 {
         img.resize_exact(resize_w, resize_h, image::imageops::FilterType::Lanczos3)
@@ -122,11 +114,8 @@ pub fn convert_image_with_size(
     }
 }
 /// 解码图片并返回其 RGBA 像素数据及尺寸
-pub fn decode_image_info(
-    data: &[u8],
-) -> Result<(Vec<u8>, u32, u32), ConvertError> {
-    let img = image::load_from_memory(data)
-        .map_err(|e| ConvertError::Decode(e.to_string()))?;
+pub fn decode_image_info(data: &[u8]) -> Result<(Vec<u8>, u32, u32), ConvertError> {
+    let img = image::load_from_memory(data).map_err(|e| ConvertError::Decode(e.to_string()))?;
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();
     Ok((rgba.into_raw(), w, h))
@@ -186,9 +175,7 @@ fn make_test_image(w: u32, h: u32) -> Vec<u8> {
 /// 用指定格式编码测试图片，返回 bytes
 fn encode_raw(w: u32, h: u32, fmt: ImageFormat) -> Vec<u8> {
     let rgba = make_test_image(w, h);
-    let img = DynamicImage::ImageRgba8(
-        ImageBuffer::<Rgba<u8>, _>::from_raw(w, h, rgba).unwrap(),
-    );
+    let img = DynamicImage::ImageRgba8(ImageBuffer::<Rgba<u8>, _>::from_raw(w, h, rgba).unwrap());
     let mut buf = Cursor::new(Vec::new());
     img.write_to(&mut buf, fmt).unwrap();
     buf.into_inner()
@@ -358,9 +345,8 @@ mod tests {
         for _ in 0..10 * 10 {
             buf.extend_from_slice(&[255, 0, 0, 255]); // RGBA 纯红
         }
-        let img = DynamicImage::ImageRgba8(
-            ImageBuffer::<Rgba<u8>, _>::from_raw(10, 10, buf).unwrap(),
-        );
+        let img =
+            DynamicImage::ImageRgba8(ImageBuffer::<Rgba<u8>, _>::from_raw(10, 10, buf).unwrap());
         let mut png_buf = Cursor::new(Vec::new());
         img.write_to(&mut png_buf, ImageFormat::Png).unwrap();
 
@@ -368,7 +354,11 @@ mod tests {
         let (pixels, w, h) = decode_image_info(&cropped).unwrap();
         assert_eq!((w, h), (2, 2));
         // 所有像素应为纯红
-        assert!(pixels.chunks(4).all(|p| p[0] == 255 && p[1] == 0 && p[2] == 0 && p[3] == 255));
+        assert!(
+            pixels
+                .chunks(4)
+                .all(|p| p[0] == 255 && p[1] == 0 && p[2] == 0 && p[3] == 255)
+        );
     }
 
     #[test]
@@ -483,5 +473,3 @@ mod tests {
         assert_eq!(&data[8..12], WEBP_SUBTYPE);
     }
 }
-
-
