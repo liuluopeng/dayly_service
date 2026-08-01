@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: Rust fmt / clippy / test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      # 缓存 cargo 依赖
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (deny warnings)
+        # future_incompatible 忽略：block v0.1.6 是第三方间接依赖的已知弃用提示
+        run: cargo clippy --workspace -- -D warnings -A future_incompatible
+
+      - name: Build tests
+        run: cargo test --workspace --no-run
+
+      - name: Run tests
+        run: cargo test --workspace
+
+  frontend:
+    name: Vue typecheck / build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+
+      - name: Install dependencies
+        working-directory: webbvueetauri
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: webbvueetauri
+        run: npx vue-tsc --noEmit
+
+      - name: Build
+        working-directory: webbvueetauri
+        run: pnpm build
