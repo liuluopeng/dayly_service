@@ -54,7 +54,7 @@ pub async fn scan_melatonin(
     claims: Claims,
 ) -> ApiResult<Json<serde_json::Value>> {
     // 查询该用户所有 dmm 类型的媒体路径
-    let mut video_paths: Vec<(Uuid, String)> = sqlx::query_as(
+    let video_paths: Vec<(Uuid, String)> = sqlx::query_as(
         "SELECT id, path FROM media_paths WHERE $1 = ANY(allow_list) AND media_type = 'melatonin'",
     )
     .bind(&claims.username)
@@ -87,27 +87,25 @@ pub async fn scan_melatonin(
 
         while let Some(dir_path) = dir_stack.pop() {
             if let Ok(entries) = fs::read_dir(&dir_path) {
-                for entry in entries {
-                    if let Ok(entry) = entry {
-                        let path = entry.path();
+                for entry in entries.flatten() {
+                    let path = entry.path();
 
-                        if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
-                            if let Ok(movie) = check_and_add_melatonin_movie(
-                                &path,
-                                media_path_id,
-                                &pool,
-                                &existing_dirs,
-                            )
-                            .await
-                            {
-                                if movie.is_some() {
-                                    movies_added += 1;
-                                }
-                                movies_scanned += 1;
+                    if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
+                        if let Ok(movie) = check_and_add_melatonin_movie(
+                            &path,
+                            media_path_id,
+                            &pool,
+                            &existing_dirs,
+                        )
+                        .await
+                        {
+                            if movie.is_some() {
+                                movies_added += 1;
                             }
-
-                            dir_stack.push(path);
+                            movies_scanned += 1;
                         }
+
+                        dir_stack.push(path);
                     }
                 }
             }
@@ -207,9 +205,7 @@ async fn check_and_add_melatonin_movie(
                         nfo_file = Some(file.path().to_string_lossy().to_string());
                     } else if is_image_file(&lower_name) {
                         // 优先选择名称含 "cover" 的图片
-                        if lower_name.contains("cover") {
-                            cover_file = Some(file.path().to_string_lossy().to_string());
-                        } else if cover_file.is_none() {
+                        if lower_name.contains("cover") || cover_file.is_none() {
                             cover_file = Some(file.path().to_string_lossy().to_string());
                         }
                     } else {
@@ -301,7 +297,7 @@ async fn check_and_add_melatonin_movie(
         "INSERT INTO melatonin_movies (id, title, cover_path, video_path, video_paths, nfo_json, media_path_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7)",
     )
-    .bind(&movie.id)
+    .bind(movie.id)
     .bind(&movie.title)
     .bind(&movie.cover_path)
     .bind(&first_video)
@@ -325,26 +321,25 @@ fn scan_preview_urls(dir_path: &StdPath, cover_path: &str, user_dirs: &[String])
         return vec![];
     };
     let mut previews: Vec<(u32, String)> = Vec::new();
-    for entry in entries {
-        if let Ok(entry) = entry {
+    for entry in entries.flatten() {
+        {
             let file_name = entry.file_name().to_string_lossy().to_string();
             let path = entry.path().to_string_lossy().to_string();
             // 排除 cover 文件
             if path == cover_path {
                 continue;
             }
-            if let Some(stem) = StdPath::new(&file_name).file_stem() {
-                if let Ok(n) = stem.to_string_lossy().parse::<u32>() {
-                    let lower = file_name.to_lowercase();
-                    if lower.ends_with(".jpg")
-                        || lower.ends_with(".jpeg")
-                        || lower.ends_with(".png")
-                        || lower.ends_with(".webp")
-                    {
-                        if let Some(url) = build_file_url(&path, user_dirs) {
-                            previews.push((n, url));
-                        }
-                    }
+            if let Some(stem) = StdPath::new(&file_name).file_stem()
+                && let Ok(n) = stem.to_string_lossy().parse::<u32>()
+            {
+                let lower = file_name.to_lowercase();
+                if (lower.ends_with(".jpg")
+                    || lower.ends_with(".jpeg")
+                    || lower.ends_with(".png")
+                    || lower.ends_with(".webp"))
+                    && let Some(url) = build_file_url(&path, user_dirs)
+                {
+                    previews.push((n, url));
                 }
             }
         }
@@ -520,15 +515,12 @@ pub async fn get_movies_by_actor(
             movie
                 .try_get::<serde_json::Value, _>("nfo_json")
                 .unwrap_or_default(),
-        ) {
-            if let Some(actors) = dmm_metadata.actor {
-                if actors
-                    .iter()
-                    .any(|a| a.name.eq_ignore_ascii_case(&actor_name))
-                {
-                    filtered_movies.push(movie);
-                }
-            }
+        ) && let Some(actors) = dmm_metadata.actor
+            && actors
+                .iter()
+                .any(|a| a.name.eq_ignore_ascii_case(&actor_name))
+        {
+            filtered_movies.push(movie);
         }
     }
 

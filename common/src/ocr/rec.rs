@@ -61,7 +61,7 @@ pub fn recognize(pixels: &[u8], width: u32, height: u32) -> Result<String, Strin
     let scale = target_h as f64 / height.max(1) as f64;
     let mut target_w = (width as f64 * scale).ceil() as u32;
     target_w = target_w.max(8);
-    target_w = ((target_w + 7) / 8) * 8;
+    target_w = target_w.div_ceil(8) * 8;
 
     // CHW tensor with BGR + [-1,1] norm
     let mut array = Array4::<f32>::zeros((1, 3, target_h as usize, target_w as usize));
@@ -118,10 +118,10 @@ pub fn recognize(pixels: &[u8], width: u32, height: u32) -> Result<String, Strin
         }
         if best != blank && best != prev {
             // Model index 0 = blank, index 1 = chars[0], index 2 = chars[1], ...
-            if best <= e.chars.len() {
-                if let Some(ch) = e.chars.get(best - 1) {
-                    result.push_str(ch);
-                }
+            if best <= e.chars.len()
+                && let Some(ch) = e.chars.get(best - 1)
+            {
+                result.push_str(ch);
             }
         }
         prev = best;

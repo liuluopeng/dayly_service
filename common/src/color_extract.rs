@@ -18,9 +18,9 @@ fn is_dark(r: u8, g: u8, b: u8) -> bool {
 }
 
 fn color_dist(c1: (u8, u8, u8), c2: (u8, u8, u8)) -> f64 {
-    let dr = (c1.0 as f64 - c2.0 as f64);
-    let dg = (c1.1 as f64 - c2.1 as f64);
-    let db = (c1.2 as f64 - c2.2 as f64);
+    let dr = c1.0 as f64 - c2.0 as f64;
+    let dg = c1.1 as f64 - c2.1 as f64;
+    let db = c1.2 as f64 - c2.2 as f64;
     (dr * dr + dg * dg + db * db).sqrt()
 }
 
@@ -33,7 +33,7 @@ fn contrast_ratio(c1: (u8, u8, u8), c2: (u8, u8, u8)) -> f64 {
 }
 
 fn to_int(r: u8, g: u8, b: u8) -> i64 {
-    ((255i64 << 24) | ((r as i64) << 16) | ((g as i64) << 8) | (b as i64)) as i64
+    (255i64 << 24) | ((r as i64) << 16) | ((g as i64) << 8) | (b as i64)
 }
 
 fn invert(r: u8, g: u8, b: u8) -> (u8, u8, u8) {
@@ -84,14 +84,18 @@ pub fn extract_colors(image_bytes: &[u8]) -> (Option<i64>, Option<i64>) {
         }
         if total > 0 {
             merged.insert(
-                ((sr / total) as u8, (sg / total) as u8, (sb / total) as u8),
+                (
+                    sr.checked_div(total).unwrap_or(0) as u8,
+                    sg.checked_div(total).unwrap_or(0) as u8,
+                    sb.checked_div(total).unwrap_or(0) as u8,
+                ),
                 total as usize,
             );
         }
     }
 
     let mut sorted: Vec<_> = merged.into_iter().collect();
-    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
     let total_px = (mosaic * mosaic) as usize;
 
     let filtered: Vec<_> = sorted

@@ -1,4 +1,4 @@
-use common::api::{client::ApiClient, ggtt::search_ggtt_code};
+use common::api::ggtt::search_ggtt_code;
 use my_type::dto::SearchRequest;
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;

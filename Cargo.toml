@@ -70,3 +70,7 @@ thiserror = "2.0.18"
 redis = { version = "0.28", features = ["tokio-comp", "connection-manager"] }
 html2text = "0.14"
 tempfile = "3.10"
+
+# wasm 产物尺寸优化（原 wasm crate 的 profile 移到这里，避免非根包 profile 被忽略）
+[profile.release]
+opt-level = "s"

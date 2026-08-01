@@ -54,7 +54,7 @@ impl fmt::Display for Note {
                 "ASCII text".to_string()
             } else if String::from_utf8(content.to_vec()).is_ok() {
                 "UTF-8 text".to_string()
-            } else if content.len() > 0 {
+            } else if !content.is_empty() {
                 "data".to_string()
             } else {
                 "empty".to_string()

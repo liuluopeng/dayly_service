@@ -129,7 +129,7 @@ fn disable_btn(id: &str, disabled: bool) {
 
 fn on_keydown(id: &str, key: &str, mut f: impl FnMut() + 'static) {
     let cb = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
-        if &e.key() == key {
+        if e.key() == key {
             f();
         }
     }) as Box<dyn FnMut(_)>);
@@ -334,11 +334,9 @@ async fn do_wubi_search() {
         Ok(resp) => {
             if let Some(d) = resp.data {
                 let mut svgs = String::new();
-                for svg in [&d.svg1, &d.svg2, &d.svg3, &d.svg4] {
-                    if let Some(s) = svg {
-                        if !s.is_empty() && s.contains("<path") {
-                            svgs.push_str(&format!("<div style='display:inline-block;width:75px;height:75px;margin:4px'>{}</div>", s));
-                        }
+                for s in [&d.svg1, &d.svg2, &d.svg3, &d.svg4].into_iter().flatten() {
+                    if !s.is_empty() && s.contains("<path") {
+                        svgs.push_str(&format!("<div style='display:inline-block;width:75px;height:75px;margin:4px'>{}</div>", s));
                     }
                 }
                 let svg_section = if svgs.is_empty() {
@@ -2881,7 +2879,7 @@ async fn do_search_history() {
                     set_text("shistory-result", "暂无搜索历史");
                 } else {
                     let mut html = String::from("<div style='font-size:13px'>");
-                    for (_i, h) in history.iter().enumerate() {
+                    for h in history.iter() {
                         let escaped = h
                             .word
                             .replace("&", "&amp;")
@@ -2965,10 +2963,9 @@ async fn do_short_note_create() {
     match create_short_note(&client, req).await {
         Ok(resp) => {
             set_text("sn-result", &format!("创建成功: {}", resp.msg));
-            el("sn-content")
-                .dyn_into::<HtmlTextAreaElement>()
-                .ok()
-                .map(|e| e.set_value(""));
+            if let Ok(e) = el("sn-content").dyn_into::<HtmlTextAreaElement>() {
+                e.set_value("")
+            }
             do_short_notes_refresh().await;
         }
         Err(e) => set_text("sn-result", &format!("创建失败: {}", e)),
@@ -3266,8 +3263,8 @@ fn spectrum_tick() {
     let mut data = vec![0u8; buf_len];
     analyser.get_byte_frequency_data(&mut data);
 
-    for i in 0..48.min(bins.len()) {
-        let bin = bins[i] as usize;
+    for (i, &bin) in bins.iter().take(48.min(bins.len())).enumerate() {
+        let bin = bin as usize;
         let val = data.get(bin).copied().unwrap_or(0) as f64 / 255.0;
         let height = (val * 100.0f64).max(1.0);
         let hue = 260.0 + (i as f64 / 47.0) * 40.0;
@@ -3375,18 +3372,18 @@ pub fn start() {
         })
     });
     on_keydown("login-pass", "Enter", || {
-        let _ = el("login-btn").click();
+        el("login-btn").click();
     });
 
     // GGTT
     on_keydown("wubi-input", "Enter", || {
-        let _ = el("wubi-btn").click();
+        el("wubi-btn").click();
     });
     on_click("wubi-btn", || spawn_local(do_wubi_search()));
 
     // Dict
     on_keydown("dict-input", "Enter", || {
-        let _ = el("dict-btn").click();
+        el("dict-btn").click();
     });
     on_click("dict-btn", || spawn_local(do_dict_search()));
 
@@ -3444,7 +3441,7 @@ pub fn start() {
     // Zici words
     on_click("zici-word-search-btn", do_zici_word_search);
     on_keydown("zici-word-search", "Enter", || {
-        let _ = el("zici-word-search-btn").click();
+        el("zici-word-search-btn").click();
     });
 
     // Search history

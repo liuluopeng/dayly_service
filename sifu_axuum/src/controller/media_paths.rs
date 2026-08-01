@@ -1,6 +1,6 @@
 use crate::middleware::Claims;
 use axum::extract::{Extension, Path as AxumPath, Query};
-use axum::routing::{delete, get, post};
+use axum::routing::{delete, get};
 use axum::{Json, Router};
 use common::api::base::{ApiError, ApiResponse, ApiResult};
 use my_type::model::media_paths::MediaPath;
@@ -103,8 +103,8 @@ pub async fn add_media_path(
     .bind(body.directory_id)
     .bind(&body.media_type)
     .bind(&body.path)
-    .bind(&body.label.unwrap_or_default())
-    .bind(&vec![username.clone()])
+    .bind(body.label.unwrap_or_default())
+    .bind(vec![username.clone()])
     .fetch_one(&pg_pool)
     .await
     .map_err(|e| ApiError::Internal(format!("添加媒体路径失败: {}", e)))?;

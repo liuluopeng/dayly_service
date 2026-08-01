@@ -1,4 +1,4 @@
-use common::api::openai::{AddMessageRequest, ChatCompletionRequest, CreateSessionRequest};
+use common::api::openai::ChatCompletionRequest;
 use serde_wasm_bindgen::to_value;
 use uuid::Uuid;
 use wasm_bindgen::prelude::*;
@@ -101,10 +101,7 @@ pub async fn add_message(
             if cite_str.is_empty() {
                 None
             } else {
-                match serde_json::from_str(&cite_str) {
-                    Ok(val) => Some(val),
-                    Err(_) => None,
-                }
+                serde_json::from_str(&cite_str).ok()
             }
         }
         None => None,
@@ -177,8 +174,8 @@ pub async fn chat_completion(request: &str) -> Result<JsValue, JsValue> {
 
 #[wasm_bindgen]
 pub async fn chat_completion_stream(request: &str) -> Result<JsValue, JsValue> {
-    let client = get_api_client(None);
-    let req: ChatCompletionRequest =
+    let _client = get_api_client(None);
+    let _req: ChatCompletionRequest =
         serde_json::from_str(request).map_err(|e| JsValue::from_str(&e.to_string()))?;
 
     // 这里直接返回成功，因为流式传输需要在前端使用fetch API直接调用

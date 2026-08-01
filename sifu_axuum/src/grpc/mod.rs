@@ -116,7 +116,7 @@ impl ClipboardHistory for ClipboardHistorySvc {
         request: tonic::Request<HistoryRequest>,
     ) -> Result<tonic::Response<HistoryResponse>, tonic::Status> {
         let req = request.into_inner();
-        let count = (req.count.max(1).min(200)) as i64;
+        let count = req.count.clamp(1, 200) as i64;
 
         let entries = if !req.search.is_empty() {
             let pattern = format!("%{}%", req.search.replace('%', "\\%"));

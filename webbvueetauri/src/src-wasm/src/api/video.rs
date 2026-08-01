@@ -1,7 +1,4 @@
-use common::api::{
-    client::ApiClient,
-    videos::{list_videos, scan_videos},
-};
+use common::api::videos::{list_videos, scan_videos};
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
 

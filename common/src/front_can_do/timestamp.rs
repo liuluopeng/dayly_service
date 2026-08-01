@@ -6,8 +6,7 @@ use chrono::{DateTime, Local, Utc};
 /// # Returns
 /// * 本地时间字符串，格式为 "YYYY-MM-DD HH:MM:SS"
 pub fn timestamp_to_local(timestamp: i64) -> String {
-    let datetime: DateTime<Utc> =
-        DateTime::from_timestamp(timestamp, 0).unwrap_or_else(|| Utc::now());
+    let datetime: DateTime<Utc> = DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now);
     let local_datetime: DateTime<Local> = datetime.into();
     local_datetime.format("%Y-%m-%d %H:%M:%S").to_string()
 }
@@ -18,8 +17,7 @@ pub fn timestamp_to_local(timestamp: i64) -> String {
 /// # Returns
 /// * UTC 时间字符串，格式为 "YYYY-MM-DD HH:MM:SS UTC"
 pub fn timestamp_to_utc(timestamp: i64) -> String {
-    let datetime: DateTime<Utc> =
-        DateTime::from_timestamp(timestamp, 0).unwrap_or_else(|| Utc::now());
+    let datetime: DateTime<Utc> = DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now);
     datetime.format("%Y-%m-%d %H:%M:%S UTC").to_string()
 }
 

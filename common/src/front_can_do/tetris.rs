@@ -41,6 +41,12 @@ pub struct Tetris {
     rot: usize,
 }
 
+impl Default for Tetris {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Tetris {
     pub fn new() -> Self {
         let mut t = Tetris {
@@ -64,10 +70,10 @@ impl Tetris {
         rotated(d, w, h, self.rot)
     }
 
-    fn collides(&self, dx: i32, dy: i32, dr: usize) -> bool {
+    fn collides(&self, _dx: i32, _dy: i32, dr: usize) -> bool {
         let (d, w, h) = PIECES[self.piece_idx];
         let r = rotated(d, w, h, (self.rot + dr) % 4);
-        let (cw, ch) = if (self.rot + dr) % 2 == 0 {
+        let (cw, ch) = if (self.rot + dr).is_multiple_of(2) {
             (w, h)
         } else {
             (h, w)
@@ -103,7 +109,11 @@ impl Tetris {
     fn lock(&mut self) {
         let r = self.cells();
         let (_, w, h) = self.piece();
-        let (cw, ch) = if self.rot % 2 == 0 { (w, h) } else { (h, w) };
+        let (cw, ch) = if self.rot.is_multiple_of(2) {
+            (w, h)
+        } else {
+            (h, w)
+        };
         for y in 0..ch {
             for x in 0..cw {
                 if r[y * cw + x] == 0 {
@@ -165,10 +175,8 @@ impl Tetris {
                 }
                 self.lock();
             }
-            "rotate" => {
-                if !self.collides(0, 0, 1) {
-                    self.rot = (self.rot + 1) % 4;
-                }
+            "rotate" if !self.collides(0, 0, 1) => {
+                self.rot = (self.rot + 1) % 4;
             }
             _ => {}
         }

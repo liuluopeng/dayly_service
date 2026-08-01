@@ -2,15 +2,13 @@ use crate::config::env::OpenAiConfig;
 use crate::middleware::Claims;
 use axum::body::Body;
 use axum::{Extension, Json, Router, routing::post};
-use common::api::base::{ApiError, ApiResponse, ApiResult};
-use futures::stream::{self, Stream, StreamExt};
-use hyper::body::Body as HyperBody;
+use common::api::base::{ApiError, ApiResponse};
+
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::PgPool;
-use std::time::Duration;
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 use uuid::Uuid;
 
 /// 校验会话是否属于当前用户，防止向他人会话注入消息
@@ -69,7 +67,7 @@ async fn chat_completion(
     claims: Claims,
     Extension(openai_config): Extension<OpenAiConfig>,
     Extension(pool): Extension<PgPool>,
-    Json(mut request): Json<OpenAiRequest>,
+    Json(request): Json<OpenAiRequest>,
 ) -> Result<Json<ApiResponse<Value>>, ApiError> {
     if openai_config.openai_api_key.is_empty() {
         return Err(ApiError::bad_request(
@@ -119,21 +117,22 @@ async fn chat_completion(
                 "会话不存在",
             ));
         }
-        if let Some(choices) = response_json.get("choices") {
-            if let Some(first_choice) = choices.as_array().and_then(|arr| arr.first()) {
-                if let Some(message) = first_choice.get("message") {
-                    if let Some(role) = message.get("role").and_then(|r| r.as_str()) {
-                        if let Some(content) = message.get("content").and_then(|c| c.as_str()) {
-                            // 提取reasoning_content字段（如果存在）
-                            let think = message.get("reasoning_content").and_then(|t| t.as_str());
+        if let Some(choices) = response_json.get("choices")
+            && let Some(first_choice) = choices.as_array().and_then(|arr| arr.first())
+            && let Some(message) = first_choice.get("message")
+            && let Some(role) = message.get("role").and_then(|r| r.as_str())
+            && let Some(content) = message.get("content").and_then(|c| c.as_str())
+        {
+            // 提取reasoning_content字段（如果存在）
+            let think = message.get("reasoning_content").and_then(|t| t.as_str());
 
-                            // 提取cite字段（如果存在）
-                            let cite = message.get("cite").cloned();
+            // 提取cite字段（如果存在）
+            let cite = message.get("cite").cloned();
 
-                            sqlx::query(
+            sqlx::query(
                                 r#"INSERT INTO openai_messages (session_id, role, content, think, cite) VALUES ($1, $2, $3, $4, $5)"#
                             )
-                            .bind(&session_id)
+                            .bind(session_id)
                             .bind(role)
                             .bind(content)
                             .bind(think)
@@ -141,10 +140,6 @@ async fn chat_completion(
                             .execute(&pool)
                             .await
                             .ok();
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -223,7 +218,7 @@ async fn chat_completion_stream(
 
     // 手动处理流，同时收集AI回复
     let pool_clone = pool.clone();
-    let session_id_clone = session_id.clone();
+    let session_id_clone = session_id;
 
     let body = Body::from_stream(futures::stream::try_unfold(
         (response, String::new(), pool_clone, session_id_clone),
@@ -289,7 +284,7 @@ async fn chat_completion_stream(
                                 "INSERT INTO openai_messages (session_id, role, content, think, cite, created_at) 
                                  VALUES ($1, $2, $3, $4, $5, NOW())"
                             )
-                            .bind(&session_id)
+                            .bind(session_id)
                             .bind("assistant")
                             .bind(&assistant_content)
                             .bind(if assistant_think.is_empty() { None } else { Some(&assistant_think) })

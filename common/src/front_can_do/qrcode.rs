@@ -23,7 +23,7 @@ impl std::fmt::Display for QrError {
 /// `scale` — 每个模块的像素大小（建议 8-20）
 /// `margin` — 外边距模块数（默认 2）
 pub fn generate_qr_png(text: &str, scale: u32, margin: u32) -> Result<Vec<u8>, QrError> {
-    let scale = scale.max(1).min(100);
+    let scale = scale.clamp(1, 100);
     let margin = margin.min(10);
 
     let code = QrCode::new(text).map_err(|e| QrError::Encode(e.to_string()))?;
@@ -34,7 +34,7 @@ pub fn generate_qr_png(text: &str, scale: u32, margin: u32) -> Result<Vec<u8>, Q
         .dark_color(Rgba([0, 0, 0, 255]))
         .light_color(Rgba([255, 255, 255, 255]))
         .quiet_zone(false)
-        .module_dimensions(scale as u32, scale as u32)
+        .module_dimensions(scale, scale)
         .build();
 
     let inner_w = raw_pixels.width();
@@ -85,7 +85,7 @@ pub fn qr_info(text: &str) -> Result<(i16, usize), QrError> {
         Version::Normal(v) => v,
         Version::Micro(v) => -v,
     };
-    let size = code.width() as usize;
+    let size = code.width();
     Ok((version, size))
 }
 

@@ -17,7 +17,7 @@ use sqlx::PgPool;
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 use uuid::Uuid;
 use walkdir::WalkDir;
 

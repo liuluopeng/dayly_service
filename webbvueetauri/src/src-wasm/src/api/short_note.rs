@@ -1,9 +1,6 @@
-use common::api::{
-    client::ApiClient,
-    short_note::{
-        create_short_note, delete_short_note, get_short_note, list_short_notes, update_short_note,
-        CreateShortNoteRequest, UpdateShortNoteRequest,
-    },
+use common::api::short_note::{
+    create_short_note, delete_short_note, get_short_note, list_short_notes, update_short_note,
+    CreateShortNoteRequest, UpdateShortNoteRequest,
 };
 use serde_wasm_bindgen::to_value;
 use uuid::Uuid;

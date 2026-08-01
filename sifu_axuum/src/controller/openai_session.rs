@@ -82,7 +82,7 @@ async fn get_session(
     let session = sqlx::query_as::<_, OpenAiSession>(
         r#"SELECT * FROM openai_sessions WHERE id = $1 AND user_id = $2"#,
     )
-    .bind(&session_id)
+    .bind(session_id)
     .bind(user_id)
     .fetch_one(&pool)
     .await
@@ -94,7 +94,7 @@ async fn get_session(
     let messages = sqlx::query_as::<_, OpenAiMessage>(
         r#"SELECT * FROM openai_messages WHERE session_id = $1 ORDER BY created_at ASC"#,
     )
-    .bind(&session_id)
+    .bind(session_id)
     .fetch_all(&pool)
     .await
     .map_err(|e| {
@@ -113,7 +113,7 @@ async fn delete_session(
 ) -> ApiResult<ApiResponse<()>> {
     let user_id = Uuid::parse_str(&claims.id).unwrap_or_default();
     sqlx::query(r#"DELETE FROM openai_sessions WHERE id = $1 AND user_id = $2"#)
-        .bind(&session_id)
+        .bind(session_id)
         .bind(user_id)
         .execute(&pool)
         .await
@@ -137,7 +137,7 @@ async fn add_message(
     let _session = sqlx::query_scalar::<_, Uuid>(
         r#"SELECT id FROM openai_sessions WHERE id = $1 AND user_id = $2"#,
     )
-    .bind(&session_id)
+    .bind(session_id)
     .bind(user_id)
     .fetch_one(&pool)
     .await
@@ -146,7 +146,7 @@ async fn add_message(
     let message = sqlx::query_as::<_, OpenAiMessage>(
         r#"INSERT INTO openai_messages (session_id, role, content, think, cite) VALUES ($1, $2, $3, $4, $5) RETURNING *"#
     )
-    .bind(&session_id)
+    .bind(session_id)
     .bind(&req.role)
     .bind(&req.content)
     .bind(&req.think)
@@ -160,7 +160,7 @@ async fn add_message(
 
     // 更新会话的 updated_at
     sqlx::query(r#"UPDATE openai_sessions SET updated_at = NOW() WHERE id = $1"#)
-        .bind(&session_id)
+        .bind(session_id)
         .execute(&pool)
         .await
         .ok();
@@ -179,7 +179,7 @@ async fn get_session_messages(
     let _session = sqlx::query_scalar::<_, Uuid>(
         r#"SELECT id FROM openai_sessions WHERE id = $1 AND user_id = $2"#,
     )
-    .bind(&session_id)
+    .bind(session_id)
     .bind(user_id)
     .fetch_one(&pool)
     .await
@@ -188,7 +188,7 @@ async fn get_session_messages(
     let messages = sqlx::query_as::<_, OpenAiMessage>(
         r#"SELECT * FROM openai_messages WHERE session_id = $1 ORDER BY created_at ASC"#,
     )
-    .bind(&session_id)
+    .bind(session_id)
     .fetch_all(&pool)
     .await
     .map_err(|e| {

@@ -1,4 +1,6 @@
 //! 音色分析-再合成：从钢琴采样 MP3 中提取音色参数，再用参数驱动加法合成
+// 热路径 DSP 循环：延迟线/相位计算依赖索引形式，保持索引循环
+#![allow(clippy::needless_range_loop)]
 //!
 //! 管线：
 //! 1. `analyze_piano_samples`：STFT + Hann 窗，逐帧提取前 H 个谐波的峰值振幅、
@@ -104,7 +106,7 @@ pub fn analyze_piano_samples(samples: &[f32], freq: f32, sample_rate: u32) -> Ve
 
     let mut amps = vec![vec![0f32; frames]; H];
     let mut rms = vec![0f32; frames];
-    let mut noise_energy = vec![0f32; NOISE_BINS];
+    let mut noise_energy = [0f32; NOISE_BINS];
 
     let mut re = vec![0f32; FRAME];
     let mut im = vec![0f32; FRAME];
@@ -261,8 +263,8 @@ pub fn synth_analyzed_note(
         return Vec::new();
     }
 
-    let h = (params[3] as usize).min(H).max(1);
-    let m = (params[4] as usize).min(M).max(2);
+    let h = (params[3] as usize).clamp(1, H);
+    let m = (params[4] as usize).clamp(2, M);
     if params.len() < PARAM_HEAD + h * m + m + 1 {
         return Vec::new();
     }
@@ -340,8 +342,8 @@ pub fn synth_analyzed_note(
 
     for i in 0..n {
         let t = i as f32 / sr;
-        let attack = ((t * 400.0).min(1.0)) as f32;
-        let release = (((n - i) as f32 / (sr * 0.08)).min(1.0).max(0.0)) as f32;
+        let attack = (t * 400.0).min(1.0);
+        let release = ((n - i) as f32 / (sr * 0.08)).clamp(0.0, 1.0);
         out[i] = lp.process(out[i] * pre_scale, lp_alpha) * attack * release;
     }
 

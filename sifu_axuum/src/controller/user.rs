@@ -1,5 +1,4 @@
-use crate::middleware::{AuthBody, AuthError, AuthPayload, Claims, JwtSecret};
-use anyhow;
+use crate::middleware::{Claims, JwtSecret};
 use axum::Json;
 use axum::Router;
 use axum::extract::Extension;
@@ -20,6 +19,7 @@ use uuid::Uuid;
 struct User {
     id: Uuid,
     username: String,
+    #[allow(dead_code)] // 明文密码列，仅查询时保留兼容
     password: String,
     is_admin: bool,
     hash: Option<String>,
@@ -102,7 +102,7 @@ pub async fn user_logout(
 }
 
 #[derive(Debug, Serialize)]
-struct UserListItem {
+pub struct UserListItem {
     id: Uuid,
     username: String,
     is_admin: bool,

@@ -36,7 +36,7 @@ pub async fn list_short_notes(
     }
 
     if !params.is_empty() {
-        path.push_str("?");
+        path.push('?');
         path.push_str(&params.join("&"));
     }
 

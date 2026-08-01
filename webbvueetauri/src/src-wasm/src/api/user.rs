@@ -1,21 +1,15 @@
-use common::api::{
-    client::ApiClient,
-    user::{user_login, LoginRequest},
-};
+use common::api::user::user_login;
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
 
-use crate::{
-    api::init::{get_api_client, init_api_client},
-    console_log,
-};
+use crate::{api::init::get_api_client, console_log};
 
 #[wasm_bindgen]
 pub async fn login_wasm(
     username: &str,
     password: &str,
     token: Option<String>,
-    port: Option<String>,
+    _port: Option<String>,
 ) -> Result<JsValue, JsValue> {
     let client = get_api_client(token.as_deref());
 

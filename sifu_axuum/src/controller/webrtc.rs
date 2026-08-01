@@ -1,9 +1,9 @@
 use axum::{
-    Extension, Json, Router,
+    Extension, Router,
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     routing::get,
 };
-use common::api::base::{ApiError, ApiResponse, ApiResult};
+use common::api::base::{ApiResponse, ApiResult};
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -28,6 +28,12 @@ pub struct SignalingState {
     ws_senders: Arc<Mutex<HashMap<String, WsSender>>>,
     /// peer_id -> device_name
     names: Arc<Mutex<HashMap<String, String>>>,
+}
+
+impl Default for SignalingState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SignalingState {
@@ -74,7 +80,7 @@ impl SignalingState {
         let msg = serde_json::to_string(&SignalingResponse::PeerList { peers: peer_list }).unwrap();
 
         let senders = self.ws_senders.lock().await;
-        for (_, sender) in senders.iter() {
+        for sender in senders.values() {
             let mut s = sender.lock().await;
             let _ = s.send(Message::Text(msg.clone().into())).await;
         }
@@ -100,6 +106,7 @@ struct PeerInfo {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type")]
+#[allow(dead_code)] // 变体由信令 JSON 反序列化驱动
 enum SignalingMessage {
     #[serde(rename = "register")]
     Register { name: String },
@@ -115,6 +122,7 @@ enum SignalingMessage {
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
+#[allow(dead_code)] // 变体由信令 JSON 反序列化驱动
 enum SignalingResponse {
     #[serde(rename = "registered")]
     Registered { peer_id: String },
@@ -145,7 +153,6 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
     let (ws_sender, mut ws_receiver) = socket.split();
     let ws_sender = Arc::new(Mutex::new(ws_sender));
     let peer_id = Uuid::new_v4().to_string();
-    let mut device_name = String::new();
 
     // 等待客户端发送 register 消息
     let register_msg = match ws_receiver.next().await {
@@ -156,10 +163,8 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
         }
     };
 
-    match serde_json::from_str(&register_msg) {
-        Ok(SignalingMessage::Register { name }) => {
-            device_name = name;
-        }
+    let device_name = match serde_json::from_str(&register_msg) {
+        Ok(SignalingMessage::Register { name }) => name,
         _ => {
             info!("WebRTC signaling: 首条消息不是 register");
             return;
@@ -263,18 +268,18 @@ async fn handle_socket(socket: WebSocket, state: SignalingState) {
     peer_connection.on_ice_candidate(Box::new(move |candidate| {
         let ws_sender = ws_sender_for_ice.clone();
         Box::pin(async move {
-            if let Some(c) = candidate {
-                if let Ok(init) = c.to_json() {
-                    let resp = SignalingResponse::Candidate {
-                        candidate: init.candidate,
-                        sdp_mid: init.sdp_mid.unwrap_or_default(),
-                        sdp_mline_index: init.sdp_mline_index.unwrap_or(0),
-                    };
-                    let mut sender = ws_sender.lock().await;
-                    let _ = sender
-                        .send(Message::Text(serde_json::to_string(&resp).unwrap().into()))
-                        .await;
-                }
+            if let Some(c) = candidate
+                && let Ok(init) = c.to_json()
+            {
+                let resp = SignalingResponse::Candidate {
+                    candidate: init.candidate,
+                    sdp_mid: init.sdp_mid.unwrap_or_default(),
+                    sdp_mline_index: init.sdp_mline_index.unwrap_or(0),
+                };
+                let mut sender = ws_sender.lock().await;
+                let _ = sender
+                    .send(Message::Text(serde_json::to_string(&resp).unwrap().into()))
+                    .await;
             }
         })
     }));

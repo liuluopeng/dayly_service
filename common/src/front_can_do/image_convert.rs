@@ -159,6 +159,7 @@ fn encode_gif(img: &DynamicImage) -> Result<Vec<u8>, ConvertError> {
 }
 
 /// 生成一个简单的渐变色测试图片（RGBA）
+#[allow(dead_code)]
 fn make_test_image(w: u32, h: u32) -> Vec<u8> {
     let mut buf = Vec::with_capacity((w * h * 4) as usize);
     for y in 0..h {
@@ -173,6 +174,7 @@ fn make_test_image(w: u32, h: u32) -> Vec<u8> {
 }
 
 /// 用指定格式编码测试图片，返回 bytes
+#[allow(dead_code)]
 fn encode_raw(w: u32, h: u32, fmt: ImageFormat) -> Vec<u8> {
     let rgba = make_test_image(w, h);
     let img = DynamicImage::ImageRgba8(ImageBuffer::<Rgba<u8>, _>::from_raw(w, h, rgba).unwrap());
@@ -183,11 +185,17 @@ fn encode_raw(w: u32, h: u32, fmt: ImageFormat) -> Vec<u8> {
 
 // ─── 文件头魔数 ────────────────────────────────────────────────
 
+#[allow(dead_code)]
 const PNG_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+#[allow(dead_code)]
 const JPEG_HEADER: [u8; 3] = [0xFF, 0xD8, 0xFF];
+#[allow(dead_code)]
 const GIF_HEADER: [u8; 6] = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]; // GIF89a
+#[allow(dead_code)]
 const WEBP_HEADER: [u8; 4] = [0x52, 0x49, 0x46, 0x46]; // RIFF
+#[allow(dead_code)]
 const WEBP_SUBTYPE: [u8; 4] = [0x57, 0x45, 0x42, 0x50]; // WEBP
+#[allow(dead_code)]
 const BMP_HEADER: [u8; 2] = [0x42, 0x4D];
 
 #[cfg(test)]

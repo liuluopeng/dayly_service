@@ -1,17 +1,16 @@
 use crate::config::env::ServerConfig;
 use crate::middleware::Claims;
 use axum::extract::{Extension, Path, Query};
-use axum::{Json, response::Response};
+use axum::response::Response;
 use common::api::base::ApiError;
 use common::api::base::ApiResponse;
 use common::api::base::ApiResult;
 use common::api::dict::{DictSearchQuery, RecentHistoryQuery};
 use my_type::model::dict::DictWord;
 use my_type::model::dict::ModernChineseWord;
+use my_type::model::dict::Word;
 use my_type::model::dict::WordHistory;
-use my_type::model::dict::{DictResource, Word};
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::collections::HashMap;
@@ -143,13 +142,6 @@ async fn lookup_resource(table: &str, path: &str) -> Option<Vec<u8>> {
         .ok()
         .flatten()
 }
-// 定义响应结构体
-fn get_server_base_url() -> String {
-    let host = std::env::var("DOMAIN").unwrap_or_else(|_| "192.168.31.58".to_string());
-    let port = std::env::var("PORT").unwrap_or_else(|_| "23000".to_string());
-    format!("http://{}:{}", host, port)
-}
-
 fn process_entry_links(record: String, base_url: &str, dict_type: &str) -> String {
     let regex_entry = Regex::new(r#"<a\s+([^>]*?)href="?entry://([^"\s>]+)"?([^>]*?)>"#).unwrap();
     let api_url = format!("{}/api/dict/{}", base_url, dict_type);
@@ -312,15 +304,14 @@ fn process_collins_resources(record: String, base_url: &str) -> String {
             collins_resources_url
         ),
     );
-    let record = record.replace(
+
+    record.replace(
         "src=colcobuildoverhaul_config.ini",
         &format!(
             "src={}/colcobuildoverhaul_config.ini",
             collins_resources_url
         ),
-    );
-
-    record
+    )
 }
 
 fn process_ldoce_resources(record: String, base_url: &str) -> String {
@@ -353,7 +344,7 @@ fn process_ldoce_resources(record: String, base_url: &str) -> String {
         })
         .to_string();
 
-    let record = Regex::new(r#"src=("[^"]*"|'[^']*'|[^\s">]+)"#)
+    Regex::new(r#"src=("[^"]*"|'[^']*'|[^\s">]+)"#)
         .unwrap()
         .replace_all(&record, |caps: &regex::Captures| {
             let src_value = caps.get(1).map(|m| m.as_str()).unwrap_or("");
@@ -377,9 +368,7 @@ fn process_ldoce_resources(record: String, base_url: &str) -> String {
                 }
             }
         })
-        .to_string();
-
-    record
+        .to_string()
 }
 
 fn process_xiandaihanyu_resources(record: String, base_url: &str) -> String {
@@ -393,18 +382,17 @@ fn process_xiandaihanyu_resources(record: String, base_url: &str) -> String {
         "href='hycd.css'",
         &format!("href='{}/hycd.css'", xiandaihanyu_resources_url),
     );
-    let record = record.replace(
+
+    record.replace(
         "href=hycd.css",
         &format!("href={}/hycd.css", xiandaihanyu_resources_url),
-    );
-
-    record
+    )
 }
 
 fn process_xiandaihanyu_html(record: String, base_url: &str) -> String {
-    let record = process_xiandaihanyu_resources(record, &base_url);
-    let record = process_entry_links(record, &base_url, "xiandaihanyu");
-    record
+    let record = process_xiandaihanyu_resources(record, base_url);
+
+    process_entry_links(record, base_url, "xiandaihanyu")
 }
 
 async fn record_word_history(pool: &PgPool, word: &str, user_id: Uuid) -> ApiResult<()> {
@@ -565,20 +553,20 @@ pub async fn collins_resource(
         }
     };
 
-    if disk_path.exists() {
-        if let Ok(contents) = std::fs::read(&disk_path) {
-            let content_type = get_content_type(&resource_path);
-            let mut response = Response::new(axum::body::Body::from(contents));
-            response.headers_mut().insert(
-                axum::http::header::CONTENT_TYPE,
-                axum::http::HeaderValue::from_static(content_type),
-            );
-            response.headers_mut().insert(
-                axum::http::header::CACHE_CONTROL,
-                axum::http::HeaderValue::from_static("public, max-age=31536000"),
-            );
-            return Ok(response);
-        }
+    if disk_path.exists()
+        && let Ok(contents) = std::fs::read(&disk_path)
+    {
+        let content_type = get_content_type(&resource_path);
+        let mut response = Response::new(axum::body::Body::from(contents));
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static(content_type),
+        );
+        response.headers_mut().insert(
+            axum::http::header::CACHE_CONTROL,
+            axum::http::HeaderValue::from_static("public, max-age=31536000"),
+        );
+        return Ok(response);
     }
 
     if let Some(data) = lookup_resource("collins_resources", &resource_path).await {
@@ -701,20 +689,20 @@ pub async fn ldoce_resource(
         }
     };
 
-    if disk_path.exists() {
-        if let Ok(contents) = std::fs::read(&disk_path) {
-            let content_type = get_content_type(&resource_path);
-            let mut response = Response::new(axum::body::Body::from(contents));
-            response.headers_mut().insert(
-                axum::http::header::CONTENT_TYPE,
-                axum::http::HeaderValue::from_static(content_type),
-            );
-            response.headers_mut().insert(
-                axum::http::header::CACHE_CONTROL,
-                axum::http::HeaderValue::from_static("public, max-age=31536000"),
-            );
-            return Ok(response);
-        }
+    if disk_path.exists()
+        && let Ok(contents) = std::fs::read(&disk_path)
+    {
+        let content_type = get_content_type(&resource_path);
+        let mut response = Response::new(axum::body::Body::from(contents));
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static(content_type),
+        );
+        response.headers_mut().insert(
+            axum::http::header::CACHE_CONTROL,
+            axum::http::HeaderValue::from_static("public, max-age=31536000"),
+        );
+        return Ok(response);
     }
 
     if let Some(data) = lookup_resource("ldoce_resources", &resource_path).await {
@@ -754,20 +742,20 @@ pub async fn xiandaihanyu_resource(Path(resource_path): Path<String>) -> ApiResu
         }
     };
 
-    if disk_path.exists() {
-        if let Ok(contents) = std::fs::read(&disk_path) {
-            let content_type = get_content_type(&resource_path);
-            let mut response = Response::new(axum::body::Body::from(contents));
-            response.headers_mut().insert(
-                axum::http::header::CONTENT_TYPE,
-                axum::http::HeaderValue::from_static(content_type),
-            );
-            response.headers_mut().insert(
-                axum::http::header::CACHE_CONTROL,
-                axum::http::HeaderValue::from_static("public, max-age=31536000"),
-            );
-            return Ok(response);
-        }
+    if disk_path.exists()
+        && let Ok(contents) = std::fs::read(&disk_path)
+    {
+        let content_type = get_content_type(&resource_path);
+        let mut response = Response::new(axum::body::Body::from(contents));
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static(content_type),
+        );
+        response.headers_mut().insert(
+            axum::http::header::CACHE_CONTROL,
+            axum::http::HeaderValue::from_static("public, max-age=31536000"),
+        );
+        return Ok(response);
     }
 
     if let Some(data) = lookup_resource("xiandaihanyu_resources", &resource_path).await {
@@ -875,7 +863,7 @@ fn get_content_type(path: &str) -> &'static str {
 }
 
 pub async fn word_search_count(
-    claims: Claims,
+    _claims: Claims,
     Extension(pool): Extension<PgPool>,
     Query(query): Query<DictSearchQuery>,
 ) -> ApiResult<ApiResponse<i64>> {

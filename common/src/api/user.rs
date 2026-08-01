@@ -27,8 +27,8 @@ impl fmt::Display for LoginResponse {
         const GREEN: &str = "\x1b[32m";
         const CYAN: &str = "\x1b[36m";
 
-        write!(f, "{}{}:{}{}\n", GREEN, "Token", RESET, self.token)?;
-        write!(f, "{}{}:{}{}", CYAN, "Token Type", RESET, self.token_type)
+        writeln!(f, "{}Token:{}{}", GREEN, RESET, self.token)?;
+        write!(f, "{}Token Type:{}{}", CYAN, RESET, self.token_type)
     }
 }
 
@@ -44,8 +44,8 @@ impl fmt::Display for LoginRequest {
         const GREEN: &str = "\x1b[32m";
         const CYAN: &str = "\x1b[36m";
 
-        write!(f, "{}{}:{}{}\n", GREEN, "Username", RESET, self.username)?;
-        write!(f, "{}{}:{}{}", CYAN, "Password", RESET, "******")
+        writeln!(f, "{}Username:{}{}", GREEN, RESET, self.username)?;
+        write!(f, "{}Password:{}******", CYAN, RESET)
     }
 }
 

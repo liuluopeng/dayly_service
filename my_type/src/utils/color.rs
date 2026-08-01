@@ -48,6 +48,7 @@ impl TableFormatter {
     }
 
     /// 创建默认宽度的表格格式化器（宽度为 60）
+    #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         TableFormatter { width: 60 }
     }

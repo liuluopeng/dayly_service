@@ -1,4 +1,3 @@
-use flutter_rust_bridge::frb;
 use uuid::Uuid;
 
 use crate::api::wifi_api::init::get_client_clone;

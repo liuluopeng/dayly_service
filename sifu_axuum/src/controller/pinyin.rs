@@ -1,11 +1,10 @@
-use common::api::base::{ApiError, ApiResponse, ApiResult};
+use common::api::base::{ApiError, ApiResult};
 
 use axum::Json;
-use axum::extract::{Extension, Path, Query};
+use axum::extract::{Extension, Query};
 use my_type::model::single_char_pinyin::SingleCharPinyin;
 use serde::Deserialize;
 use sqlx::PgPool;
-use tracing::debug;
 
 #[derive(Debug, Deserialize)]
 pub struct PinyinQuery {

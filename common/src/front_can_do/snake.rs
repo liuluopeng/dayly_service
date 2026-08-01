@@ -21,6 +21,12 @@ pub struct Snake {
     food: (usize, usize),
 }
 
+impl Default for Snake {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Snake {
     pub fn new() -> Self {
         let mut cells = [[0u8; W]; H];

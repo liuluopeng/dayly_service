@@ -1,6 +1,5 @@
 use crate::config::env::ServerConfig;
 use crate::middleware::Claims;
-use anyhow;
 use axum::extract::{Extension, Path as AxumPath, Query};
 use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
@@ -10,7 +9,7 @@ use common::api::base::{ApiError, ApiResult};
 use my_type::model::songs::Song;
 use redis::AsyncCommands;
 use redis::aio::ConnectionManager;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 use common::api::songs::{LyricsResponse, SongWithUrl};
 use my_type::dto::songs::AllLyricsResponse;
@@ -109,26 +108,28 @@ pub async fn scan_songs(
             let mut songs_to_insert = Vec::new();
             let mut errors = Vec::new();
 
+            type SongRow = (
+                Uuid,
+                String,
+                String,
+                Uuid,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<Vec<u8>>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+            );
+
             fn scan_directory(
                 path: &Path,
                 media_path_id: Uuid,
                 existing_paths: &std::collections::HashSet<String>,
-                songs: &mut Vec<(
-                    Uuid,
-                    String,
-                    String,
-                    Uuid,
-                    Option<String>,
-                    Option<String>,
-                    Option<String>,
-                    Option<Vec<u8>>,
-                    Option<String>,
-                    Option<String>,
-                    Option<String>,
-                    Option<String>,
-                    Option<String>,
-                    Option<String>,
-                )>,
+                songs: &mut Vec<SongRow>,
                 errors: &mut Vec<String>,
             ) {
                 for entry in WalkDir::new(path)
@@ -329,11 +330,13 @@ pub async fn scan_songs(
 // ─── 自动 TTML 生成（已移除 Python 依赖，使用 dummy 占位）───
 
 /// Dummy: 已移除 Demucs Python 依赖
+#[allow(dead_code)] // dummy：已移除 Demucs Python 依赖
 fn run_demucs(_song_path: &str) -> Option<Vec<u8>> {
     None
 }
 
 /// Dummy: 已移除 align.py Python 依赖
+#[allow(dead_code)] // dummy：已移除 align.py Python 依赖
 fn run_align(_lrc_text: &str, _vocal_wav: &[u8]) -> Option<String> {
     None
 }
@@ -717,7 +720,7 @@ pub async fn get_play_history(
         songs.into_iter().map(|s| (s.id, s)).collect();
 
     let base_url = server_config.get_base_url();
-    let port = server_config.get_port();
+    let _port = server_config.get_port();
 
     let result: Vec<SongWithUrl> = uuids
         .iter()

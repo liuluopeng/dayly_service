@@ -11,6 +11,12 @@ pub struct Game2048 {
     history: Vec<([[u32; SIZE]; SIZE], u64)>,
 }
 
+impl Default for Game2048 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Game2048 {
     pub fn new() -> Self {
         let mut g = Game2048 {
@@ -69,9 +75,9 @@ impl Game2048 {
 
     fn transpose(b: &[[u32; SIZE]; SIZE]) -> [[u32; SIZE]; SIZE] {
         let mut t = [[0u32; SIZE]; SIZE];
-        for r in 0..SIZE {
-            for c in 0..SIZE {
-                t[c][r] = b[r][c];
+        for (r, row) in b.iter().enumerate() {
+            for (c, cell) in row.iter().enumerate() {
+                t[c][r] = *cell;
             }
         }
         t
@@ -79,8 +85,8 @@ impl Game2048 {
 
     fn reverse(b: &[[u32; SIZE]; SIZE]) -> [[u32; SIZE]; SIZE] {
         let mut rev = *b;
-        for r in 0..SIZE {
-            rev[r].reverse();
+        for row in rev.iter_mut() {
+            row.reverse();
         }
         rev
     }
@@ -94,9 +100,9 @@ impl Game2048 {
             b = Self::reverse(&b);
         }
         let mut total = 0;
-        for r in 0..SIZE {
-            let (nr, s) = Self::slide_row(&b[r]);
-            b[r] = nr;
+        for cell in b.iter_mut() {
+            let (nr, s) = Self::slide_row(cell);
+            *cell = nr;
             total += s;
         }
         if dir == "right" || dir == "down" {

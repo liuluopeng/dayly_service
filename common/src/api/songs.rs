@@ -1,15 +1,12 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use anyhow;
-
 use crate::{
     api::base::{ApiResponse, ApiResult, PaginatedResponse},
     api::client::ApiClient,
 };
 
 use my_type::dto;
-use my_type::model::songs::Song;
 
 pub use dto::{AllLyricsResponse, LyricsResponse, SongWithUrl};
 
@@ -44,7 +41,7 @@ pub async fn get_all_songs(
     }
 
     if !params.is_empty() {
-        path.push_str("?");
+        path.push('?');
         path.push_str(&params.join("&"));
     }
 

@@ -57,11 +57,11 @@ where
         const MAGENTA: &str = "\x1b[35m";
         const BLUE: &str = "\x1b[34m";
 
-        println!("{}{}:{}{}", CYAN, "总条数", RESET, self.total);
-        println!("{}{}:{}{}", GREEN, "当前页码", RESET, self.page);
-        println!("{}{}:{}{}", YELLOW, "每页大小", RESET, self.page_size);
-        println!("{}{}:{}{}", MAGENTA, "总页数", RESET, self.total_pages);
-        println!("{}{}:{}{:?}", BLUE, "数据", RESET, self.data);
+        println!("{}总条数:{}{}", CYAN, RESET, self.total);
+        println!("{}当前页码:{}{}", GREEN, RESET, self.page);
+        println!("{}每页大小:{}{}", YELLOW, RESET, self.page_size);
+        println!("{}总页数:{}{}", MAGENTA, RESET, self.total_pages);
+        println!("{}数据:{}{:?}", BLUE, RESET, self.data);
     }
 }
 impl<T> ApiResponse<T> {
@@ -90,11 +90,11 @@ where
         const GREEN: &str = "\x1b[32m";
         const BLUE: &str = "\x1b[34m";
 
-        write!(f, "{}{}:{}{}\n", GREEN, "消息", RESET, self.msg)?;
+        writeln!(f, "{}消息:{}{}", GREEN, RESET, self.msg)?;
         if let Some(ref data) = self.data {
-            write!(f, "{}{}:{}\n{}", BLUE, "数据", RESET, data)?;
+            write!(f, "{}数据:{}\n{}", BLUE, RESET, data)?;
         } else {
-            write!(f, "{}{}:{}{}", BLUE, "数据", RESET, "无")?;
+            write!(f, "{}数据:{}无", BLUE, RESET)?;
         }
         Ok(())
     }
@@ -113,13 +113,13 @@ where
         const MAGENTA: &str = "\x1b[35m";
         const BLUE: &str = "\x1b[34m";
 
-        write!(f, "{}{}:{}{}\n", CYAN, "总条数", RESET, self.total)?;
-        write!(f, "{}{}:{}{}\n", GREEN, "当前页码", RESET, self.page)?;
-        write!(f, "{}{}:{}{}\n", YELLOW, "每页大小", RESET, self.page_size)?;
-        write!(f, "{}{}:{}{}\n", MAGENTA, "总页数", RESET, self.total_pages)?;
-        write!(f, "{}{}:{}\n", BLUE, "数据", RESET)?;
+        writeln!(f, "{}总条数:{}{}", CYAN, RESET, self.total)?;
+        writeln!(f, "{}当前页码:{}{}", GREEN, RESET, self.page)?;
+        writeln!(f, "{}每页大小:{}{}", YELLOW, RESET, self.page_size)?;
+        writeln!(f, "{}总页数:{}{}", MAGENTA, RESET, self.total_pages)?;
+        writeln!(f, "{}数据:{}", BLUE, RESET)?;
         for (i, item) in self.data.iter().enumerate() {
-            write!(f, "{}{}{}:\n{}\n", "  ", i + 1, ".", item)?;
+            write!(f, "  {}.:\n{}\n", i + 1, item)?;
         }
         Ok(())
     }

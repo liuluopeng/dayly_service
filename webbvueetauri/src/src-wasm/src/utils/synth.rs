@@ -1,4 +1,6 @@
 //! Karplus-Strong 物理建模合成 —— 钢琴音色（润色版）
+// 热路径 DSP 循环：延迟线/相位计算依赖索引形式，保持索引循环
+#![allow(clippy::needless_range_loop)]
 //!
 //! 相比 v1 的改进（消除"皮筋"感）：
 //! 1. 分数延迟线（线性插值）：音准精确，无整数延迟的拍频
@@ -146,15 +148,12 @@ pub fn synth_piano_note(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32
 
     for i in 0..n {
         let t = i as f64 / sample_rate as f64;
-        let mut v =
-            main_a[i] * 0.55 + main_b[i] * 0.55 + harm2[i] * 0.22 + harm3[i] * 0.08 + hammer[i];
+        let v = main_a[i] * 0.55 + main_b[i] * 0.55 + harm2[i] * 0.22 + harm3[i] * 0.08 + hammer[i];
 
         // 起音（~2.5ms）防爆音
         let attack = ((t * 400.0).min(1.0)) as f32;
         // 尾部释放（~80ms 平滑归零）
-        let release = (((n - i) as f64 / (sample_rate as f64 * 0.08))
-            .min(1.0)
-            .max(0.0)) as f32;
+        let release = (((n - i) as f64 / (sample_rate as f64 * 0.08)) as f32).clamp(0.0, 1.0);
 
         out[i] = lp.process(v, lp_alpha) * attack * release;
     }
@@ -231,7 +230,7 @@ pub fn synth_piano_bright(freq: f32, duration_ms: u32, sample_rate: u32, seed: u
 
     for i in 0..n {
         let t = i as f64 / sample_rate as f64;
-        let mut v = main_a[i] * 0.5
+        let v = main_a[i] * 0.5
             + main_b[i] * 0.5
             + harm2[i] * 0.25
             + harm3[i] * 0.12
@@ -239,9 +238,7 @@ pub fn synth_piano_bright(freq: f32, duration_ms: u32, sample_rate: u32, seed: u
             + hammer[i];
 
         let attack = ((t * 450.0).min(1.0)) as f32;
-        let release = (((n - i) as f64 / (sample_rate as f64 * 0.06))
-            .min(1.0)
-            .max(0.0)) as f32;
+        let release = (((n - i) as f64 / (sample_rate as f64 * 0.06)) as f32).clamp(0.0, 1.0);
 
         out[i] = lp.process(v, lp_alpha) * attack * release;
     }
@@ -329,7 +326,7 @@ pub fn synth_bell_note(freq: f32, duration_ms: u32, sample_rate: u32, seed: u32)
             v += rng.next() * 0.25 * env * env;
         }
         // 起音（1.5ms 防爆音）
-        let attack = ((t * 650.0).min(1.0)) as f32;
+        let attack = (t * 650.0).min(1.0);
         out[i] = v * attack;
     }
 

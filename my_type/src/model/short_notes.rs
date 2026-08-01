@@ -64,11 +64,7 @@ impl ShortNote {
             })
             .unwrap_or_else(|| "(无内容)".to_string());
 
-        format!(
-            "{} - {}",
-            self.id.to_string()[..8].to_string(),
-            content_preview
-        )
+        format!("{} - {}", &self.id.to_string()[..8], content_preview)
     }
 
     /// 返回详细显示（包含完整信息）

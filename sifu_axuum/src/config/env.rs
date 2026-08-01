@@ -8,6 +8,7 @@ pub enum AppEnv {
     Production,
 }
 
+#[allow(clippy::should_implement_trait)]
 impl AppEnv {
     pub fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {

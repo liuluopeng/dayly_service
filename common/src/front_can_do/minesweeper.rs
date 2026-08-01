@@ -5,6 +5,7 @@ const H: usize = 9;
 const MINES: usize = 10;
 
 #[derive(Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 enum Cell {
     Hidden(u8),
     Revealed(u8),
@@ -18,6 +19,12 @@ pub struct Minesweeper {
     pub over: bool,
     pub won: bool,
     first_click: bool,
+}
+
+impl Default for Minesweeper {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Minesweeper {

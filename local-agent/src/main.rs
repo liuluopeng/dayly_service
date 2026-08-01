@@ -219,22 +219,14 @@ fn run_monitor(grpc_addr: &str) {
 
     const POLL_INTERVAL: Duration = Duration::from_millis(500);
     const SAVE_DIR: &str = "Pictures/clipboard";
+    #[allow(dead_code)] // 保留：历史记录上限参考值
     const MAX_HISTORY: usize = 1000;
 
+    #[derive(Default)]
     struct State {
         last_change_count: i64,
         last_text_hash: u64,
         last_image_hash: u64,
-    }
-
-    impl Default for State {
-        fn default() -> Self {
-            Self {
-                last_change_count: 0,
-                last_text_hash: 0,
-                last_image_hash: 0,
-            }
-        }
     }
 
     fn hash_text(s: &str) -> u64 {
@@ -327,7 +319,7 @@ fn run_monitor(grpc_addr: &str) {
     };
 
     // 连接 gRPC 服务器
-    let mut sync_client = match rt.block_on(sync::SyncClient::connect(&grpc_addr)) {
+    let mut sync_client = match rt.block_on(sync::SyncClient::connect(grpc_addr)) {
         Ok(c) => c,
         Err(e) => {
             error!("连接 gRPC 服务器失败 ({}): {}", grpc_addr, e);

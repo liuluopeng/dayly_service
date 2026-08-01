@@ -36,8 +36,8 @@ fn det_resize(w: u32, h: u32) -> (u32, u32, f32) {
     } else {
         DET_MAX_SIDE as f32 / max
     };
-    let nw = ((w as f32 * scale).ceil() as u32 + 31) / 32 * 32;
-    let nh = ((h as f32 * scale).ceil() as u32 + 31) / 32 * 32;
+    let nw = ((w as f32 * scale).ceil() as u32).div_ceil(32) * 32;
+    let nh = ((h as f32 * scale).ceil() as u32).div_ceil(32) * 32;
     (nw.max(32), nh.max(32), scale)
 }
 
@@ -270,7 +270,7 @@ pub fn detect_text_regions(pixels: &[u8], width: u32, height: u32) -> Result<Vec
 
     // Model output is already sigmoid-ed probability map in [0, 1]
     let thresh = 0.3;
-    let mut binmap = vec![0u8; (ow * oh) as usize];
+    let mut binmap = vec![0u8; ow * oh];
     let mut max_prob = 0.0f32;
     let mut nonzero = 0u32;
     for y in 0..oh {

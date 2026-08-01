@@ -2211,7 +2211,7 @@ static NEW_WORDS_DATA: [&str; 2182] = [
 
 #[wasm_bindgen]
 pub fn get_new_chars(grade: usize, term: usize) -> JsValue {
-    if grade < 1 || grade > 6 || term < 1 || term > 2 {
+    if !(1..=6).contains(&grade) || !(1..=2).contains(&term) {
         return Array::new().into();
     }
     let index = (grade - 1) * 2 + (term - 1);

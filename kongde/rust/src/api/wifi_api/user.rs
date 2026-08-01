@@ -33,9 +33,9 @@ pub async fn user_login_for_dart(
     username: &str,
     password: &str,
 ) -> Result<LoginResponse, ApiError> {
-    let mut client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
+    let client = get_client_clone().map_err(|e| ApiError::Internal(e.to_string()))?;
 
-    match user_login(&mut client, username, password).await {
+    match user_login(&client, username, password).await {
         Ok(res) => {
             if let Some(login_response) = res.data {
                 // 登录成功后，将token保存到全局客户端中

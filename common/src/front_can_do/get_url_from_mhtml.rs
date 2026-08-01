@@ -2,12 +2,12 @@ pub fn get_url_from_mhtml(mhtml_content: &str) -> Option<String> {
     // 尝试从Snapshot-Content-Location提取URL
     for line in mhtml_content.lines() {
         let line = line.trim();
-        if line.starts_with("Snapshot-Content-Location:") {
-            if let Some(url) = line.strip_prefix("Snapshot-Content-Location:") {
-                let url = url.trim();
-                if !url.is_empty() {
-                    return Some(url.to_string());
-                }
+        if line.starts_with("Snapshot-Content-Location:")
+            && let Some(url) = line.strip_prefix("Snapshot-Content-Location:")
+        {
+            let url = url.trim();
+            if !url.is_empty() {
+                return Some(url.to_string());
             }
         }
     }
@@ -15,12 +15,12 @@ pub fn get_url_from_mhtml(mhtml_content: &str) -> Option<String> {
     // 尝试从Content-Location提取URL
     for line in mhtml_content.lines() {
         let line = line.trim();
-        if line.starts_with("Content-Location:") {
-            if let Some(url) = line.strip_prefix("Content-Location:") {
-                let url = url.trim();
-                if !url.is_empty() && url.starts_with("http") {
-                    return Some(url.to_string());
-                }
+        if line.starts_with("Content-Location:")
+            && let Some(url) = line.strip_prefix("Content-Location:")
+        {
+            let url = url.trim();
+            if !url.is_empty() && url.starts_with("http") {
+                return Some(url.to_string());
             }
         }
     }
@@ -28,15 +28,15 @@ pub fn get_url_from_mhtml(mhtml_content: &str) -> Option<String> {
     // 尝试从From字段提取URL（某些MHTML格式）
     for line in mhtml_content.lines() {
         let line = line.trim();
-        if line.starts_with("From:") {
-            if let Some(url_part) = line.strip_prefix("From:") {
-                let url_part = url_part.trim();
-                // 处理 "From: <Saved by Blink>" 格式
-                if url_part.contains("http") {
-                    if let Some(start) = url_part.find("http") {
-                        return Some(url_part[start..].to_string());
-                    }
-                }
+        if line.starts_with("From:")
+            && let Some(url_part) = line.strip_prefix("From:")
+        {
+            let url_part = url_part.trim();
+            // 处理 "From: <Saved by Blink>" 格式
+            if url_part.contains("http")
+                && let Some(start) = url_part.find("http")
+            {
+                return Some(url_part[start..].to_string());
             }
         }
     }
@@ -100,7 +100,7 @@ fn decode_rfc2047(encoded: &str) -> String {
 
             // 读取charset
             let mut charset = String::new();
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 if c == '?' {
                     break;
                 }
@@ -118,11 +118,9 @@ fn decode_rfc2047(encoded: &str) -> String {
             // 读取encoded-text直到 ?=
             let mut encoded_text = String::new();
             while let Some(c) = chars.next() {
-                if c == '?' {
-                    if chars.peek() == Some(&'=') {
-                        chars.next(); // 跳过 =
-                        break;
-                    }
+                if c == '?' && chars.peek() == Some(&'=') {
+                    chars.next(); // 跳过 =
+                    break;
                 }
                 encoded_text.push(c);
             }

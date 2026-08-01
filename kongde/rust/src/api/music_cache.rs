@@ -27,10 +27,11 @@ pub fn read_metadata_cached(file_path: String) -> Result<AudioMetadata, String> 
 
     let rt = crate::api::runtime::shared_rt();
     rt.block_on(async {
-        let p = crate::api::db::pool().map_err(|e| e)?;
+        let p = crate::api::db::pool()?;
 
         // 查缓存
-        let cached: Option<(Option<String>, Option<String>, Option<String>, Option<i64>, Option<String>)> =
+        type CacheRow = (Option<String>, Option<String>, Option<String>, Option<i64>, Option<String>);
+        let cached: Option<CacheRow> =
             sqlx::query_as("SELECT title, artist, album, duration_ms, picture_base64 FROM music_cache WHERE file_path = ? AND modified_secs = ?")
                 .bind(&file_path).bind(modified)
                 .fetch_optional(p).await.map_err(|e| format!("缓存查询失败: {}", e))?;
@@ -44,7 +45,7 @@ pub fn read_metadata_cached(file_path: String) -> Result<AudioMetadata, String> 
         let meta = read_metadata(&file_path)?;
 
         // 存缓存
-        let picture_b64 = meta.picture.as_ref().and_then(|p| Some(base64_encode(p)));
+        let picture_b64 = meta.picture.as_ref().map(|p| base64_encode(p));
         let _ = sqlx::query("INSERT OR REPLACE INTO music_cache (file_path, modified_secs, title, artist, album, duration_ms, picture_base64) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .bind(&file_path).bind(modified)
             .bind(&meta.title).bind(&meta.artist).bind(&meta.album)

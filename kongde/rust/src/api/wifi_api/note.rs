@@ -119,7 +119,7 @@ pub async fn save_note_for_dart(
     };
     match save_note(&client, &req).await {
         Ok(response) => {
-            if let Some(_) = response.data {
+            if response.data.is_some() {
                 // 保存成功后获取笔记详情
                 match get_note(&client, &id).await {
                     Ok(note) => {

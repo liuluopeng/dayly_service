@@ -140,7 +140,7 @@ pub fn connect_webrtc(sink: StreamSink<String>, device_name: String) {
                 }
             };
 
-            let resp: SignalResponse = match serde_json::from_str(&registered_msg) {
+            let _resp: SignalResponse = match serde_json::from_str(&registered_msg) {
                 Ok(SignalResponse::Registered { peer_id }) => {
                     log::info!("WebRTC: 注册成功, peer_id={}", peer_id);
                     SignalResponse::Registered { peer_id }

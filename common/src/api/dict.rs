@@ -1,9 +1,8 @@
 use my_type::dto;
-use my_type::model::dict::{ModernChineseWord, Word, WordHistory};
+use my_type::model::dict::{Word, WordHistory};
 
 use super::base::{ApiResponse, ApiResult};
 use super::client::ApiClient;
-use serde_json::Value;
 
 pub use dto::{
     DictCandidateResponse, DictExactResponse, DictSearchQuery, DictSearchResult, RecentHistoryQuery,

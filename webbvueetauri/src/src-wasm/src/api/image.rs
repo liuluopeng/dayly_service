@@ -1,7 +1,4 @@
-use common::api::{
-    client::ApiClient,
-    images::{get_image_folders, list_images, scan_images},
-};
+use common::api::images::{get_image_folders, list_images, scan_images};
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
 

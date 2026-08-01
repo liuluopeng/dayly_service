@@ -15,6 +15,7 @@ pub struct HistoryEntry {
     pub entry_type: String, // "text" | "image"
     pub text_content: Option<String>,
     pub image_path: Option<String>,
+    #[allow(dead_code)]
     pub content_hash: String,
     pub created_at: String,
 }
@@ -84,6 +85,7 @@ impl ClipboardHistory {
     }
 
     /// 插入一条文本记录（自动去重）
+    #[allow(dead_code)] // 保留：后续版本可能直接入库
     pub async fn insert_text(&self, text: &str, hash: &str) -> Result<bool, String> {
         if self.is_recent_duplicate("text", hash).await? {
             return Ok(false);
@@ -105,6 +107,7 @@ impl ClipboardHistory {
     }
 
     /// 插入一条图片记录
+    #[allow(dead_code)] // 保留：后续版本可能直接入库
     pub async fn insert_image(&self, image_path: &str, hash: &str) -> Result<bool, String> {
         if self.is_recent_duplicate("image", hash).await? {
             return Ok(false);
@@ -195,6 +198,7 @@ impl ClipboardHistory {
     // ─── 内部方法 ───────────────────────────────────────────────
 
     /// 检查是否与同类型的最近一条记录哈希相同
+    #[allow(dead_code)] // 保留：去重逻辑参考
     async fn is_recent_duplicate(&self, entry_type: &str, hash: &str) -> Result<bool, String> {
         let row: Option<(String,)> = sqlx::query_as(
             "SELECT content_hash FROM clipboard_entries

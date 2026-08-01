@@ -1,6 +1,6 @@
 use crate::middleware::Claims;
 use axum::extract::{Extension, Path as AxumPath, Query};
-use axum::routing::{delete, get, post};
+use axum::routing::{delete, get};
 use axum::{Json, Router};
 use common::api::base::{ApiError, ApiResponse, ApiResult};
 use my_type::model::user_directories::UserDirectory;
@@ -79,7 +79,7 @@ pub async fn add_user_directory(
     )
     .bind(Uuid::now_v7())
     .bind(&body.path)
-    .bind(&body.label.unwrap_or_default())
+    .bind(body.label.unwrap_or_default())
     .bind(&allow_list)
     .fetch_one(&pg_pool)
     .await

@@ -201,7 +201,7 @@ pub fn print_svg(
         truecolor,
         transparent,
     };
-    let result = svg_to_ansi(svg_data, &config)?;
+    let _result = svg_to_ansi(svg_data, &config)?;
     Ok(())
 }
 
@@ -279,8 +279,8 @@ pub fn image_to_ansi(img: &DynamicImage, config: &PrintConfig) -> Result<String,
     let img_buffer = img.to_rgba8();
 
     let mut result = String::new();
-    let mut row_buffer: Vec<(Option<(u8, u8, u8)>, Option<(u8, u8, u8)>)> =
-        vec![(None, None); width as usize];
+    type SvgColor = Option<(u8, u8, u8)>;
+    let mut row_buffer: Vec<(SvgColor, SvgColor)> = vec![(None, None); width as usize];
 
     for (curr_row, img_row) in img_buffer.enumerate_rows() {
         let is_even_row = curr_row % 2 == 0;

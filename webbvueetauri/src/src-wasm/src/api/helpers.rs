@@ -2,8 +2,6 @@ use serde::Serialize;
 use serde_json::Value;
 use wasm_bindgen::prelude::*;
 
-use crate::console_log;
-
 /// Convert serde_json::Value to JsValue using json_compatible serializer.
 /// This produces plain JS objects instead of Map instances.
 pub fn to_js(value: &Value) -> Result<JsValue, JsValue> {

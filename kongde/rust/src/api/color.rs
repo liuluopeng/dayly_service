@@ -69,7 +69,7 @@ pub fn merge_similar_colors(
         std::collections::HashMap::new();
     let mut processed: std::collections::HashSet<(u8, u8, u8)> = std::collections::HashSet::new();
 
-    let mut colors: Vec<(u8, u8, u8)> = color_counts.keys().cloned().collect();
+    let colors: Vec<(u8, u8, u8)> = color_counts.keys().cloned().collect();
 
     for color in colors {
         if processed.contains(&color) {
@@ -110,6 +110,7 @@ pub fn invert_color(r: u8, g: u8, b: u8) -> (u8, u8, u8) {
     (255 - r, 255 - g, 255 - b)
 }
 
+#[allow(clippy::ptr_arg)] // FRB 绑定接口，保持签名
 pub fn is_monochromatic(colors: &Vec<((u8, u8, u8), usize)>, total_pixels: usize) -> bool {
     if colors.is_empty() {
         return false;
@@ -151,7 +152,7 @@ pub fn extract_colors(image_data: Vec<u8>) -> Result<ColorInfo, String> {
         image::load_from_memory(&image_data).map_err(|e| format!("Failed to load image: {}", e))?;
 
     let img_rgba = img.to_rgba8();
-    let (width, height) = img_rgba.dimensions();
+    let (_width, _height) = img_rgba.dimensions();
 
     let mosaic_width = 20;
     let mosaic_height = 20;

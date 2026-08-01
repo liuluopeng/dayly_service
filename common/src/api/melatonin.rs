@@ -2,7 +2,6 @@ use my_type::model::melatonin_movie::{MelatoninMovie, MelatoninMovieList};
 
 use super::base::{ApiResponse, ApiResult, PaginatedResponse};
 use super::client::ApiClient;
-use serde_json::Value;
 use uuid::Uuid;
 
 pub use my_type::dto::{

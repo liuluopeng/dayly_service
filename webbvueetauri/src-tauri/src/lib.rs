@@ -1,3 +1,6 @@
+// cocoa crate 旧 API 已被 objc2 取代，但 Tauri 模板仍依赖它；升级前先容忍弃用警告
+#![allow(deprecated)]
+
 use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/

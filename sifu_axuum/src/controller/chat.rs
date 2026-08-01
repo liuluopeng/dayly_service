@@ -65,10 +65,10 @@ async fn send_message(
         content: message.content.clone(),
         created_at: message.created_at,
     };
-    if let Ok(json) = serde_json::to_string(&ws_msg) {
-        if let Err(e) = chat_tx.send(json) {
-            debug!("广播消息失败（无订阅者或通道已满）: {:?}", e);
-        }
+    if let Ok(json) = serde_json::to_string(&ws_msg)
+        && let Err(e) = chat_tx.send(json)
+    {
+        debug!("广播消息失败（无订阅者或通道已满）: {:?}", e);
     }
 
     Ok(ApiResponse::ok(message))
@@ -193,7 +193,7 @@ async fn recent_contacts(
     })?;
 
     let mut sorted = contacts;
-    sorted.sort_by(|a, b| b.last_message_at.cmp(&a.last_message_at));
+    sorted.sort_by_key(|c| std::cmp::Reverse(c.last_message_at));
     Ok(ApiResponse::ok(sorted))
 }
 

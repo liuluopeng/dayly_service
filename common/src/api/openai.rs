@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-use anyhow;
-
 use super::base::{ApiResponse, ApiResult};
 use super::client::ApiClient;
 

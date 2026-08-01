@@ -1,9 +1,8 @@
 use crate::middleware::Claims;
 use axum::Router;
-use axum::extract::{Extension, Path, Query, State};
-use axum::http::StatusCode;
+use axum::extract::{Extension, Path, Query};
 use axum::http::header;
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
 use axum::routing::{get, post};
 use base64::{Engine as _, engine::general_purpose};
 use common::api::base::{ApiError, ApiResponse};
@@ -446,7 +445,7 @@ fn extract_boundary(mhtml: &str) -> Option<String> {
     None
 }
 
-fn split_header_body<'a>(part: &'a str) -> Option<(&'a str, &'a str)> {
+fn split_header_body(part: &str) -> Option<(&str, &str)> {
     if let Some(pos) = part.find("\r\n\r\n") {
         Some((&part[..pos], &part[pos + 4..]))
     } else if let Some(pos) = part.find("\n\n") {
@@ -456,7 +455,7 @@ fn split_header_body<'a>(part: &'a str) -> Option<(&'a str, &'a str)> {
     }
 }
 
-fn extract_header_value<'a>(headers: &'a str, key: &str) -> Option<String> {
+fn extract_header_value(headers: &str, key: &str) -> Option<String> {
     let key_lower = key.to_lowercase();
     let mut result = String::new();
 

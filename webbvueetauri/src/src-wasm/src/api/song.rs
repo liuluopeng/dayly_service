@@ -1,9 +1,6 @@
-use common::api::{
-    client::ApiClient,
-    songs::{
-        get_all_lyrics, get_all_songs, get_song_cover, get_song_file, get_song_lyrics,
-        get_song_ttml, get_songs_by_album, get_songs_by_artist, scan_songs,
-    },
+use common::api::songs::{
+    get_all_lyrics, get_all_songs, get_song_cover, get_song_file, get_song_lyrics, get_song_ttml,
+    get_songs_by_album, get_songs_by_artist, scan_songs,
 };
 use serde_wasm_bindgen::to_value;
 use std::cell::RefCell;
@@ -229,7 +226,7 @@ pub async fn get_all_lyrics_wasm(song_id: &str) -> Result<JsValue, JsValue> {
 // 使用环形缓冲保留最近几次加载的数据，避免重叠加载时
 // 上一个请求返回的指针被立即释放（悬垂指针）
 thread_local! {
-    static AUDIO_BUF: RefCell<Vec<Vec<u8>>> = RefCell::new(Vec::new());
+    static AUDIO_BUF: RefCell<Vec<Vec<u8>>> = const { RefCell::new(Vec::new()) };
 }
 
 const AUDIO_BUF_SLOTS: usize = 4;

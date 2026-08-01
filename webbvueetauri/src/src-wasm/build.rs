@@ -92,5 +92,4 @@ fn main() {
     writeln!(f, "];").unwrap();
 
     println!("cargo:rerun-if-changed={}", json_path);
-    println!("cargo:warning=Generated words data: {} entries", total);
 }

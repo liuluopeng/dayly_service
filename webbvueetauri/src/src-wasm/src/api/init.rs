@@ -46,7 +46,7 @@ pub fn init_api_client(token: Option<&str>, api_url: Option<&str>, api_port: Opt
 
     // 如果指定了端口，设置端口
     if let Some(port) = api_port {
-        if let Some(port_num) = port.parse::<u16>().ok() {
+        if let Ok(port_num) = port.parse::<u16>() {
             API_CLIENT.with(|cell| {
                 if let Some(client) = cell.borrow_mut().as_mut() {
                     client.set_port(port_num);

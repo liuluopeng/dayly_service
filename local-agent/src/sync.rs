@@ -13,7 +13,7 @@ pub mod clipboard_sync {
 }
 
 use clipboard_sync::clipboard_sync_client::ClipboardSyncClient;
-use clipboard_sync::{PushClipboardRequest, PushClipboardResponse};
+use clipboard_sync::PushClipboardRequest;
 
 #[derive(Clone)]
 pub struct SyncClient {

@@ -16,7 +16,7 @@ use std::time::SystemTime;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio_util::io::ReaderStream;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 use crate::middleware::Claims;
 
@@ -354,22 +354,22 @@ async fn serve_file(
         })
         .unwrap_or(0);
     let etag = format!(r#""{}-{}""#, mtime_ts, file_size);
-    let last_modified = mtime.and_then(|t| {
+    let last_modified = mtime.map(|t| {
         let dt: DateTime<chrono::Utc> = t.into();
-        Some(dt.format("%a, %d %b %Y %H:%M:%S GMT").to_string())
+        dt.format("%a, %d %b %Y %H:%M:%S GMT").to_string()
     });
 
     // 条件请求：If-None-Match / If-Modified-Since → 304
     if let (Some(etag_val), Some(lm_val)) = (Some(&etag), last_modified.as_ref()) {
-        if let Some(if_none_match) = headers.get("if-none-match") {
-            if if_none_match.to_str().unwrap_or("") == etag_val {
-                return StatusCode::NOT_MODIFIED.into_response();
-            }
+        if let Some(if_none_match) = headers.get("if-none-match")
+            && if_none_match.to_str().unwrap_or("") == etag_val
+        {
+            return StatusCode::NOT_MODIFIED.into_response();
         }
-        if let Some(if_modified_since) = headers.get("if-modified-since") {
-            if if_modified_since.to_str().unwrap_or("") == lm_val.as_str() {
-                return StatusCode::NOT_MODIFIED.into_response();
-            }
+        if let Some(if_modified_since) = headers.get("if-modified-since")
+            && if_modified_since.to_str().unwrap_or("") == lm_val.as_str()
+        {
+            return StatusCode::NOT_MODIFIED.into_response();
         }
     }
 
@@ -381,29 +381,28 @@ async fn serve_file(
     };
 
     // 处理 Range 请求
-    if use_range {
-        if let Some(range) = headers.get("Range") {
-            if let Ok(range_str) = range.to_str() {
-                if let Some((start, end)) = parse_range_header(range_str, file_size) {
-                    return handle_range_request(
-                        &full_path,
-                        start,
-                        end,
-                        file_size,
-                        &content_type,
-                        &etag,
-                        last_modified.as_deref(),
-                    )
-                    .await;
-                } else {
-                    let mut resp = StatusCode::RANGE_NOT_SATISFIABLE.into_response();
-                    resp.headers_mut().insert(
-                        "content-range",
-                        format!("bytes */{}", file_size).parse().unwrap(),
-                    );
-                    return resp;
-                }
-            }
+    if use_range
+        && let Some(range) = headers.get("Range")
+        && let Ok(range_str) = range.to_str()
+    {
+        if let Some((start, end)) = parse_range_header(range_str, file_size) {
+            return handle_range_request(
+                &full_path,
+                start,
+                end,
+                file_size,
+                content_type,
+                &etag,
+                last_modified.as_deref(),
+            )
+            .await;
+        } else {
+            let mut resp = StatusCode::RANGE_NOT_SATISFIABLE.into_response();
+            resp.headers_mut().insert(
+                "content-range",
+                format!("bytes */{}", file_size).parse().unwrap(),
+            );
+            return resp;
         }
     }
 

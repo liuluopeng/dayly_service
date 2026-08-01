@@ -36,6 +36,7 @@ impl ApiClient {
     }
 
     /// 创建默认的 API 客户端（使用默认基础 URL）
+    #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         Self::new("http://localhost:23001")
     }
