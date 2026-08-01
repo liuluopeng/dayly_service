@@ -1,7 +1,5 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:kongde/controllers/tab_bar_controller.dart';
 import 'package:kongde/pages/home_page.dart';
@@ -54,36 +52,39 @@ class _MainTabPageState extends State<MainTabPage> {
     return Scaffold(
       body: Row(
         children: [
-          NavigationRail(
-            selectedIndex: _tabBarController.currentIndex.value,
-            onDestinationSelected: (index) {
-              _tabBarController.changeTab(index);
-            },
-            labelType: NavigationRailLabelType.all,
-            minWidth: 72,
-            groupAlignment: 0.0,
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Icon(Icons.apps, size: 28, color: Theme.of(context).colorScheme.primary),
-            ),
-            destinations: [
-              NavigationRailDestination(
-                icon: Icon(Icons.chat_outlined),
-                selectedIcon: Icon(Icons.chat),
-                label: Text('nav.home'.tr),
+          // Obx 包裹：让选中高亮响应 currentIndex 变化
+          Obx(() {
+            return NavigationRail(
+              selectedIndex: _tabBarController.currentIndex.value,
+              onDestinationSelected: (index) {
+                _tabBarController.changeTab(index);
+              },
+              labelType: NavigationRailLabelType.all,
+              minWidth: 72,
+              groupAlignment: 0.0,
+              leading: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Icon(Icons.apps, size: 28, color: Theme.of(context).colorScheme.primary),
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.view_module_outlined),
-                selectedIcon: Icon(Icons.view_module),
-                label: Text('nav.menu'.tr),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.person_outlined),
-                selectedIcon: Icon(Icons.person),
-                label: Text('nav.profile'.tr),
-              ),
-            ],
-          ),
+              destinations: [
+                NavigationRailDestination(
+                  icon: Icon(Icons.chat_outlined),
+                  selectedIcon: Icon(Icons.chat),
+                  label: Text('nav.home'.tr),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.view_module_outlined),
+                  selectedIcon: Icon(Icons.view_module),
+                  label: Text('nav.menu'.tr),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.person_outlined),
+                  selectedIcon: Icon(Icons.person),
+                  label: Text('nav.profile'.tr),
+                ),
+              ],
+            );
+          }),
           const VerticalDivider(thickness: 1, width: 1),
           Expanded(
             child: Obx(() {
@@ -142,30 +143,33 @@ class _MainTabPageState extends State<MainTabPage> {
       child: Scaffold(
         body: Row(
           children: [
-            NavigationRail(
-              selectedIndex: _tabBarController.currentIndex.value,
-              onDestinationSelected: (index) {
-                _tabBarController.changeTab(index);
-              },
-              labelType: NavigationRailLabelType.all,
-              destinations: [
-                NavigationRailDestination(
-                  icon: Icon(Icons.chat),
-                  selectedIcon: Icon(Icons.chat),
-                  label: Text('nav.home'.tr),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.contacts),
-                  selectedIcon: Icon(Icons.contacts),
-                  label: Text('nav.menu'.tr),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person),
-                  selectedIcon: Icon(Icons.person),
-                  label: Text('nav.profile'.tr),
-                ),
-              ],
-            ),
+            // Obx 包裹：让选中高亮响应 currentIndex 变化
+            Obx(() {
+              return NavigationRail(
+                selectedIndex: _tabBarController.currentIndex.value,
+                onDestinationSelected: (index) {
+                  _tabBarController.changeTab(index);
+                },
+                labelType: NavigationRailLabelType.all,
+                destinations: [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.chat),
+                    selectedIcon: Icon(Icons.chat),
+                    label: Text('nav.home'.tr),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.contacts),
+                    selectedIcon: Icon(Icons.contacts),
+                    label: Text('nav.menu'.tr),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.person),
+                    selectedIcon: Icon(Icons.person),
+                    label: Text('nav.profile'.tr),
+                  ),
+                ],
+              );
+            }),
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(
               child: Obx(() {
