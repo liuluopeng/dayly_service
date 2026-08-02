@@ -1,0 +1,23 @@
+// dayly_service_rust 项目专属配置
+// 配色：Kanagawa Wave（深蓝水彩风）——用于与你的其他项目区分
+{
+  "theme": "Kanagawa Wave",
+  "tab_size": 4,
+  "indent_guides": {
+    "enabled": true
+  },
+  "languages": {
+    "Rust": {
+      "tab_size": 4
+    },
+    "Dart": {
+      "tab_size": 2
+    },
+    "TypeScript": {
+      "tab_size": 2
+    },
+    "Vue": {
+      "tab_size": 2
+    }
+  }
+}
