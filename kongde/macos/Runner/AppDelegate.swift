@@ -72,7 +72,6 @@ class SurroundListenManager {
 class AppDelegate: FlutterAppDelegate {
   private weak var openFileChannel: FlutterMethodChannel?
   private var pendingFilePaths: [String] = []
-  private let surroundChannel = "kongde/native_audio"
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     return true
@@ -85,42 +84,6 @@ class AppDelegate: FlutterAppDelegate {
   override func applicationDidFinishLaunching(_ notification: Notification) {
     super.applicationDidFinishLaunching(notification)
     NSLog("[kongde] applicationDidFinishLaunching")
-
-    guard let controller = mainFlutterWindow?.contentViewController as? FlutterViewController else { return }
-    let channel = FlutterMethodChannel(name: surroundChannel, binaryMessenger: controller.engine.binaryMessenger)
-    channel.setMethodCallHandler { call, result in
-      switch call.method {
-      case "surroundStart":
-        do {
-          try SurroundListenManager.shared.start()
-          result(true)
-        } catch {
-          result(FlutterError(code: "start_error", message: error.localizedDescription, details: nil))
-        }
-      case "surroundStop":
-        SurroundListenManager.shared.stop()
-        result(true)
-      case "surroundSetGain":
-        if let args = call.arguments as? [String: Any], let gain = args["gain"] as? Double {
-          SurroundListenManager.shared.setGain(Float(gain))
-          result(true)
-        } else {
-          result(FlutterError(code: "bad_args", message: "gain missing", details: nil))
-        }
-      case "surroundPause":
-        SurroundListenManager.shared.pause()
-        result(true)
-      case "surroundResume":
-        do {
-          try SurroundListenManager.shared.resume()
-          result(true)
-        } catch {
-          result(FlutterError(code: "resume_error", message: error.localizedDescription, details: nil))
-        }
-      default:
-        result(FlutterMethodNotImplemented)
-      }
-    }
   }
 
   override func application(_ sender: NSApplication, openFile filename: String) -> Bool {
