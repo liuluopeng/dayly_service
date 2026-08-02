@@ -37,6 +37,11 @@ let audioCtx: AudioContext | null = null;
 let source: AudioBufferSourceNode | null = null;
 let gainNode: GainNode | null = null;
 
+// 持续随机模式（AudioWorklet 实时生成，永不循环重复）
+const mode = ref<'loop' | 'live'>('loop');
+let workletNode: AudioWorkletNode | null = null;
+let workletReady = false;
+
 function getCtx(): AudioContext | null {
   if (audioCtx) return audioCtx;
   try {
@@ -75,16 +80,50 @@ function applyVolume() {
   if (gainNode) gainNode.gain.value = volume.value;
 }
 
+function stopAll() {
+  source?.stop();
+  source?.disconnect();
+  source = null;
+  workletNode?.disconnect();
+  workletNode = null;
+  playing.value = false;
+}
+
+async function ensureWorklet(ctx: AudioContext) {
+  if (workletReady) return;
+  await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}noise-worklet.js`);
+  workletReady = true;
+}
+
 async function toggle() {
   const ctx = getCtx();
   if (!ctx) return;
   if (ctx.state === 'suspended') ctx.resume();
 
   if (playing.value) {
-    source?.stop();
-    source?.disconnect();
-    source = null;
-    playing.value = false;
+    stopAll();
+    return;
+  }
+
+  gainNode = ctx.createGain();
+  gainNode.gain.value = volume.value;
+  gainNode.connect(ctx.destination);
+
+  if (mode.value === 'live') {
+    // 持续随机：AudioWorklet 实时生成（永不循环重复）
+    try {
+      await ensureWorklet(ctx);
+      workletNode = new AudioWorkletNode(ctx, 'noise-worklet');
+      workletNode.port.postMessage({ type: noiseType.value, seed: seed.value });
+      workletNode.connect(gainNode);
+      playing.value = true;
+    } catch (e) {
+      console.error('Worklet 启动失败:', e);
+      workletNode?.disconnect();
+      workletNode = null;
+      gainNode.disconnect();
+      gainNode = null;
+    }
     return;
   }
 
@@ -93,10 +132,6 @@ async function toggle() {
 
   // 每次生成新种子，同类型可换变化（对雨声/粉红明显）
   seed.value = (seed.value * 2654435761 + 1013904223) >>> 0;
-
-  gainNode = ctx.createGain();
-  gainNode.gain.value = volume.value;
-  gainNode.connect(ctx.destination);
 
   source = ctx.createBufferSource();
   source.buffer = buf;
@@ -110,31 +145,43 @@ function selectType(type: NoiseType) {
   if (type === noiseType.value) return;
   noiseType.value = type;
   if (playing.value) {
-    // 切音色：停旧播新
-    source?.stop();
-    source?.disconnect();
-    source = null;
-    playing.value = false;
-    toggle();
+    if (mode.value === 'live') {
+      // 实时模式：通知 worklet 切音色（无缝切换）
+      workletNode?.port.postMessage({ type });
+    } else {
+      // 循环模式：停旧播新
+      stopAll();
+      toggle();
+    }
   }
 }
 
 function newSeed() {
   seed.value = Math.floor(Math.random() * 0xffffffff);
-  noiseCache.clear();
   if (playing.value) {
-    source?.stop();
-    source?.disconnect();
-    source = null;
-    playing.value = false;
-    toggle();
+    if (mode.value === 'live') {
+      workletNode?.port.postMessage({ seed: seed.value });
+    } else {
+      noiseCache.clear();
+      stopAll();
+      toggle();
+    }
+  } else {
+    noiseCache.clear();
   }
 }
 
+function setMode(m: 'loop' | 'live') {
+  if (m === mode.value) return;
+  const wasPlaying = playing.value;
+  stopAll();
+  mode.value = m;
+  if (wasPlaying) toggle();
+}
+
 onUnmounted(() => {
-  source?.stop();
-  source?.disconnect();
-  source = null;
+  stopAll();
+  if (audioCtx) audioCtx.close();
 });
 </script>
 
@@ -142,6 +189,24 @@ onUnmounted(() => {
   <div class="min-h-screen bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] p-4 md:p-8 flex flex-col items-center">
     <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">{{ t('noise.title') }}</h1>
     <p class="text-white/60 text-sm mb-6">{{ t('noise.subtitle') }}</p>
+
+    <!-- 模式切换 -->
+    <div class="flex gap-2 mb-6 bg-black/30 rounded-full p-1 border border-white/10">
+      <button
+        class="px-5 py-1.5 rounded-full text-sm font-medium transition-colors"
+        :class="mode === 'loop' ? 'bg-emerald-500 text-black' : 'text-white/70 hover:bg-white/10'"
+        @click="setMode('loop')"
+      >
+        {{ t('noise.modeLoop') }}
+      </button>
+      <button
+        class="px-5 py-1.5 rounded-full text-sm font-medium transition-colors"
+        :class="mode === 'live' ? 'bg-emerald-500 text-black' : 'text-white/70 hover:bg-white/10'"
+        @click="setMode('live')"
+      >
+        {{ t('noise.modeLive') }}
+      </button>
+    </div>
 
     <!-- 音色选择 -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-2xl mb-6">
