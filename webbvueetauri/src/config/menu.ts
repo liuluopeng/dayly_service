@@ -110,6 +110,12 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
       description: t('menu.piano.desc')
     },
     {
+      path: '/white-noise',
+      title: t('menu.whiteNoise.title'),
+      icon: '🌊',
+      description: t('menu.whiteNoise.desc')
+    },
+    {
       path: '/notes',
       title: t('menu.notes.title'),
       icon: '📚',

@@ -234,6 +234,10 @@
     "piano": {
       "title": "钢琴",
       "desc": "键盘钢琴（采样音色）"
+    },
+    "whiteNoise": {
+      "title": "白噪音",
+      "desc": "Wasm 合成环境声"
     }
   },
   "home": {
@@ -713,5 +717,20 @@
     "practiceHard": "挑战(含节奏)",
     "practiceDone": "完成 {n} 条 ✓",
     "practiceHint": "看简谱直接按键（不试音）——视唱练耳：看到 3 就按 U，看到 5 就按 O。按对自动前进"
+  },
+  "noise": {
+    "title": "环境白噪音",
+    "subtitle": "Wasm 实时合成的环境声，戴耳机放松/专注/助眠",
+    "white": "白噪音",
+    "whiteDesc": "均匀沙沙声",
+    "pink": "粉红噪音",
+    "pinkDesc": "柔和瀑布声",
+    "brown": "棕噪音",
+    "brownDesc": "低沉暖风机",
+    "rain": "雨声",
+    "rainDesc": "慢调制雨落",
+    "volume": "音量",
+    "reshuffle": "🎲 换一种变化",
+    "hint": "15 秒无缝循环缓冲（96kHz HiRes），由 Rust/Wasm 算法实时生成，无采样文件"
   }
 }

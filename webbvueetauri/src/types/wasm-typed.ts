@@ -201,3 +201,9 @@ export const synth_analyzed_note = wasm.synth_analyzed_note as (params: Float32A
 
 // === 钟琴音色（闭式表达式合成） ===
 export const synth_bell_note = wasm.synth_bell_note as (freq: number, duration_ms: number, sample_rate: number, seed: number) => Float32Array;
+
+// === 环境白噪音合成 ===
+export const synth_white_noise = wasm.synth_white_noise as (duration_ms: number, sample_rate: number, seed: number) => Float32Array;
+export const synth_pink_noise = wasm.synth_pink_noise as (duration_ms: number, sample_rate: number, seed: number) => Float32Array;
+export const synth_brown_noise = wasm.synth_brown_noise as (duration_ms: number, sample_rate: number, seed: number) => Float32Array;
+export const synth_rain_noise = wasm.synth_rain_noise as (duration_ms: number, sample_rate: number, seed: number) => Float32Array;
