@@ -7,6 +7,8 @@ import {
   synth_brown_noise,
   synth_rain_noise,
 } from '../types/wasm-typed';
+// wasm 二进制（vite 作为 asset 处理，运行时 fetch 交给 AudioWorklet 裸实例化）
+import wasmUrl from '../src-wasm/pkg/wasm_bg.wasm?url';
 
 const { t } = useI18n();
 
@@ -111,9 +113,13 @@ async function toggle() {
 
   if (mode.value === 'live') {
     // 持续随机：AudioWorklet 实时生成（永不循环重复）
+    // wasm 字节通过 postMessage 转移给 worklet，worklet 裸实例化后指针直写共享内存
     try {
       await ensureWorklet(ctx);
+      const res = await fetch(wasmUrl);
+      const wasmBytes = await res.arrayBuffer();
       workletNode = new AudioWorkletNode(ctx, 'noise-worklet');
+      workletNode.port.postMessage({ wasm: wasmBytes }, [wasmBytes]);
       workletNode.port.postMessage({ type: noiseType.value, seed: seed.value });
       workletNode.connect(gainNode);
       playing.value = true;
