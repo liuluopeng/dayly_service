@@ -1,10 +1,78 @@
 import Cocoa
 import FlutterMacOS
+import AVFoundation
+
+// 环境监听：麦克风直通耳机输出（AVAudioEngine 输入 → 混音器 → 输出）
+class SurroundListenManager {
+    static let shared = SurroundListenManager()
+    private let engine = AVAudioEngine()
+    private let micMixer = AVAudioMixerNode()
+    private let eq = AVAudioUnitEQ(numberOfBands: 1)
+    private var isRunning = false
+    private var isPaused = false
+
+    private init() {
+        engine.attach(micMixer)
+        engine.attach(eq)
+    }
+
+    func start() throws {
+        if isRunning { return }
+        let input = engine.inputNode
+        let format = input.inputFormat(forBus: 0)
+        engine.connect(input, to: micMixer, format: format)
+        engine.connect(micMixer, to: eq, format: format)
+        engine.connect(eq, to: engine.mainMixerNode, format: format)
+        micMixer.outputVolume = 1.0
+        if let band = eq.bands.first {
+            band.filterType = .parametric
+            band.frequency = 1000
+            band.bandwidth = 2.0
+            band.gain = 0.0
+            band.bypass = false
+        }
+        try engine.start()
+        isRunning = true
+        isPaused = false
+    }
+
+    func stop() {
+        guard isRunning else { return }
+        engine.stop()
+        isRunning = false
+        isPaused = false
+    }
+
+    func setGain(_ gain: Float) {
+        if gain <= 1.0 {
+            micMixer.outputVolume = gain
+            if let band = eq.bands.first { band.gain = 0.0 }
+        } else {
+            micMixer.outputVolume = 1.0
+            let db = 20.0 * log10(Double(gain))
+            let clamped = max(-12.0, min(24.0, db))
+            if let band = eq.bands.first { band.gain = Float(clamped) }
+        }
+    }
+
+    func pause() {
+        guard isRunning, !isPaused else { return }
+        engine.pause()
+        isPaused = true
+    }
+
+    func resume() throws {
+        guard isRunning, isPaused else { return }
+        try engine.start()
+        isPaused = false
+    }
+}
 
 @main
 class AppDelegate: FlutterAppDelegate {
   private weak var openFileChannel: FlutterMethodChannel?
   private var pendingFilePaths: [String] = []
+  private let surroundChannel = "kongde/native_audio"
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     return true
@@ -17,6 +85,42 @@ class AppDelegate: FlutterAppDelegate {
   override func applicationDidFinishLaunching(_ notification: Notification) {
     super.applicationDidFinishLaunching(notification)
     NSLog("[kongde] applicationDidFinishLaunching")
+
+    guard let controller = mainFlutterWindow?.contentViewController as? FlutterViewController else { return }
+    let channel = FlutterMethodChannel(name: surroundChannel, binaryMessenger: controller.engine.binaryMessenger)
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "surroundStart":
+        do {
+          try SurroundListenManager.shared.start()
+          result(true)
+        } catch {
+          result(FlutterError(code: "start_error", message: error.localizedDescription, details: nil))
+        }
+      case "surroundStop":
+        SurroundListenManager.shared.stop()
+        result(true)
+      case "surroundSetGain":
+        if let args = call.arguments as? [String: Any], let gain = args["gain"] as? Double {
+          SurroundListenManager.shared.setGain(Float(gain))
+          result(true)
+        } else {
+          result(FlutterError(code: "bad_args", message: "gain missing", details: nil))
+        }
+      case "surroundPause":
+        SurroundListenManager.shared.pause()
+        result(true)
+      case "surroundResume":
+        do {
+          try SurroundListenManager.shared.resume()
+          result(true)
+        } catch {
+          result(FlutterError(code: "resume_error", message: error.localizedDescription, details: nil))
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 
   override func application(_ sender: NSApplication, openFile filename: String) -> Bool {

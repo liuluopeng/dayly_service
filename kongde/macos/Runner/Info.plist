@@ -123,5 +123,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>用于环境监听：把外界声音实时传到耳机，避免错过环境动静。</string>
 </dict>
 </plist>

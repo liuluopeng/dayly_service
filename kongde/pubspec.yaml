@@ -49,6 +49,9 @@ dependencies:
   rxdart: ^0.28.0
   # audiotags: ^1.4.5
   path_provider: ^2.1.5
+  flutter_sound: ^9.30.0
+  audio_session: ^0.1.21
+  permission_handler: ^11.3.1
   rust_lib_kongde:
     path: rust_builder
   flutter_rust_bridge: 2.12.0
@@ -131,3 +134,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+dependency_overrides:
+  # flutter_sound 官方 macOS 声明损坏（pluginClass 与代码不一致），
+  # 使用本地副本并移除 macOS 声明；macOS 平台由原生 MethodChannel 直通实现
+  flutter_sound:
+    path: third_party/flutter_sound
