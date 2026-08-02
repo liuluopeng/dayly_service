@@ -1,5 +1,7 @@
 // dayly_service_rust 项目专属配置
-// 配色：Kanagawa Wave（深蓝水彩风）——用于与你的其他项目区分
+// 默认配色：Kanagawa Wave（深蓝水彩风）——用于与你的其他项目区分
+//
+// 快速切换配色：cmd-shift-p → "settings profile selector: toggle"
 {
   "theme": "Kanagawa Wave",
   "tab_size": 4,
@@ -18,6 +20,37 @@
     },
     "Vue": {
       "tab_size": 2
+    }
+  },
+  // 项目配色方案预设：按场景一键切换
+  "profiles": {
+    "Dayly · Kanagawa": {
+      "settings": {
+        "theme": "Kanagawa Wave",
+        "ui_font_size": 15.0,
+        "buffer_font_size": 15.0
+      }
+    },
+    "Dayly · Gruvbox": {
+      "settings": {
+        "theme": "Gruvbox Dark",
+        "ui_font_size": 15.0,
+        "buffer_font_size": 15.0
+      }
+    },
+    "Dayly · Catppuccin": {
+      "settings": {
+        "theme": "Catppuccin Mocha",
+        "ui_font_size": 15.0,
+        "buffer_font_size": 15.0
+      }
+    },
+    "Dayly · Light (白天)": {
+      "settings": {
+        "theme": "One Light",
+        "ui_font_size": 15.0,
+        "buffer_font_size": 15.0
+      }
     }
   }
 }
