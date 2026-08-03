@@ -7,6 +7,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # sqlx query! 宏走仓库内 .sqlx 离线缓存（与 Dockerfile 一致，CI 无数据库）
+  SQLX_OFFLINE: true
 
 jobs:
   rust:
