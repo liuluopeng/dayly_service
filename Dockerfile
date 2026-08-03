@@ -15,6 +15,7 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
     protobuf-compiler \
     curl \
     ca-certificates \
+    binaryen \
     && curl -fsSL https://deb.nodesource.com/setup_26.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
