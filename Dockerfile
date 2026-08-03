@@ -8,17 +8,20 @@ FROM rust:1.92.0 AS base-builder
 # RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
 #     && rm -rf /var/lib/apt/lists/*
 
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
-    apt-get update &&     apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    protobuf-compiler \
-    curl \
-    ca-certificates \
-    binaryen \
-    && curl -fsSL https://deb.nodesource.com/setup_26.x | bash - \
-    && apt-get install -y nodejs \
+# arm64 基础镜像用 ports.ubuntu.com，一并换阿里云镜像
+RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|http://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || \
+    sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+RUN apt-get update && apt-get install -y pkg-config libssl-dev protobuf-compiler curl ca-certificates binaryen \
     && rm -rf /var/lib/apt/lists/*
+
+# Node.js：官方源不稳定，用 npmmirror 二进制（arm64/x64 通用）
+RUN ARCH=$(uname -m) && case "$ARCH" in \
+        aarch64|arm64) NODE_ARCH=arm64 ;; \
+        x86_64|amd64)  NODE_ARCH=x64 ;; \
+        *) echo "unsupported arch: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL "https://npmmirror.com/mirrors/node/v22.16.0/node-v22.16.0-linux-${NODE_ARCH}.tar.xz" | tar -xJ -C /usr/local --strip-components=1 && \
+    node --version && npm --version
 
 # 安装 pnpm
 RUN npm install -g pnpm@11
