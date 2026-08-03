@@ -52,7 +52,9 @@ ENV PUB_HOSTED_URL=https://pub.flutter-io.cn \
     PATH="/root/.cargo/bin:$PATH"
 
 # Rust 工具链（FRB codegen / wasm-pack 需要）
-RUN apt-get update && apt-get install -y curl pkg-config libssl-dev protobuf-compiler git \
+# apt 源换阿里云镜像（国内网络访问 ports.ubuntu.com 不稳定）
+RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|http://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true \
+    && apt-get update && apt-get install -y curl pkg-config libssl-dev protobuf-compiler git lld binaryen \
     && rm -rf /var/lib/apt/lists/* \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && rustup target add wasm32-unknown-unknown
@@ -70,11 +72,40 @@ RUN echo "[source.crates-io]\n\
     git-fetch-with-cli = true\n" >> $CARGO_HOME/config.toml
 
 # FRB 工具链（编译耗时，独立缓存层）
+# 预装与项目匹配的 wasm-bindgen-cli（0.2.126），避免 wasm-pack 在
+# RUSTFLAGS 泄漏时临时安装导致失败
 RUN cargo install wasm-pack \
-    && cargo install flutter_rust_bridge_codegen --version 2.12.0
+    && cargo install flutter_rust_bridge_codegen --version 2.12.0 \
+    && cargo install wasm-bindgen-cli --version 0.2.126
+
+# FRB build-web 用 -Z build-std（需要 nightly + rust-src 组件）
+# 镜像预装 nightly 但缺 rust-src，补装
+RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu \
+    || rustup component add rust-src --toolchain nightly \
+    || true
 
 WORKDIR /app
+# kongde/rust 继承根 workspace（workspace.dependencies），根 Cargo.toml 必须复制
+COPY ./Cargo.toml /app/Cargo.toml
+COPY ./Cargo.lock /app/Cargo.lock
+# kongde/rust 的 path 依赖（common / my_type）必须一起复制
+COPY ./common /app/common
+COPY ./my_type /app/my_type
 COPY ./kongde /app/kongde
+# cargo 解析 workspace 需要所有 member 的 Cargo.toml 存在（仅 manifest，不编译）
+COPY ./sifu_axuum/Cargo.toml /app/sifu_axuum/Cargo.toml
+COPY ./local-agent/Cargo.toml /app/local-agent/Cargo.toml
+COPY ./wasm-demo/Cargo.toml /app/wasm-demo/Cargo.toml
+COPY ./webbvueetauri/src-tauri/Cargo.toml /app/webbvueetauri/src-tauri/Cargo.toml
+COPY ./webbvueetauri/src/src-wasm/Cargo.toml /app/webbvueetauri/src/src-wasm/Cargo.toml
+# 占位 src：cargo 解析 workspace 时要求每个 member 有 targets（不参与编译）
+RUN mkdir -p /app/sifu_axuum/src /app/local-agent/src /app/wasm-demo/src \
+        /app/webbvueetauri/src-tauri/src /app/webbvueetauri/src/src-wasm/src \
+    && echo 'fn main() {}' > /app/sifu_axuum/src/main.rs \
+    && echo 'fn main() {}' > /app/local-agent/src/main.rs \
+    && echo 'fn main() {}' > /app/wasm-demo/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src-tauri/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src/src-wasm/src/lib.rs
 
 WORKDIR /app/kongde
 RUN flutter config --no-analytics \
@@ -83,7 +114,7 @@ RUN flutter config --no-analytics \
 # FRB build-web（atomics/shared-memory flags，与宿主机 build-frontends.sh 一致）
 RUN flutter_rust_bridge_codegen build-web --release \
     --wasm-pack-rustflags \
-    "-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
+    "-Clinker=wasm-ld -Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
      -Clink-arg=--shared-memory \
      -Clink-arg=--import-memory \
      -Clink-arg=--max-memory=33554432 \
@@ -124,6 +155,14 @@ COPY ./kongde/rust/Cargo.toml /app/kongde/rust/Cargo.toml
 COPY ./local-agent/Cargo.toml /app/local-agent/Cargo.toml
 COPY ./my_type/Cargo.toml /app/my_type/Cargo.toml
 COPY ./webbvueetauri/src/src-wasm/Cargo.toml /app/webbvueetauri/src/src-wasm/Cargo.toml
+# 占位 src：cargo 解析 workspace 时要求每个 member 有 targets（不参与编译）
+RUN mkdir -p /app/sifu_axuum/src /app/local-agent/src /app/wasm-demo/src \
+        /app/webbvueetauri/src-tauri/src /app/webbvueetauri/src/src-wasm/src \
+    && echo 'fn main() {}' > /app/sifu_axuum/src/main.rs \
+    && echo 'fn main() {}' > /app/local-agent/src/main.rs \
+    && echo 'fn main() {}' > /app/wasm-demo/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src-tauri/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src/src-wasm/src/lib.rs
 COPY ./wasm-demo/Cargo.toml /app/wasm-demo/Cargo.toml
 COPY ./webbvueetauri/src-tauri/Cargo.toml /app/webbvueetauri/src-tauri/Cargo.toml
 
