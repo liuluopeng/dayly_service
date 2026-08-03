@@ -279,17 +279,30 @@ fn route() {
     }
 }
 
+/// 同源 API 基地址：页面 origin（生产端口自动跟随；开发由 trunk proxy 转发）
+fn default_base_url() -> String {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(origin) = window.location().origin() {
+                return origin;
+            }
+        }
+    }
+    String::new()
+}
+
 fn get_client() -> ApiClient {
     CLIENT.with(|rc| {
         let b = rc.borrow();
         if let Some(client) = b.as_ref() {
-            let mut c = ApiClient::new("");
+            let mut c = ApiClient::new(&default_base_url());
             if let Some(t) = client.token() {
                 c.set_token(t);
             }
             c
         } else {
-            ApiClient::new("")
+            ApiClient::new(&default_base_url())
         }
     })
 }
@@ -297,7 +310,7 @@ fn get_client() -> ApiClient {
 fn set_token_inner(token: &str) {
     CLIENT.with(|c| {
         let mut b = c.borrow_mut();
-        let client = b.get_or_insert_with(|| ApiClient::new(""));
+        let client = b.get_or_insert_with(|| ApiClient::new(&default_base_url()));
         if token.is_empty() {
             client.clear_token();
         } else {

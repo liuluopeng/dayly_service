@@ -7,10 +7,11 @@ export function getDefaultApiUrl(): string {
   if (isTauri()) {
     return 'http://localhost:23000';
   }
-  // 浏览器（vite dev / docker 同源部署）：返回空串 = 相对路径
-  // 生产：前端与 API 同源（axum 服务），/api 自动跟随当前端口；
-  // 开发：vite server.proxy 将 /api 转发到 localhost:23001
-  return '';
+  // 浏览器：返回同源绝对地址（页面 origin）
+  // - 生产（docker）：页面 http://host:23000 → API http://host:23000，端口自动跟随
+  // - 开发（vite 1420）：请求发到 1420，由 server.proxy 转发到 23001
+  // 注意：wasm reqwest 不接受相对 URL（builder error），必须绝对地址
+  return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
 }
 
 export function getApiUrl(): string {

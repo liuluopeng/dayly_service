@@ -25,7 +25,16 @@ class ServerEntry {
     this.sameOrigin = false,
   });
 
-  String get url => sameOrigin ? '' : 'http://$host:$port';
+  String get url => sameOrigin ? _sameOriginUrl : 'http://$host:$port';
+
+  // 同源模式的绝对地址：页面 origin（wasm reqwest 不接受相对 URL）
+  static String get _sameOriginUrl {
+    if (kIsWeb) {
+      final base = Uri.base;
+      return '${base.scheme}://${base.host}:${base.port}';
+    }
+    return '';
+  }
   bool get hasCredentials => username.isNotEmpty && password.isNotEmpty;
   bool get isLoggedIn => token.isNotEmpty;
 
