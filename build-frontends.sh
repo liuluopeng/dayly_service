@@ -47,7 +47,7 @@ flutter_rust_bridge_codegen build-web --release \
   "-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
    -Clink-arg=--shared-memory \
    -Clink-arg=--import-memory \
-   -Clink-arg=--max-memory=33554432 \
+   -Clink-arg=--max-memory=134217728 \
    -Clink-arg=--export=__wasm_init_tls \
    -Clink-arg=--export=__tls_size \
    -Clink-arg=--export=__tls_align \
@@ -57,7 +57,7 @@ flutter_rust_bridge_codegen build-web --release \
 # 3b. Patch thread_stack_size default + larger initial memory
 sed -i '' \
   -e 's/wasm.__wbindgen_start(thread_stack_size);/wasm.__wbindgen_start(thread_stack_size || 1048576);/' \
-  -e 's/initial:[0-9]*,maximum:512/initial:256,maximum:512/' \
+  -e 's/initial:[0-9]*,maximum:[0-9]*/initial:256,maximum:2048/' \
   web/pkg/rust_lib_kongde.js
 
 # 3c. Build Flutter web (JS mode, not dart2wasm)
@@ -67,5 +67,15 @@ echo "  -> $STATIC/flutter/"
 
 echo ""
 echo "=== Done ==="
+# 与 sifu_axuum 端口逻辑一致：ENV=development -> 23001，否则 23000；显式 PORT 优先
+ENV_MODE="$(grep -E '^ENV=' "$ROOT/sifu_axuum/.env" 2>/dev/null | cut -d= -f2- || echo production)"
+PORT_VAL="$(grep -E '^PORT=' "$ROOT/sifu_axuum/.env" 2>/dev/null | cut -d= -f2- || true)"
+if [ -n "$PORT_VAL" ]; then
+  VISIT_PORT="$PORT_VAL"
+elif [ "$ENV_MODE" = "development" ]; then
+  VISIT_PORT="23001"
+else
+  VISIT_PORT="23000"
+fi
 echo "Run: cd sifu_axuum && cargo run"
-echo "Visit: http://localhost:23000/"
+echo "Visit: http://localhost:$VISIT_PORT/"

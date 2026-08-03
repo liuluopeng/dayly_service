@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  get: ^5.0.0-release-candidate-9.3.2
+  get: ^4.7.3
   audio_service: ^0.18.18
   just_audio: ^0.10.5
   http: ^1.2.2

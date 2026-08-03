@@ -1,5 +1,6 @@
 # Flutter Web 构建镜像（国内代理，可 --build-arg 覆盖）
-ARG FLUTTER_IMAGE=ghcr.nju.edu.cn/cirruslabs/flutter:stable
+# 注意：固定 3.41.0 —— 3.44.0 构建的 flutter web 在 dart2js 下启动即崩（Uncaught Error）
+ARG FLUTTER_IMAGE=ghcr.nju.edu.cn/cirruslabs/flutter:3.41.0
 
 # 先构建基础镜像阶段
 FROM rust:1.92.0 AS base-builder
@@ -63,6 +64,17 @@ RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|http://mirrors.aliyun.com/ubu
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && rustup target add wasm32-unknown-unknown
 
+# binaryen（wasm-opt）升级到 123：apt 版本 108 过旧，优化多线程 wasm（atomics）
+# 有 bug，导致 docker 内构建的 flutter web 启动即崩（宿主机 wasm-pack 用新版正常）
+RUN ARCH=$(uname -m) && case "$ARCH" in \
+        aarch64|arm64) BE_ARCH=aarch64 ;; \
+        x86_64|amd64)  BE_ARCH=x86_64 ;; \
+        *) echo "unsupported arch: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL --retry 3 "https://github.com/WebAssembly/binaryen/releases/download/version_123/binaryen-version_123-${BE_ARCH}-linux.tar.gz" \
+        | tar -xz -C /usr/local --strip-components=1 \
+    && wasm-opt --version
+
 # cargo 国内源
 RUN echo "[source.crates-io]\n\
     replace-with = 'rsproxy-sparse'\n\
@@ -83,10 +95,15 @@ RUN cargo install wasm-pack \
     && cargo install wasm-bindgen-cli --version 0.2.126
 
 # FRB build-web 用 -Z build-std（需要 nightly + rust-src 组件）
-# 镜像预装 nightly 但缺 rust-src，补装
-RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu \
-    || rustup component add rust-src --toolchain nightly \
-    || true
+# 固定 nightly-2026-07-15（与宿主机同代）：不同 nightly 的 build-std 生成的 wasm
+# 行为不同——docker 内最新 nightly(2026-08-02) 构建的 flutter web 启动即崩（Uncaught Error）
+# FRB 强制设置 RUSTUP_TOOLCHAIN=nightly：把固定 nightly 的工具链目录重命名为 nightly，
+# 使该解析命中固定版本（rustup toolchain link 不允许标准 channel 名）
+RUN rustup toolchain install nightly-2026-07-15 --profile minimal --component rust-src \
+    && rustup target add wasm32-unknown-unknown --toolchain nightly-2026-07-15 \
+    && rustup toolchain uninstall nightly 2>/dev/null || true \
+    && mv /root/.rustup/toolchains/nightly-2026-07-15-aarch64-unknown-linux-gnu \
+          /root/.rustup/toolchains/nightly-aarch64-unknown-linux-gnu
 
 WORKDIR /app
 # kongde/rust 继承根 workspace（workspace.dependencies），根 Cargo.toml 必须复制
@@ -116,12 +133,13 @@ RUN flutter config --no-analytics \
     && flutter pub get
 
 # FRB build-web（atomics/shared-memory flags，与宿主机 build-frontends.sh 一致）
+# 注意：不用 -Clinker=wasm-ld（apt lld 18 与宿主 rustc 自带 rust-lld 差异曾致 wasm 崩溃）
 RUN flutter_rust_bridge_codegen build-web --release \
     --wasm-pack-rustflags \
-    "-Clinker=wasm-ld -Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
+    "-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
      -Clink-arg=--shared-memory \
      -Clink-arg=--import-memory \
-     -Clink-arg=--max-memory=33554432 \
+     -Clink-arg=--max-memory=134217728 \
      -Clink-arg=--export=__wasm_init_tls \
      -Clink-arg=--export=__tls_size \
      -Clink-arg=--export=__tls_align \
@@ -131,7 +149,7 @@ RUN flutter_rust_bridge_codegen build-web --release \
 # Patch thread_stack_size 默认值 + 增大初始化内存（Linux sed 语法）
 RUN sed -i \
   -e 's/wasm.__wbindgen_start(thread_stack_size);/wasm.__wbindgen_start(thread_stack_size || 1048576);/' \
-  -e 's/initial:[0-9]*,maximum:512/initial:256,maximum:512/' \
+  -e 's/initial:[0-9]*,maximum:[0-9]*/initial:256,maximum:2048/' \
   web/pkg/rust_lib_kongde.js
 
 # Flutter Web（JS 模式，与宿主机一致）

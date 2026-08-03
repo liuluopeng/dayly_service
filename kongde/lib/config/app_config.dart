@@ -65,6 +65,10 @@ class AppConfig extends GetxController {
 
   AppConfig._internal();
 
+  // 当前页面 origin 的 host/port（同源模式下编辑对话框展示用）
+  static String get sameOriginHost => kIsWeb ? Uri.base.host : '';
+  static int get sameOriginPort => kIsWeb ? Uri.base.port : 0;
+
   final List<ServerEntry> servers = [];
   int _activeIndex = 0;
 
@@ -229,6 +233,7 @@ class AppConfig extends GetxController {
       username: username ?? old.username,
       password: password ?? old.password,
       token: old.token,
+      sameOrigin: old.sameOrigin,
     );
     await _saveServers();
     if (index == _activeIndex) {

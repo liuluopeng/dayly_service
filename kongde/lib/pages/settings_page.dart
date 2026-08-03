@@ -158,8 +158,12 @@ class _SettingsPageState extends State<SettingsPage> {
     final server = appConfig.servers[index];
     _showServerDialog(
       title: 'settings.editServer'.tr,
-      name: server.name, host: server.host, port: server.port.toString(),
+      // 同源模式（web 自动配置）：地址由页面 origin 决定，禁止修改，展示真实地址
+      name: server.name,
+      host: server.sameOrigin ? config.AppConfig.sameOriginHost : server.host,
+      port: server.sameOrigin ? config.AppConfig.sameOriginPort.toString() : server.port.toString(),
       username: server.username, password: server.password,
+      lockAddress: server.sameOrigin,
       onConfirm: (name, host, port, username, password) async {
         LOGGER.i('Updating server [$index]: name=$name, host=$host, port=$port, username=$username');
         try {
@@ -178,6 +182,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required String title,
     required String name, required String host, required String port,
     required String username, required String password,
+    bool lockAddress = false,
     required Future<void> Function(String name, String host, int port, String username, String password) onConfirm,
   }) {
     final nameCtl = TextEditingController(text: name);
@@ -194,9 +199,9 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           TextFormField(controller: nameCtl, decoration: InputDecoration(labelText: 'common.name'.tr, border: const OutlineInputBorder()), validator: (v) => v == null || v.trim().isEmpty ? 'common.required'.tr : null),
           const SizedBox(height: 12),
-          TextFormField(controller: hostCtl, decoration: InputDecoration(labelText: 'common.address'.tr, hintText: '192.168.1.100', border: const OutlineInputBorder()), validator: (v) => v == null || v.trim().isEmpty ? 'common.required'.tr : null),
+          TextFormField(controller: hostCtl, enabled: !lockAddress, decoration: InputDecoration(labelText: 'common.address'.tr, hintText: '192.168.1.100', border: const OutlineInputBorder()), validator: (v) => lockAddress || (v != null && v.trim().isNotEmpty) ? null : 'common.required'.tr),
           const SizedBox(height: 12),
-          TextFormField(controller: portCtl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'common.port'.tr, hintText: '23000', border: const OutlineInputBorder()), validator: (v) { if (v == null || v.trim().isEmpty) return 'common.required'.tr; final p = int.tryParse(v.trim()); if (p == null || p < 1 || p > 65535) return 'common.invalid'.tr; return null; }),
+          TextFormField(controller: portCtl, enabled: !lockAddress, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'common.port'.tr, hintText: '23000', border: const OutlineInputBorder()), validator: (v) { if (lockAddress) return null; if (v == null || v.trim().isEmpty) return 'common.required'.tr; final p = int.tryParse(v.trim()); if (p == null || p < 1 || p > 65535) return 'common.invalid'.tr; return null; }),
           const Divider(height: 24),
           TextFormField(controller: usernameCtl, decoration: InputDecoration(labelText: 'common.username'.tr, border: const OutlineInputBorder()), validator: (v) => v == null || v.trim().isEmpty ? 'common.required'.tr : null),
           const SizedBox(height: 12),

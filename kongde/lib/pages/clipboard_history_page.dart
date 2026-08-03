@@ -62,7 +62,7 @@ class _ClipboardHistoryPageState extends State<ClipboardHistoryPage> {
     Get.snackbar(
       'common.copied'.tr,
       '',
-      snackPosition: SnackPosition.bottom,
+      snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 1),
     );
   }

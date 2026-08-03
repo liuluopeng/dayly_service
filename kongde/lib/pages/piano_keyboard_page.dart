@@ -213,7 +213,7 @@ class _PianoKeyboardPageState extends State<PianoKeyboardPage> {
       'Key Pressed',
       '$noteName (${frequency.toStringAsFixed(2)} Hz)',
       duration: const Duration(milliseconds: 500),
-      snackPosition: SnackPosition.bottom,
+      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.black54,
       colorText: Colors.white,
     );
