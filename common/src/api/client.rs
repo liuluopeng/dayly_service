@@ -53,8 +53,8 @@ impl ApiClient {
     #[cfg(test)]
     pub(crate) fn test_client() -> Self {
         // 本地测试服务地址（测试环境可覆盖；生产代码不得依赖此值）
-        let url = std::env::var("DAYLY_API_URL")
-            .unwrap_or_else(|_| "http://localhost:23001".to_string());
+        let url =
+            std::env::var("DAYLY_API_URL").unwrap_or_else(|_| "http://localhost:23001".to_string());
         Self::new(&url)
     }
 

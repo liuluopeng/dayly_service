@@ -155,7 +155,11 @@ static mut LIVE_BUF: [f32; LIVE_BUF_LEN] = [0.0; LIVE_BUF_LEN];
 pub extern "C" fn noise_live_reset(kind: i32, seed: u32, sample_rate: f32) {
     unsafe {
         LIVE_KIND = kind;
-        LIVE_SR = if sample_rate.is_finite() && sample_rate >= 8000.0 { sample_rate } else { 48000.0 };
+        LIVE_SR = if sample_rate.is_finite() && sample_rate >= 8000.0 {
+            sample_rate
+        } else {
+            48000.0
+        };
         LIVE_X = seed | 1;
         LIVE_B = [0.0; 7];
         LIVE_LAST = 0.0;
@@ -207,7 +211,8 @@ pub extern "C" fn noise_live_fill(len: usize) -> i32 {
                     b[3] = 0.86650f32 * b[3] + white * 0.3104856;
                     b[4] = 0.55000f32 * b[4] + white * 0.5329522;
                     b[5] = -0.7616f32 * b[5] - white * 0.0168980;
-                    let v = (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + white * 0.5362) * 0.11;
+                    let v =
+                        (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + white * 0.5362) * 0.11;
                     b[6] = white * 0.115926;
                     (v * 4.5).clamp(-1.0, 1.0)
                 }

@@ -40,7 +40,11 @@ pub fn get_client_clone() -> Result<ApiClient, String> {
     let fallback = web_sys::window()
         .and_then(|w| w.location().origin().ok())
         .unwrap_or_else(|| "http://localhost:23001".to_string());
-    let mut client = ApiClient::new(if base_url.is_empty() { &fallback } else { &base_url });
+    let mut client = ApiClient::new(if base_url.is_empty() {
+        &fallback
+    } else {
+        &base_url
+    });
     if let Some(token) = TOKEN.with(|t| t.borrow().clone()) {
         client.set_token(&token);
     }
