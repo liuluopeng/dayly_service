@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:get/get.dart';
 import 'package:kongde/services/sqlite_storage.dart';
 import 'package:kongde/utils.dart';
@@ -12,6 +12,8 @@ class ServerEntry {
   String username;
   String password;
   String token;
+  // 同源模式：url 返回相对路径（''），请求跟随页面 origin（Web 生产部署自动启用）
+  bool sameOrigin;
 
   ServerEntry({
     required this.name,
@@ -20,9 +22,10 @@ class ServerEntry {
     this.username = '',
     this.password = '',
     this.token = '',
+    this.sameOrigin = false,
   });
 
-  String get url => 'http://$host:$port';
+  String get url => sameOrigin ? '' : 'http://$host:$port';
   bool get hasCredentials => username.isNotEmpty && password.isNotEmpty;
   bool get isLoggedIn => token.isNotEmpty;
 
@@ -33,6 +36,7 @@ class ServerEntry {
     'username': username,
     'password': password,
     'token': token,
+    'sameOrigin': sameOrigin,
   };
 
   factory ServerEntry.fromJson(Map<String, dynamic> json) => ServerEntry(
@@ -42,6 +46,7 @@ class ServerEntry {
     username: (json['username'] as String?) ?? '',
     password: (json['password'] as String?) ?? '',
     token: (json['token'] as String?) ?? '',
+    sameOrigin: (json['sameOrigin'] as bool?) ?? false,
   );
 }
 
@@ -88,13 +93,28 @@ class AppConfig extends GetxController {
     }
 
     _activeIndex = await store.getInt(_activeIndexKey) ?? 0;
+
+    // Web 生产构建且未配置任何服务器：自动启用同源模式（相对路径，端口跟随页面）
+    if (kIsWeb && kReleaseMode && this.servers.isEmpty) {
+      this.servers.add(ServerEntry(name: '同源自动', host: '', port: 0, sameOrigin: true));
+      await _saveServers();
+      _activeIndex = 0;
+      LOGGER.i("[config] Web 生产构建，自动启用同源模式（相对路径）");
+    }
+
     if (_activeIndex >= this.servers.length) _activeIndex = 0;
 
     LOGGER.i("[config] 加载了 ${this.servers.length} 个服务器, 当前索引=$_activeIndex");
 
     if (this.servers.isNotEmpty) {
-      await initClient(port: activeServer.port);
-      await setClientBaseUrl(baseUrl: activeServer.url);
+      if (activeServer.sameOrigin) {
+        // 同源模式：不设端口，base_url 为空串（相对路径 /api）
+        await setClientBaseUrl(baseUrl: '');
+        LOGGER.i("[config] 使用同源模式（相对路径）");
+      } else {
+        await initClient(port: activeServer.port);
+        await setClientBaseUrl(baseUrl: activeServer.url);
+      }
       LOGGER.i("[config] 切换到服务器 ${activeServer.name} (${activeServer.url})");
       if (activeServer.token.isNotEmpty) {
         await setClientToken(token: activeServer.token);
