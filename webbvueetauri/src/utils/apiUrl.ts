@@ -1,8 +1,16 @@
+function isTauri(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+}
+
 export function getDefaultApiUrl(): string {
-  if (import.meta.env.DEV) {
-    return `http://${window.location.hostname}:23001`;
+  // Tauri WebView 不走 HTTP origin，必须用绝对地址
+  if (isTauri()) {
+    return 'http://localhost:23000';
   }
-  return `http://${window.location.hostname}:23000`;
+  // 浏览器（vite dev / docker 同源部署）：返回空串 = 相对路径
+  // 生产：前端与 API 同源（axum 服务），/api 自动跟随当前端口；
+  // 开发：vite server.proxy 将 /api 转发到 localhost:23001
+  return '';
 }
 
 export function getApiUrl(): string {
@@ -11,5 +19,5 @@ export function getApiUrl(): string {
 
 export function getPortFromUrl(url: string): string {
   const portMatch = url.match(/:([0-9]+)/);
-  return portMatch ? portMatch[1] : '23001';
+  return portMatch ? portMatch[1] : '';
 }

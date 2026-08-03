@@ -19,6 +19,14 @@ export default defineConfig(async () => ({
     port: 1420,
     strictPort: true,
     host: host || false,
+    // 开发代理：前端请求 /api 相对路径时转发到本地 axum（23001）
+    // 生产（docker 同源部署）不需要代理，/api 直接命中 axum
+    proxy: {
+      "/api": {
+        target: "http://localhost:23001",
+        changeOrigin: true,
+      },
+    },
     hmr: host
       ? {
         protocol: "ws",

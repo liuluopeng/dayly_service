@@ -1,0 +1,8 @@
+# Trunk 开发服务器代理配置
+# 开发时（trunk serve，默认 8080 端口）：
+#   前端请求相对路径 /api/* → 代理转发到本地 axum 开发服务器（23001）
+# 生产（docker 同源部署，/wasm/ 由 axum 服务）：
+#   不需要代理，/api 相对路径直接命中 axum，端口自动跟随
+[[proxy]]
+backend = "http://localhost:23001/api"
+rewrite = "/api"

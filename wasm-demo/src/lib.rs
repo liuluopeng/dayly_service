@@ -283,13 +283,13 @@ fn get_client() -> ApiClient {
     CLIENT.with(|rc| {
         let b = rc.borrow();
         if let Some(client) = b.as_ref() {
-            let mut c = ApiClient::new("http://localhost:23001");
+            let mut c = ApiClient::new("");
             if let Some(t) = client.token() {
                 c.set_token(t);
             }
             c
         } else {
-            ApiClient::new("http://localhost:23001")
+            ApiClient::new("")
         }
     })
 }
@@ -297,7 +297,7 @@ fn get_client() -> ApiClient {
 fn set_token_inner(token: &str) {
     CLIENT.with(|c| {
         let mut b = c.borrow_mut();
-        let client = b.get_or_insert_with(|| ApiClient::new("http://localhost:23001"));
+        let client = b.get_or_insert_with(|| ApiClient::new(""));
         if token.is_empty() {
             client.clear_token();
         } else {
@@ -2988,7 +2988,7 @@ fn do_sidebar_toggle() {
 
 fn songs_base_url() -> String {
     let url = CLIENT.with(|rc| rc.borrow().as_ref().map(|c| c.base_url().to_string()));
-    url.unwrap_or_else(|| "http://localhost:23001".to_string())
+    url.unwrap_or_else(|| "".to_string())
 }
 
 fn songs_render_list() {
