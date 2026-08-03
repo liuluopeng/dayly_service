@@ -2988,7 +2988,7 @@ fn do_sidebar_toggle() {
 
 fn songs_base_url() -> String {
     let url = CLIENT.with(|rc| rc.borrow().as_ref().map(|c| c.base_url().to_string()));
-    url.unwrap_or_else(|| "".to_string())
+    url.unwrap_or_default()
 }
 
 fn songs_render_list() {

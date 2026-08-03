@@ -33,10 +33,11 @@ impl AppEnv {
 pub struct ServerConfig {
     #[clap(default_value = "127.0.0.1", env)]
     pub host: IpAddr,
-    #[clap(default_value = "23000", env)]
-    pub port: u16,
-    #[clap(default_value = "50051", env)]
-    pub grpc_port: u16,
+    // 端口不写死：ENV 显式设置优先；未设置时按环境默认（dev 23001 / prod 23000）
+    #[clap(env)]
+    pub port: Option<u16>,
+    #[clap(env)]
+    pub grpc_port: Option<u16>,
     #[clap(default_value = "production", env)]
     pub env: String,
     #[clap(default_value = "192.168.31.58", env)]
@@ -49,19 +50,19 @@ impl ServerConfig {
     }
 
     pub fn get_port(&self) -> u16 {
-        if self.port == 23000 && self.app_env() == AppEnv::Development {
-            self.app_env().default_port()
-        } else {
-            self.port
-        }
+        // ENV 显式设置（含 23000）不会被环境默认覆盖
+        self.port.unwrap_or_else(|| self.app_env().default_port())
     }
 
     pub fn get_grpc_port(&self) -> u16 {
-        if self.grpc_port == 50051 && self.app_env() == AppEnv::Development {
-            50053
-        } else {
-            self.grpc_port
-        }
+        // dev 默认 50053（local-agent 默认连接），prod 默认 50051；ENV 可覆盖
+        self.grpc_port.unwrap_or_else(|| {
+            if self.app_env().is_development() {
+                50053
+            } else {
+                50051
+            }
+        })
     }
 
     pub fn get_base_url(&self) -> String {

@@ -24,7 +24,7 @@ fn make_loopable(out: &mut [f32], sample_rate: u32) {
 
 fn normalize(out: &mut [f32]) {
     let peak = out.iter().fold(0f32, |a, &b| a.max(b.abs()));
-    if peak > 0.0001 {
+    if peak > 0.0001f32 {
         let scale = (1.0 / peak).min(1.0) * 0.85;
         for x in out.iter_mut() {
             *x *= scale;
@@ -61,12 +61,12 @@ pub fn synth_pink_noise(duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f3
     let mut b = [0f32; 7];
     for (i, x) in out.iter_mut().enumerate() {
         let white = rng.next();
-        b[0] = 0.99886 * b[0] + white * 0.0555179;
-        b[1] = 0.99332 * b[1] + white * 0.0750759;
-        b[2] = 0.96900 * b[2] + white * 0.1538520;
-        b[3] = 0.86650 * b[3] + white * 0.3104856;
-        b[4] = 0.55000 * b[4] + white * 0.5329522;
-        b[5] = -0.7616 * b[5] - white * 0.0168980;
+        b[0] = 0.99886f32 * b[0] + white * 0.0555179;
+        b[1] = 0.99332f32 * b[1] + white * 0.0750759;
+        b[2] = 0.969f32 * b[2] + white * 0.153852f32;
+        b[3] = 0.86650f32 * b[3] + white * 0.3104856;
+        b[4] = 0.55000f32 * b[4] + white * 0.5329522;
+        b[5] = -0.7616f32 * b[5] - white * 0.0168980;
         *x = (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + white * 0.5362) * 0.11;
         b[6] = white * 0.115926;
         let _ = i;
@@ -169,7 +169,7 @@ pub extern "C" fn noise_live_reset(kind: i32, seed: u32, sample_rate: f32) {
 /// 返回内部缓冲区指针（worklet 用视图读取）
 #[no_mangle]
 pub extern "C" fn noise_live_buffer() -> *mut f32 {
-    unsafe { LIVE_BUF.as_mut_ptr() }
+    std::ptr::addr_of_mut!(LIVE_BUF) as *mut f32
 }
 
 fn live_rng() -> f32 {
@@ -200,20 +200,20 @@ pub extern "C" fn noise_live_fill(len: usize) -> i32 {
             let v = match kind {
                 0 => white * 0.85,
                 1 => {
-                    let b = &mut LIVE_B;
-                    b[0] = 0.99886 * b[0] + white * 0.0555179;
-                    b[1] = 0.99332 * b[1] + white * 0.0750759;
-                    b[2] = 0.96900 * b[2] + white * 0.1538520;
-                    b[3] = 0.86650 * b[3] + white * 0.3104856;
-                    b[4] = 0.55000 * b[4] + white * 0.5329522;
-                    b[5] = -0.7616 * b[5] - white * 0.0168980;
+                    let b: &mut [f32; 7] = &mut *std::ptr::addr_of_mut!(LIVE_B);
+                    b[0] = 0.99886f32 * b[0] + white * 0.0555179;
+                    b[1] = 0.99332f32 * b[1] + white * 0.0750759;
+                    b[2] = 0.969f32 * b[2] + white * 0.153852f32;
+                    b[3] = 0.86650f32 * b[3] + white * 0.3104856;
+                    b[4] = 0.55000f32 * b[4] + white * 0.5329522;
+                    b[5] = -0.7616f32 * b[5] - white * 0.0168980;
                     let v = (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + white * 0.5362) * 0.11;
                     b[6] = white * 0.115926;
                     (v * 4.5).clamp(-1.0, 1.0)
                 }
                 2 => {
                     LIVE_LAST = (LIVE_LAST + white * 0.02) * 0.997;
-                    (LIVE_LAST * 3.5 * 0.85).clamp(-1.0, 1.0)
+                    (LIVE_LAST * 3.5f32 * 0.85).clamp(-1.0, 1.0)
                 }
                 _ => {
                     LIVE_LP += lp_alpha * (white - LIVE_LP);
