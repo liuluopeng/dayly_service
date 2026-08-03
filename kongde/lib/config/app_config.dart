@@ -94,12 +94,20 @@ class AppConfig extends GetxController {
 
     _activeIndex = await store.getInt(_activeIndexKey) ?? 0;
 
-    // Web 生产构建且未配置任何服务器：自动启用同源模式（相对路径，端口跟随页面）
-    if (kIsWeb && kReleaseMode && this.servers.isEmpty) {
-      this.servers.add(ServerEntry(name: '同源自动', host: '', port: 0, sameOrigin: true));
+    // Web 且未配置任何服务器：按构建模式自动设置
+    if (kIsWeb && this.servers.isEmpty) {
+      if (kReleaseMode) {
+        // 生产构建：同源模式（相对路径，端口跟随页面）
+        this.servers.add(ServerEntry(name: '同源自动', host: '', port: 0, sameOrigin: true));
+        LOGGER.i("[config] Web 生产构建，自动启用同源模式（相对路径）");
+      } else {
+        // 开发构建（flutter run）：自动指向本地开发服务器（23001）
+        final devHost = Uri.base.host.isNotEmpty ? Uri.base.host : 'localhost';
+        this.servers.add(ServerEntry(name: '本地开发', host: devHost, port: 23001));
+        LOGGER.i("[config] Web 开发构建，自动指向 $devHost:23001");
+      }
       await _saveServers();
       _activeIndex = 0;
-      LOGGER.i("[config] Web 生产构建，自动启用同源模式（相对路径）");
     }
 
     if (_activeIndex >= this.servers.length) _activeIndex = 0;
