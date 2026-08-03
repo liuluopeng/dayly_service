@@ -51,6 +51,7 @@ mod tests {
     use super::*;
     use crate::test_helpers::test_pool;
     use std::collections::HashSet;
+    use tracing::debug;
 
     #[tokio::test]
     async fn test_get_pinyin_by_ori() {
