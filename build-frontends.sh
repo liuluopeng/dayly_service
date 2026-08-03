@@ -10,10 +10,14 @@ echo "=== Building frontends ==="
 echo ""
 echo "--- Vue (webbvueetauri) ---"
 cd "$ROOT/webbvueetauri"
+# 先构建 src-wasm：vite 产物依赖它，且保证 vue-tsc（prebuild）类型检查用的是最新 wasm 绑定
+(cd src/src-wasm && wasm-pack build)
 pnpm install
 pnpm build
 rm -rf "$STATIC/vue" && mkdir -p "$STATIC/vue" && cp -r dist/* "$STATIC/vue/"
-echo "  -> $STATIC/vue/"
+# 与 Docker 一致：同时产出 /dist/（Docker 内构建也覆盖这两处）
+rm -rf "$STATIC/dist" && mkdir -p "$STATIC/dist" && cp -r dist/* "$STATIC/dist/"
+echo "  -> $STATIC/vue/ + $STATIC/dist/"
 
 # 2. wasm-demo (Trunk)
 echo ""
@@ -29,6 +33,13 @@ echo "  -> $STATIC/wasm/"
 echo ""
 echo "--- Flutter Web (kongde) ---"
 cd "$ROOT/kongde"
+
+# 检查 FRB codegen（缺失时安装，版本与项目 flutter_rust_bridge 一致）
+which flutter_rust_bridge_codegen >/dev/null 2>&1 \
+  || cargo install flutter_rust_bridge_codegen --version 2.12.0
+
+# FRB build-web 用 -Z build-std（nightly 特性），确保 rust-src 组件存在
+rustup component add rust-src --toolchain nightly 2>/dev/null || true
 
 # 3a. Build Rust WASM module with atomics + shared memory
 flutter_rust_bridge_codegen build-web --release \
