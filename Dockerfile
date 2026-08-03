@@ -189,8 +189,10 @@ COPY ./kongde/rust/src /app/kongde/rust/src
 COPY ./webbvueetauri /app/webbvueetauri
 COPY ./webbvueetauri/src/src-wasm/src /app/webbvueetauri/src/src-wasm/src
 
-# 复制其他必要文件
+# 复制静态资源（排除 Docker 内构建的 dist/flutter 目录，
+# 宿主机旧产物不进入镜像，由容器内构建步骤产出）
 COPY ./sifu_axuum/static /app/sifu_axuum/static
+RUN rm -rf /app/sifu_axuum/static/dist /app/sifu_axuum/static/flutter
 
 # 编译 WASM
 WORKDIR /app/webbvueetauri/src/src-wasm
