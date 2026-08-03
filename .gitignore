@@ -63,6 +63,12 @@ cold_data/
 /cache/
 /static/
 /models/
+# 子目录中的数据/产物（锚定规则不覆盖，单独列出）
+sifu_axuum/static/
+sifu_axuum/models/
+kongde/lib/models/
+pdf/
+data/
 
 # === Old WASM output (now in src/src-wasm/pkg/) ===
 wasm_bg.js
