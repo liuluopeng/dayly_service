@@ -15,7 +15,7 @@ class NotificationWidget extends StatelessWidget {
       '',
       backgroundColor: Colors.black,
       colorText: Colors.white,
-      snackPosition: SnackPosition.top,
+      snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 2),
       margin: const EdgeInsets.all(8),
       borderRadius: 8,

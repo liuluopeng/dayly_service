@@ -18,7 +18,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_hello_endpoint() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match send_hello_request(&client).await {
             Ok(response) => {

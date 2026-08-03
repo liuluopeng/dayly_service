@@ -56,13 +56,19 @@ Thumbs.db
 cold_data/
 
 # === Data directories (large, not source) ===
-mhtml/
+/mhtml/
+/pdf/
+/backup/
+/data/
+/cache/
+/static/
+/models/
+# 子目录中的数据/产物（锚定规则不覆盖，单独列出）
+sifu_axuum/static/
+sifu_axuum/models/
+kongde/lib/models/
 pdf/
-backup/
 data/
-cache/
-static/
-models/
 
 # === Old WASM output (now in src/src-wasm/pkg/) ===
 wasm_bg.js
@@ -99,6 +105,5 @@ package.json
 mdx2sql/
 search-wubi/
 
-mhtml/
 # 打包产物
-dist/
+/dist/

@@ -130,7 +130,7 @@ pub async fn get_movies_by_genre(
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::test]
 async fn test_get_melatonin_movies_for_dart() {
-    let client = ApiClient::default();
+    let client = ApiClient::test_client();
     let page = 0;
     let page_size = 10;
 

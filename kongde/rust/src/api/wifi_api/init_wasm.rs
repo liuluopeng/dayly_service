@@ -35,8 +35,13 @@ pub fn get_client_base_url() -> Result<String, String> {
 
 pub fn get_client_clone() -> Result<ApiClient, String> {
     let base_url = BASE_URL.with(|b| b.borrow().clone());
+    // 同源模式（base_url 为空）：跟随页面 origin，而不是写死 localhost
+    // （wasm reqwest 不接受相对 URL，必须绝对地址）
+    let fallback = web_sys::window()
+        .and_then(|w| w.location().origin().ok())
+        .unwrap_or_else(|| "http://localhost:23001".to_string());
     let mut client = ApiClient::new(if base_url.is_empty() {
-        "http://localhost:23001"
+        &fallback
     } else {
         &base_url
     });

@@ -58,6 +58,45 @@ class MainFlutterWindow: NSWindow {
 
     let binaryMessenger = flutterViewController.engine.binaryMessenger
 
+    // 环境监听 channel（麦克风直通耳机）
+    let surroundChannel = FlutterMethodChannel(
+      name: "kongde/native_audio",
+      binaryMessenger: binaryMessenger
+    )
+    surroundChannel.setMethodCallHandler { (call, result) in
+      switch call.method {
+      case "surroundStart":
+        do {
+          try SurroundListenManager.shared.start()
+          result(true)
+        } catch {
+          result(FlutterError(code: "start_error", message: error.localizedDescription, details: nil))
+        }
+      case "surroundStop":
+        SurroundListenManager.shared.stop()
+        result(true)
+      case "surroundSetGain":
+        if let args = call.arguments as? [String: Any], let gain = args["gain"] as? Double {
+          SurroundListenManager.shared.setGain(Float(gain))
+          result(true)
+        } else {
+          result(FlutterError(code: "bad_args", message: "gain missing", details: nil))
+        }
+      case "surroundPause":
+        SurroundListenManager.shared.pause()
+        result(true)
+      case "surroundResume":
+        do {
+          try SurroundListenManager.shared.resume()
+          result(true)
+        } catch {
+          result(FlutterError(code: "resume_error", message: error.localizedDescription, details: nil))
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
     // 窗口控制 channel
     let windowChannel = FlutterMethodChannel(
       name: "com.kongde/window",

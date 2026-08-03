@@ -5,6 +5,7 @@ import 'package:kongde/pages/play_online_music_page.dart';
 import 'package:kongde/widgets/notification_bar.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 import 'package:kongde/widgets/mini_player_widget.dart';
+import 'package:kongde/widgets/surround_quick_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -83,6 +84,11 @@ class _HomePageState extends State<HomePage> {
             child: MiniPlayerWidget(),
           ),
           const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: SurroundQuickWidget(),
+          ),
+          const SizedBox(height: 16),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -147,6 +153,10 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: MiniPlayerWidget(),
                 ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: SurroundQuickWidget(),
               ),
             ],
           ),

@@ -1,3 +1,9 @@
 **/target/
 **/node_modules/
 **/dist/
+# Flutter 宿主机构建缓存（53GB+），容器内重新构建
+**/.dart_tool/
+**/build/
+# macOS 系统文件
+**/.DS_Store
+**/*.iml

@@ -102,7 +102,7 @@ class _UnifiedDictPageState extends State<UnifiedDictPage> {
         setState(() { _currentHtml = sections.join(''); _currentLabel = sections.length > 1 ? '${sections.length} 个结果' : '1 个结果'; });
       }
     } catch (e) {
-      if (mounted) Get.snackbar('错误', '$e', snackPosition: SnackPosition.bottom);
+      if (mounted) Get.snackbar('错误', '$e', snackPosition: SnackPosition.BOTTOM);
     }
 
     // 刷新统计

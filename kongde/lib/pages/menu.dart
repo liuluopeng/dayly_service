@@ -14,6 +14,7 @@ import 'package:kongde/pages/chat_home_page.dart';
 import 'package:kongde/pages/sharing_page.dart';
 import 'package:kongde/pages/tools_home_page.dart';
 import 'package:kongde/pages/piano_keyboard_page.dart';
+import 'package:kongde/pages/surround_listen_page.dart';
 import 'package:kongde/views/note_view.dart';
 import 'package:kongde/pages/clipboard_history_page.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
@@ -125,6 +126,11 @@ class _ContactsPageState extends State<ContactsPage> {
                       'icon': Icons.piano,
                       'title': 'menu.pianoKeyboard'.tr,
                       'onTap': () => Get.to(() => const PianoKeyboardPage()),
+                    },
+                    {
+                      'icon': Icons.hearing,
+                      'title': 'menu.surroundListen'.tr,
+                      'onTap': () => Get.to(() => const SurroundListenPage()),
                     },
                     {
                       'icon': Icons.build,

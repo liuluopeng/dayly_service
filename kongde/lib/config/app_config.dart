@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:get/get.dart';
 import 'package:kongde/services/sqlite_storage.dart';
 import 'package:kongde/utils.dart';
@@ -12,6 +12,8 @@ class ServerEntry {
   String username;
   String password;
   String token;
+  // 同源模式：url 返回相对路径（''），请求跟随页面 origin（Web 生产部署自动启用）
+  bool sameOrigin;
 
   ServerEntry({
     required this.name,
@@ -20,9 +22,19 @@ class ServerEntry {
     this.username = '',
     this.password = '',
     this.token = '',
+    this.sameOrigin = false,
   });
 
-  String get url => 'http://$host:$port';
+  String get url => sameOrigin ? _sameOriginUrl : 'http://$host:$port';
+
+  // 同源模式的绝对地址：页面 origin（wasm reqwest 不接受相对 URL）
+  static String get _sameOriginUrl {
+    if (kIsWeb) {
+      final base = Uri.base;
+      return '${base.scheme}://${base.host}:${base.port}';
+    }
+    return '';
+  }
   bool get hasCredentials => username.isNotEmpty && password.isNotEmpty;
   bool get isLoggedIn => token.isNotEmpty;
 
@@ -33,6 +45,7 @@ class ServerEntry {
     'username': username,
     'password': password,
     'token': token,
+    'sameOrigin': sameOrigin,
   };
 
   factory ServerEntry.fromJson(Map<String, dynamic> json) => ServerEntry(
@@ -42,6 +55,7 @@ class ServerEntry {
     username: (json['username'] as String?) ?? '',
     password: (json['password'] as String?) ?? '',
     token: (json['token'] as String?) ?? '',
+    sameOrigin: (json['sameOrigin'] as bool?) ?? false,
   );
 }
 
@@ -50,6 +64,10 @@ class AppConfig extends GetxController {
   static AppConfig get instance => _instance ??= AppConfig._internal();
 
   AppConfig._internal();
+
+  // 当前页面 origin 的 host/port（同源模式下编辑对话框展示用）
+  static String get sameOriginHost => kIsWeb ? Uri.base.host : '';
+  static int get sameOriginPort => kIsWeb ? Uri.base.port : 0;
 
   final List<ServerEntry> servers = [];
   int _activeIndex = 0;
@@ -88,13 +106,45 @@ class AppConfig extends GetxController {
     }
 
     _activeIndex = await store.getInt(_activeIndexKey) ?? 0;
+
+    // 原生平台（macOS/Android/iOS）且未配置任何服务器：
+    // 自动预填默认服务器，用户可直接使用或在设置页编辑（原生必须绝对地址）
+    if (!kIsWeb && this.servers.isEmpty) {
+      this.servers.add(ServerEntry(name: '默认服务器', host: '192.168.31.58', port: 23000));
+      LOGGER.i("[config] 原生平台，自动预填默认服务器 192.168.31.58:23000");
+      await _saveServers();
+      _activeIndex = 0;
+    }
+
+    // Web 且未配置任何服务器：按构建模式自动设置
+    if (kIsWeb && this.servers.isEmpty) {
+      if (kReleaseMode) {
+        // 生产构建：同源模式（相对路径，端口跟随页面）
+        this.servers.add(ServerEntry(name: '同源自动', host: '', port: 0, sameOrigin: true));
+        LOGGER.i("[config] Web 生产构建，自动启用同源模式（相对路径）");
+      } else {
+        // 开发构建（flutter run）：自动指向本地开发服务器（23001）
+        final devHost = Uri.base.host.isNotEmpty ? Uri.base.host : 'localhost';
+        this.servers.add(ServerEntry(name: '本地开发', host: devHost, port: 23001));
+        LOGGER.i("[config] Web 开发构建，自动指向 $devHost:23001");
+      }
+      await _saveServers();
+      _activeIndex = 0;
+    }
+
     if (_activeIndex >= this.servers.length) _activeIndex = 0;
 
     LOGGER.i("[config] 加载了 ${this.servers.length} 个服务器, 当前索引=$_activeIndex");
 
     if (this.servers.isNotEmpty) {
-      await initClient(port: activeServer.port);
-      await setClientBaseUrl(baseUrl: activeServer.url);
+      if (activeServer.sameOrigin) {
+        // 同源模式：不设端口，base_url 为空串（相对路径 /api）
+        await setClientBaseUrl(baseUrl: '');
+        LOGGER.i("[config] 使用同源模式（相对路径）");
+      } else {
+        await initClient(port: activeServer.port);
+        await setClientBaseUrl(baseUrl: activeServer.url);
+      }
       LOGGER.i("[config] 切换到服务器 ${activeServer.name} (${activeServer.url})");
       if (activeServer.token.isNotEmpty) {
         await setClientToken(token: activeServer.token);
@@ -183,6 +233,7 @@ class AppConfig extends GetxController {
       username: username ?? old.username,
       password: password ?? old.password,
       token: old.token,
+      sameOrigin: old.sameOrigin,
     );
     await _saveServers();
     if (index == _activeIndex) {

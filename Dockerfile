@@ -1,3 +1,7 @@
+# Flutter Web 构建镜像（国内代理，可 --build-arg 覆盖）
+# 注意：固定 3.41.0 —— 3.44.0 构建的 flutter web 在 dart2js 下启动即崩（Uncaught Error）
+ARG FLUTTER_IMAGE=ghcr.nju.edu.cn/cirruslabs/flutter:3.41.0
+
 # 先构建基础镜像阶段
 FROM rust:1.92.0 AS base-builder
 
@@ -5,16 +9,20 @@ FROM rust:1.92.0 AS base-builder
 # RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
 #     && rm -rf /var/lib/apt/lists/*
 
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
-    apt-get update &&     apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    protobuf-compiler \
-    curl \
-    ca-certificates \
-    && curl -fsSL https://deb.nodesource.com/setup_26.x | bash - \
-    && apt-get install -y nodejs \
+# arm64 基础镜像用 ports.ubuntu.com，一并换阿里云镜像
+RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|http://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || \
+    sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+RUN apt-get update && apt-get install -y pkg-config libssl-dev protobuf-compiler curl ca-certificates binaryen \
     && rm -rf /var/lib/apt/lists/*
+
+# Node.js：官方源不稳定，用 npmmirror 二进制（arm64/x64 通用）
+RUN ARCH=$(uname -m) && case "$ARCH" in \
+        aarch64|arm64) NODE_ARCH=arm64 ;; \
+        x86_64|amd64)  NODE_ARCH=x64 ;; \
+        *) echo "unsupported arch: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL "https://npmmirror.com/mirrors/node/v22.16.0/node-v22.16.0-linux-${NODE_ARCH}.tar.xz" | tar -xJ -C /usr/local --strip-components=1 && \
+    node --version && npm --version
 
 # 安装 pnpm
 RUN npm install -g pnpm@11
@@ -39,9 +47,120 @@ RUN echo "[source.crates-io]\n\
 RUN rustup target add wasm32-unknown-unknown && \
     cargo install wasm-pack
 
+# ═══ Flutter Web 构建阶段（容器内构建，产物复制进 static/flutter）═══
+FROM ${FLUTTER_IMAGE} AS flutter-web-builder
+
+ENV PUB_HOSTED_URL=https://pub.flutter-io.cn \
+    FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn \
+    RUSTUP_DIST_SERVER=https://rsproxy.cn \
+    RUSTUP_UPDATE_ROOT=https://rsproxy.cn/rustup \
+    PATH="/root/.cargo/bin:$PATH"
+
+# Rust 工具链（FRB codegen / wasm-pack 需要）
+# apt 源换阿里云镜像（国内网络访问 ports.ubuntu.com 不稳定）
+RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|http://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true \
+    && apt-get update && apt-get install -y curl pkg-config libssl-dev protobuf-compiler git lld binaryen \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && rustup target add wasm32-unknown-unknown
+
+# binaryen（wasm-opt）升级到 123：apt 版本 108 过旧，优化多线程 wasm（atomics）
+# 有 bug，导致 docker 内构建的 flutter web 启动即崩（宿主机 wasm-pack 用新版正常）
+RUN ARCH=$(uname -m) && case "$ARCH" in \
+        aarch64|arm64) BE_ARCH=aarch64 ;; \
+        x86_64|amd64)  BE_ARCH=x86_64 ;; \
+        *) echo "unsupported arch: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL --retry 3 "https://github.com/WebAssembly/binaryen/releases/download/version_123/binaryen-version_123-${BE_ARCH}-linux.tar.gz" \
+        | tar -xz -C /usr/local --strip-components=1 \
+    && wasm-opt --version
+
+# cargo 国内源
+RUN echo "[source.crates-io]\n\
+    replace-with = 'rsproxy-sparse'\n\
+    [source.rsproxy]\n\
+    registry = \"https://rsproxy.cn/crates.io-index\"\n\
+    [source.rsproxy-sparse]\n\
+    registry = \"sparse+https://rsproxy.cn/index/\"\n\
+    [registries.rsproxy]\n\
+    index = \"https://rsproxy.cn/crates.io-index\"\n\
+    [net]\n\
+    git-fetch-with-cli = true\n" >> $CARGO_HOME/config.toml
+
+# FRB 工具链（编译耗时，独立缓存层）
+# 预装与项目匹配的 wasm-bindgen-cli（0.2.126），避免 wasm-pack 在
+# RUSTFLAGS 泄漏时临时安装导致失败
+RUN cargo install wasm-pack \
+    && cargo install flutter_rust_bridge_codegen --version 2.12.0 \
+    && cargo install wasm-bindgen-cli --version 0.2.126
+
+# FRB build-web 用 -Z build-std（需要 nightly + rust-src 组件）
+# 固定 nightly-2026-07-15（与宿主机同代）：不同 nightly 的 build-std 生成的 wasm
+# 行为不同——docker 内最新 nightly(2026-08-02) 构建的 flutter web 启动即崩（Uncaught Error）
+# FRB 强制设置 RUSTUP_TOOLCHAIN=nightly：把固定 nightly 的工具链目录重命名为 nightly，
+# 使该解析命中固定版本（rustup toolchain link 不允许标准 channel 名）
+RUN rustup toolchain install nightly-2026-07-15 --profile minimal --component rust-src \
+    && rustup target add wasm32-unknown-unknown --toolchain nightly-2026-07-15 \
+    && rustup toolchain uninstall nightly 2>/dev/null || true \
+    && mv /root/.rustup/toolchains/nightly-2026-07-15-aarch64-unknown-linux-gnu \
+          /root/.rustup/toolchains/nightly-aarch64-unknown-linux-gnu
+
+WORKDIR /app
+# kongde/rust 继承根 workspace（workspace.dependencies），根 Cargo.toml 必须复制
+COPY ./Cargo.toml /app/Cargo.toml
+COPY ./Cargo.lock /app/Cargo.lock
+# kongde/rust 的 path 依赖（common / my_type）必须一起复制
+COPY ./common /app/common
+COPY ./my_type /app/my_type
+COPY ./kongde /app/kongde
+# cargo 解析 workspace 需要所有 member 的 Cargo.toml 存在（仅 manifest，不编译）
+COPY ./sifu_axuum/Cargo.toml /app/sifu_axuum/Cargo.toml
+COPY ./local-agent/Cargo.toml /app/local-agent/Cargo.toml
+COPY ./wasm-demo/Cargo.toml /app/wasm-demo/Cargo.toml
+COPY ./webbvueetauri/src-tauri/Cargo.toml /app/webbvueetauri/src-tauri/Cargo.toml
+COPY ./webbvueetauri/src/src-wasm/Cargo.toml /app/webbvueetauri/src/src-wasm/Cargo.toml
+# 占位 src：cargo 解析 workspace 时要求每个 member 有 targets（不参与编译）
+RUN mkdir -p /app/sifu_axuum/src /app/local-agent/src /app/wasm-demo/src \
+        /app/webbvueetauri/src-tauri/src /app/webbvueetauri/src/src-wasm/src \
+    && echo 'fn main() {}' > /app/sifu_axuum/src/main.rs \
+    && echo 'fn main() {}' > /app/local-agent/src/main.rs \
+    && echo 'fn main() {}' > /app/wasm-demo/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src-tauri/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src/src-wasm/src/lib.rs
+
+WORKDIR /app/kongde
+RUN flutter config --no-analytics \
+    && flutter pub get
+
+# FRB build-web（atomics/shared-memory flags，与宿主机 build-frontends.sh 一致）
+# 注意：不用 -Clinker=wasm-ld（apt lld 18 与宿主 rustc 自带 rust-lld 差异曾致 wasm 崩溃）
+RUN flutter_rust_bridge_codegen build-web --release \
+    --wasm-pack-rustflags \
+    "-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
+     -Clink-arg=--shared-memory \
+     -Clink-arg=--import-memory \
+     -Clink-arg=--max-memory=134217728 \
+     -Clink-arg=--export=__wasm_init_tls \
+     -Clink-arg=--export=__tls_size \
+     -Clink-arg=--export=__tls_align \
+     -Clink-arg=--export=__tls_base \
+     -Clink-arg=--export=__heap_base"
+
+# Patch thread_stack_size 默认值 + 增大初始化内存（Linux sed 语法）
+RUN sed -i \
+  -e 's/wasm.__wbindgen_start(thread_stack_size);/wasm.__wbindgen_start(thread_stack_size || 1048576);/' \
+  -e 's/initial:[0-9]*,maximum:[0-9]*/initial:256,maximum:2048/' \
+  web/pkg/rust_lib_kongde.js
+
+# Flutter Web（JS 模式，与宿主机一致）
+RUN flutter build web --release --base-href=/flutter/
+
+# 收集产物
+RUN mkdir -p /app/sifu_axuum/static/flutter && rm -rf /app/sifu_axuum/static/flutter/* \
+    && cp -r build/web/* /app/sifu_axuum/static/flutter/
+
 # 使用基础镜像构建应用
 FROM base-builder AS builder
-
 # 创建并进入/app目录
 WORKDIR /app
 
@@ -58,6 +177,14 @@ COPY ./kongde/rust/Cargo.toml /app/kongde/rust/Cargo.toml
 COPY ./local-agent/Cargo.toml /app/local-agent/Cargo.toml
 COPY ./my_type/Cargo.toml /app/my_type/Cargo.toml
 COPY ./webbvueetauri/src/src-wasm/Cargo.toml /app/webbvueetauri/src/src-wasm/Cargo.toml
+# 占位 src：cargo 解析 workspace 时要求每个 member 有 targets（不参与编译）
+RUN mkdir -p /app/sifu_axuum/src /app/local-agent/src /app/wasm-demo/src \
+        /app/webbvueetauri/src-tauri/src /app/webbvueetauri/src/src-wasm/src \
+    && echo 'fn main() {}' > /app/sifu_axuum/src/main.rs \
+    && echo 'fn main() {}' > /app/local-agent/src/main.rs \
+    && echo 'fn main() {}' > /app/wasm-demo/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src-tauri/src/lib.rs \
+    && echo 'fn main() {}' > /app/webbvueetauri/src/src-wasm/src/lib.rs
 COPY ./wasm-demo/Cargo.toml /app/wasm-demo/Cargo.toml
 COPY ./webbvueetauri/src-tauri/Cargo.toml /app/webbvueetauri/src-tauri/Cargo.toml
 
@@ -84,8 +211,10 @@ COPY ./kongde/rust/src /app/kongde/rust/src
 COPY ./webbvueetauri /app/webbvueetauri
 COPY ./webbvueetauri/src/src-wasm/src /app/webbvueetauri/src/src-wasm/src
 
-# 复制其他必要文件
+# 复制静态资源（排除 Docker 内构建的 dist/flutter 目录，
+# 宿主机旧产物不进入镜像，由容器内构建步骤产出）
 COPY ./sifu_axuum/static /app/sifu_axuum/static
+RUN rm -rf /app/sifu_axuum/static/dist /app/sifu_axuum/static/flutter /app/sifu_axuum/static/vue
 
 # 编译 WASM
 WORKDIR /app/webbvueetauri/src/src-wasm
@@ -96,8 +225,10 @@ WORKDIR /app/webbvueetauri
 RUN pnpm install
 RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && pnpm build
 
-# 复制前端dist到static
-RUN mkdir -p /app/sifu_axuum/static/dist && cp -r dist/* /app/sifu_axuum/static/dist/
+# 复制前端 dist 到 static（/dist/ 与 /vue/ 都用容器内新构建产物）
+RUN mkdir -p /app/sifu_axuum/static/dist /app/sifu_axuum/static/vue \
+    && cp -r dist/* /app/sifu_axuum/static/dist/ \
+    && cp -r dist/* /app/sifu_axuum/static/vue/
 
 # 构建应用
 WORKDIR /app/sifu_axuum
@@ -121,6 +252,9 @@ COPY --from=builder /app/target/release/lx_dayly_service /app/lx_dayly_service
 
 # 复制 axum 的后台等静态文件
 COPY --from=builder /app/sifu_axuum/static /app/static
+
+# 覆盖为容器内构建的 Flutter Web 产物
+COPY --from=flutter-web-builder /app/sifu_axuum/static/flutter /app/static/flutter
 
 # 词典 SQLite 数据库（通过 volume 挂载，不在镜像内）
 # COPY dict.db /app/dict.db  ← 8.5GB 太大，走 volume
