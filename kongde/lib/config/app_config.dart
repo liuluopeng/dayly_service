@@ -94,6 +94,15 @@ class AppConfig extends GetxController {
 
     _activeIndex = await store.getInt(_activeIndexKey) ?? 0;
 
+    // 原生平台（macOS/Android/iOS）且未配置任何服务器：
+    // 自动预填默认服务器，用户可直接使用或在设置页编辑（原生必须绝对地址）
+    if (!kIsWeb && this.servers.isEmpty) {
+      this.servers.add(ServerEntry(name: '默认服务器', host: '192.168.31.58', port: 23000));
+      LOGGER.i("[config] 原生平台，自动预填默认服务器 192.168.31.58:23000");
+      await _saveServers();
+      _activeIndex = 0;
+    }
+
     // Web 且未配置任何服务器：按构建模式自动设置
     if (kIsWeb && this.servers.isEmpty) {
       if (kReleaseMode) {
