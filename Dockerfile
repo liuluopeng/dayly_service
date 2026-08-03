@@ -192,7 +192,7 @@ COPY ./webbvueetauri/src/src-wasm/src /app/webbvueetauri/src/src-wasm/src
 # 复制静态资源（排除 Docker 内构建的 dist/flutter 目录，
 # 宿主机旧产物不进入镜像，由容器内构建步骤产出）
 COPY ./sifu_axuum/static /app/sifu_axuum/static
-RUN rm -rf /app/sifu_axuum/static/dist /app/sifu_axuum/static/flutter
+RUN rm -rf /app/sifu_axuum/static/dist /app/sifu_axuum/static/flutter /app/sifu_axuum/static/vue
 
 # 编译 WASM
 WORKDIR /app/webbvueetauri/src/src-wasm
@@ -203,8 +203,10 @@ WORKDIR /app/webbvueetauri
 RUN pnpm install
 RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && pnpm build
 
-# 复制前端dist到static
-RUN mkdir -p /app/sifu_axuum/static/dist && cp -r dist/* /app/sifu_axuum/static/dist/
+# 复制前端 dist 到 static（/dist/ 与 /vue/ 都用容器内新构建产物）
+RUN mkdir -p /app/sifu_axuum/static/dist /app/sifu_axuum/static/vue \
+    && cp -r dist/* /app/sifu_axuum/static/dist/ \
+    && cp -r dist/* /app/sifu_axuum/static/vue/
 
 # 构建应用
 WORKDIR /app/sifu_axuum

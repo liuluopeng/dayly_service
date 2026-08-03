@@ -20,7 +20,8 @@ echo ""
 echo "--- WASM Demo (wasm-demo) ---"
 cd "$ROOT/wasm-demo"
 which trunk >/dev/null 2>&1 || cargo install trunk
-trunk build --release --dist dist
+# --public-url /wasm/：产物引用加 /wasm/ 前缀，否则部署在子路径下 JS/CSS 404
+trunk build --release --dist dist --public-url /wasm/
 rm -rf "$STATIC/wasm" && mkdir -p "$STATIC/wasm" && cp -r dist/* "$STATIC/wasm/"
 echo "  -> $STATIC/wasm/"
 
