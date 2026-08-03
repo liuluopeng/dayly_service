@@ -58,7 +58,7 @@ dependencies:
   path: ^1.9.0
   logger: ^2.6.2
   flutter_audio_visualizer:
-    path: ../../flutter_audio_visualizer
+    path: third_party/flutter_audio_visualizer
   mobile_scanner: ^7.1.4
   url_launcher: ^6.3.1
   uuid: ^4.5.2

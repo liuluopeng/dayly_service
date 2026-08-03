@@ -281,7 +281,7 @@ packages:
   flutter_audio_visualizer:
     dependency: "direct main"
     description:
-      path: "../../flutter_audio_visualizer"
+      path: "third_party/flutter_audio_visualizer"
       relative: true
     source: path
     version: "0.0.1"

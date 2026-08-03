@@ -1,3 +1,6 @@
+# Flutter Web 构建镜像（国内代理，可 --build-arg 覆盖）
+ARG FLUTTER_IMAGE=ghcr.nju.edu.cn/cirruslabs/flutter:stable
+
 # 先构建基础镜像阶段
 FROM rust:1.92.0 AS base-builder
 
@@ -39,9 +42,72 @@ RUN echo "[source.crates-io]\n\
 RUN rustup target add wasm32-unknown-unknown && \
     cargo install wasm-pack
 
+# ═══ Flutter Web 构建阶段（容器内构建，产物复制进 static/flutter）═══
+FROM ${FLUTTER_IMAGE} AS flutter-web-builder
+
+ENV PUB_HOSTED_URL=https://pub.flutter-io.cn \
+    FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn \
+    RUSTUP_DIST_SERVER=https://rsproxy.cn \
+    RUSTUP_UPDATE_ROOT=https://rsproxy.cn/rustup \
+    PATH="/root/.cargo/bin:$PATH"
+
+# Rust 工具链（FRB codegen / wasm-pack 需要）
+RUN apt-get update && apt-get install -y curl pkg-config libssl-dev protobuf-compiler git \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && rustup target add wasm32-unknown-unknown
+
+# cargo 国内源
+RUN echo "[source.crates-io]\n\
+    replace-with = 'rsproxy-sparse'\n\
+    [source.rsproxy]\n\
+    registry = \"https://rsproxy.cn/crates.io-index\"\n\
+    [source.rsproxy-sparse]\n\
+    registry = \"sparse+https://rsproxy.cn/index/\"\n\
+    [registries.rsproxy]\n\
+    index = \"https://rsproxy.cn/crates.io-index\"\n\
+    [net]\n\
+    git-fetch-with-cli = true\n" >> $CARGO_HOME/config.toml
+
+# FRB 工具链（编译耗时，独立缓存层）
+RUN cargo install wasm-pack \
+    && cargo install flutter_rust_bridge_codegen --version 2.12.0
+
+WORKDIR /app
+COPY ./kongde /app/kongde
+
+WORKDIR /app/kongde
+RUN flutter config --no-analytics \
+    && flutter pub get
+
+# FRB build-web（atomics/shared-memory flags，与宿主机 build-frontends.sh 一致）
+RUN flutter_rust_bridge_codegen build-web --release \
+    --wasm-pack-rustflags \
+    "-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
+     -Clink-arg=--shared-memory \
+     -Clink-arg=--import-memory \
+     -Clink-arg=--max-memory=33554432 \
+     -Clink-arg=--export=__wasm_init_tls \
+     -Clink-arg=--export=__tls_size \
+     -Clink-arg=--export=__tls_align \
+     -Clink-arg=--export=__tls_base \
+     -Clink-arg=--export=__heap_base"
+
+# Patch thread_stack_size 默认值 + 增大初始化内存（Linux sed 语法）
+RUN sed -i \
+  -e 's/wasm.__wbindgen_start(thread_stack_size);/wasm.__wbindgen_start(thread_stack_size || 1048576);/' \
+  -e 's/initial:[0-9]*,maximum:512/initial:256,maximum:512/' \
+  web/pkg/rust_lib_kongde.js
+
+# Flutter Web（JS 模式，与宿主机一致）
+RUN flutter build web --release --base-href=/flutter/
+
+# 收集产物
+RUN mkdir -p /app/sifu_axuum/static/flutter && rm -rf /app/sifu_axuum/static/flutter/* \
+    && cp -r build/web/* /app/sifu_axuum/static/flutter/
+
 # 使用基础镜像构建应用
 FROM base-builder AS builder
-
 # 创建并进入/app目录
 WORKDIR /app
 
@@ -121,6 +187,9 @@ COPY --from=builder /app/target/release/lx_dayly_service /app/lx_dayly_service
 
 # 复制 axum 的后台等静态文件
 COPY --from=builder /app/sifu_axuum/static /app/static
+
+# 覆盖为容器内构建的 Flutter Web 产物
+COPY --from=flutter-web-builder /app/sifu_axuum/static/flutter /app/static/flutter
 
 # 词典 SQLite 数据库（通过 volume 挂载，不在镜像内）
 # COPY dict.db /app/dict.db  ← 8.5GB 太大，走 volume
