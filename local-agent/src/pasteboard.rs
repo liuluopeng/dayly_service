@@ -14,6 +14,7 @@ mod imp {
 }
 
 #[cfg(not(target_os = "macos"))]
+#[allow(dead_code)]
 mod imp {
     pub fn change_count() -> i64 {
         0
