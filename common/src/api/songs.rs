@@ -176,7 +176,7 @@ mod tests {
     // GET请求的测试，默认执行
     #[tokio::test]
     async fn test_get_all_songs() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         // 测试默认分页（第1页，每页10条）
         match get_all_songs(&client, None, None).await {

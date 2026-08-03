@@ -17,7 +17,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_pinyin_by_ori() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match get_pinyin_by_ori(&client, "你好").await {
             Ok(pinyin_list) => {

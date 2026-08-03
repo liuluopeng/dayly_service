@@ -37,10 +37,25 @@ impl ApiClient {
         }
     }
 
-    /// 创建默认的 API 客户端（使用默认基础 URL）
+    /// 创建默认的 API 客户端（端口不写死）
+    ///
+    /// 优先读取环境变量 `DAYLY_API_URL`（如 `http://192.168.1.10:9000`）；
+    /// 未设置时返回相对路径客户端（空 base_url），
+    /// 配合同源部署（前端与 API 同 origin）使用，端口自动跟随。
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
-        Self::new("http://localhost:23001")
+        match std::env::var("DAYLY_API_URL") {
+            Ok(url) if !url.is_empty() => Self::new(&url),
+            _ => Self::new(""),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_client() -> Self {
+        // 本地测试服务地址（测试环境可覆盖；生产代码不得依赖此值）
+        let url = std::env::var("DAYLY_API_URL")
+            .unwrap_or_else(|_| "http://localhost:23001".to_string());
+        Self::new(&url)
     }
 
     /// 获取基础 URL

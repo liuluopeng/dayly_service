@@ -165,7 +165,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_xiandaihanyu() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match search_xiandaihanyu(&client, "市场").await {
             Ok(response) => {
@@ -179,7 +179,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_collins() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match search_collins(&client, "hello").await {
             Ok(response) => {
@@ -193,7 +193,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_ldoce() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match search_ldoce(&client, "world").await {
             Ok(response) => {
@@ -207,7 +207,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_recent_history() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match get_recent_history(&client, 10).await {
             Ok(response) => {
@@ -225,7 +225,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_top_words() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match get_top_words(&client).await {
             Ok(response) => {

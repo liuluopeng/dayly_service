@@ -21,7 +21,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_whitenoise_list() {
-        let client = ApiClient::default();
+        let client = ApiClient::test_client();
 
         match get_whitenoise_list(&client).await {
             Ok(audio_files) => {
