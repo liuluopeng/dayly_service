@@ -100,6 +100,7 @@ pub async fn update_user_settings(
 
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::test]
+#[ignore]
 async fn test_user_login() {
     let client = ApiClient::test_client();
     let username = "admin";

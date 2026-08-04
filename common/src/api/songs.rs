@@ -175,6 +175,7 @@ mod tests {
 
     // GET请求的测试，默认执行
     #[tokio::test]
+    #[ignore]
     async fn test_get_all_songs() {
         let client = ApiClient::test_client();
 

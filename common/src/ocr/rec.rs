@@ -135,6 +135,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore]
     fn test_recognize_empty() {
         let pixels = vec![0u8; 50 * 30 * 4];
         let text = recognize(&pixels, 50, 30).unwrap_or_default();

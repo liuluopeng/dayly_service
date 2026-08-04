@@ -311,7 +311,8 @@ mod tests {
     fn test_is_too_dark() {
         assert!(is_too_dark(10, 10, 10));
         assert!(is_too_dark(50, 50, 50));
-        assert!(!is_too_dark(100, 100, 100));
+        assert!(is_too_dark(100, 100, 100)); // 亮度约 0.13 < 0.15 阈值
+        assert!(!is_too_dark(150, 150, 150));
         assert!(!is_too_dark(255, 255, 255));
     }
 

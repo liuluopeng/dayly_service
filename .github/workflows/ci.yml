@@ -48,7 +48,9 @@ jobs:
         run: cargo test --workspace --exclude webbvueetauri --no-run --lib --bins
 
       - name: Run tests
-        run: cargo test --workspace --exclude webbvueetauri --lib --bins
+        # 排除 lx_dayly_service：其测试为集成测试（需 postgres/redis），CI 不提供；
+        # common 依赖 localhost:23001 的集成测试已标 #[ignore]
+        run: cargo test --workspace --exclude webbvueetauri --exclude lx_dayly_service --lib --bins
 
   frontend:
     name: Vue typecheck / build
