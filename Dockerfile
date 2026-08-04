@@ -128,32 +128,15 @@ RUN mkdir -p /app/sifu_axuum/src /app/local-agent/src /app/wasm-demo/src \
     && echo 'fn main() {}' > /app/webbvueetauri/src-tauri/src/lib.rs \
     && echo 'fn main() {}' > /app/webbvueetauri/src/src-wasm/src/lib.rs
 
+# 共享构建脚本（唯一事实来源：本地 build-frontends.sh / CI / Dockerfile 一致）
+COPY ./scripts /app/scripts
+
 WORKDIR /app/kongde
 RUN flutter config --no-analytics \
     && flutter pub get
 
-# FRB build-web（atomics/shared-memory flags，与宿主机 build-frontends.sh 一致）
-# 注意：不用 -Clinker=wasm-ld（apt lld 18 与宿主 rustc 自带 rust-lld 差异曾致 wasm 崩溃）
-RUN flutter_rust_bridge_codegen build-web --release \
-    --wasm-pack-rustflags \
-    "-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals \
-     -Clink-arg=--shared-memory \
-     -Clink-arg=--import-memory \
-     -Clink-arg=--max-memory=134217728 \
-     -Clink-arg=--export=__wasm_init_tls \
-     -Clink-arg=--export=__tls_size \
-     -Clink-arg=--export=__tls_align \
-     -Clink-arg=--export=__tls_base \
-     -Clink-arg=--export=__heap_base"
-
-# Patch thread_stack_size 默认值 + 增大初始化内存（Linux sed 语法）
-RUN sed -i \
-  -e 's/wasm.__wbindgen_start(thread_stack_size);/wasm.__wbindgen_start(thread_stack_size || 1048576);/' \
-  -e 's/initial:[0-9]*,maximum:[0-9]*/initial:256,maximum:2048/' \
-  web/pkg/rust_lib_kongde.js
-
-# Flutter Web（JS 模式，与宿主机一致）
-RUN flutter build web --release --base-href=/flutter/
+# FRB build-web + patch + flutter build web（统一走共享脚本）
+RUN bash /app/scripts/build-flutter-web.sh
 
 # 收集产物
 RUN mkdir -p /app/sifu_axuum/static/flutter && rm -rf /app/sifu_axuum/static/flutter/* \
@@ -211,24 +194,22 @@ COPY ./kongde/rust/src /app/kongde/rust/src
 COPY ./webbvueetauri /app/webbvueetauri
 COPY ./webbvueetauri/src/src-wasm/src /app/webbvueetauri/src/src-wasm/src
 
+# 共享构建脚本
+COPY ./scripts /app/scripts
+
 # 复制静态资源（排除 Docker 内构建的 dist/flutter 目录，
 # 宿主机旧产物不进入镜像，由容器内构建步骤产出）
 COPY ./sifu_axuum/static /app/sifu_axuum/static
 RUN rm -rf /app/sifu_axuum/static/dist /app/sifu_axuum/static/flutter /app/sifu_axuum/static/vue
 
-# 编译 WASM
-WORKDIR /app/webbvueetauri/src/src-wasm
-RUN wasm-pack build
-
-# 构建前端
-WORKDIR /app/webbvueetauri
-RUN pnpm install
-RUN cd /app/webbvueetauri && sed -i '/"prebuild"/d' package.json && pnpm build
+# 编译 WASM + 构建前端（统一走共享脚本：wasm-pack + pnpm install + prebuild typecheck + vite build）
+WORKDIR /app
+RUN bash /app/scripts/build-vue.sh
 
 # 复制前端 dist 到 static（/dist/ 与 /vue/ 都用容器内新构建产物）
 RUN mkdir -p /app/sifu_axuum/static/dist /app/sifu_axuum/static/vue \
-    && cp -r dist/* /app/sifu_axuum/static/dist/ \
-    && cp -r dist/* /app/sifu_axuum/static/vue/
+    && cp -r /app/webbvueetauri/dist/* /app/sifu_axuum/static/dist/ \
+    && cp -r /app/webbvueetauri/dist/* /app/sifu_axuum/static/vue/
 
 # 构建应用
 WORKDIR /app/sifu_axuum

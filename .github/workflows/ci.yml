@@ -66,10 +66,6 @@ jobs:
       - name: Install pnpm
         run: npm i -g pnpm@11
 
-      - name: Install dependencies
-        working-directory: webbvueetauri
-        run: pnpm install --frozen-lockfile
-
       # vue-tsc / vite 均引用 src-wasm/pkg（wasm-pack 产物，不入库），CI 需先构建
       - name: Setup Rust (wasm)
         uses: dtolnay/rust-toolchain@stable
@@ -79,15 +75,6 @@ jobs:
       - name: Install wasm-pack
         run: cargo install wasm-pack --locked
 
-      - name: Build wasm
-        working-directory: webbvueetauri/src/src-wasm
-        run: wasm-pack build
-
-      - name: Typecheck
-        working-directory: webbvueetauri
-        # pnpm exec：强制用项目本地依赖（npx 会下载最新 vue-tsc 与 typescript 5.6 不兼容）
-        run: pnpm exec vue-tsc --noEmit
-
-      - name: Build
-        working-directory: webbvueetauri
-        run: pnpm build
+      # 与 Dockerfile / build-frontends.sh 共享同一构建脚本（唯一事实来源）
+      - name: Build (shared script)
+        run: bash scripts/build-vue.sh

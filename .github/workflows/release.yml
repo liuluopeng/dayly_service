@@ -94,15 +94,9 @@ jobs:
       - name: Install wasm-pack
         run: cargo install wasm-pack --locked
 
-      - name: Build wasm
-        working-directory: webbvueetauri/src/src-wasm
-        run: wasm-pack build
-
-      - name: Build web
-        working-directory: webbvueetauri
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+      # 与 Dockerfile / build-frontends.sh / CI 共享同一构建脚本
+      - name: Build (shared script)
+        run: bash scripts/build-vue.sh
 
       - uses: actions/upload-artifact@v4
         with:
