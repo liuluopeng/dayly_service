@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# pre-push hook：push 前执行本地 CI（scripts/local-ci.sh），失败则阻止推送
+# 需要 git config core.hooksPath .githooks（见 README 或提交说明）
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "=== pre-push: 本地 CI 开始 ==="
+if ! bash scripts/local-ci.sh; then
+  echo ""
+  echo "本地 CI 失败，push 已阻止。"
+  echo "如需强制推送（不推荐）：git push --no-verify"
+  exit 1
+fi
+echo "=== pre-push: 本地 CI 通过 ==="
