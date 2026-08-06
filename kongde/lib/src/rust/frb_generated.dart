@@ -93,7 +93,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1915617743;
+  int get rustContentHash => -2114646350;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -522,6 +522,11 @@ abstract class RustLibApi extends BaseApi {
   });
 
   Future<List<String>> crateApiZiciZiciNewWords();
+
+  Future<List<WordFrequencyEntry>> crateApiZiciZiciWordFrequencySearch({
+    required String query,
+    required int limit,
+  });
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_ApiClient;
@@ -4348,6 +4353,41 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiZiciZiciNewWordsConstMeta =>
       const TaskConstMeta(debugName: "zici_new_words", argNames: []);
 
+  @override
+  Future<List<WordFrequencyEntry>> crateApiZiciZiciWordFrequencySearch({
+    required String query,
+    required int limit,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(query, serializer);
+          sse_encode_u_32(limit, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 122,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_word_frequency_entry,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiZiciZiciWordFrequencySearchConstMeta,
+        argValues: [query, limit],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiZiciZiciWordFrequencySearchConstMeta =>
+      const TaskConstMeta(
+        debugName: "zici_word_frequency_search",
+        argNames: ["query", "limit"],
+      );
+
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_ApiClient => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerApiClient;
@@ -4925,6 +4965,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<WordFrequencyEntry> dco_decode_list_word_frequency_entry(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_word_frequency_entry).toList();
+  }
+
+  @protected
   List<WordHistory> dco_decode_list_word_history(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_word_history).toList();
@@ -5244,6 +5290,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       id: dco_decode_Uuid(arr[0]),
       word: dco_decode_String(arr[1]),
       hasSearchedTimes: dco_decode_i_32(arr[2]),
+    );
+  }
+
+  @protected
+  WordFrequencyEntry dco_decode_word_frequency_entry(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return WordFrequencyEntry(
+      word: dco_decode_String(arr[0]),
+      pinyin: dco_decode_String(arr[1]),
+      frequency: dco_decode_u_32(arr[2]),
+      explanation: dco_decode_String(arr[3]),
     );
   }
 
@@ -5938,6 +5998,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<WordFrequencyEntry> sse_decode_list_word_frequency_entry(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WordFrequencyEntry>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_word_frequency_entry(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<WordHistory> sse_decode_list_word_history(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -6306,6 +6380,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       id: var_id,
       word: var_word,
       hasSearchedTimes: var_hasSearchedTimes,
+    );
+  }
+
+  @protected
+  WordFrequencyEntry sse_decode_word_frequency_entry(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_word = sse_decode_String(deserializer);
+    var var_pinyin = sse_decode_String(deserializer);
+    var var_frequency = sse_decode_u_32(deserializer);
+    var var_explanation = sse_decode_String(deserializer);
+    return WordFrequencyEntry(
+      word: var_word,
+      pinyin: var_pinyin,
+      frequency: var_frequency,
+      explanation: var_explanation,
     );
   }
 
@@ -6979,6 +7070,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_word_frequency_entry(
+    List<WordFrequencyEntry> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_word_frequency_entry(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_word_history(
     List<WordHistory> self,
     SseSerializer serializer,
@@ -7280,6 +7383,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_Uuid(self.id, serializer);
     sse_encode_String(self.word, serializer);
     sse_encode_i_32(self.hasSearchedTimes, serializer);
+  }
+
+  @protected
+  void sse_encode_word_frequency_entry(
+    WordFrequencyEntry self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.word, serializer);
+    sse_encode_String(self.pinyin, serializer);
+    sse_encode_u_32(self.frequency, serializer);
+    sse_encode_String(self.explanation, serializer);
   }
 
   @protected

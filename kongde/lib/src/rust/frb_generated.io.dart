@@ -298,6 +298,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Word> dco_decode_list_word(dynamic raw);
 
   @protected
+  List<WordFrequencyEntry> dco_decode_list_word_frequency_entry(dynamic raw);
+
+  @protected
   List<WordHistory> dco_decode_list_word_history(dynamic raw);
 
   @protected
@@ -394,6 +397,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Word dco_decode_word(dynamic raw);
+
+  @protected
+  WordFrequencyEntry dco_decode_word_frequency_entry(dynamic raw);
 
   @protected
   WordHistory dco_decode_word_history(dynamic raw);
@@ -646,6 +652,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Word> sse_decode_list_word(SseDeserializer deserializer);
 
   @protected
+  List<WordFrequencyEntry> sse_decode_list_word_frequency_entry(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WordHistory> sse_decode_list_word_history(SseDeserializer deserializer);
 
   @protected
@@ -746,6 +757,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Word sse_decode_word(SseDeserializer deserializer);
+
+  @protected
+  WordFrequencyEntry sse_decode_word_frequency_entry(
+    SseDeserializer deserializer,
+  );
 
   @protected
   WordHistory sse_decode_word_history(SseDeserializer deserializer);
@@ -1062,6 +1078,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_word(List<Word> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_word_frequency_entry(
+    List<WordFrequencyEntry> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_word_history(
     List<WordHistory> self,
     SseSerializer serializer,
@@ -1184,6 +1206,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_word(Word self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_word_frequency_entry(
+    WordFrequencyEntry self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_word_history(WordHistory self, SseSerializer serializer);

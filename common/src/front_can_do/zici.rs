@@ -2217,3 +2217,58 @@ pub fn new_chars_for_grade(grade: usize, term: usize) -> Vec<char> {
 pub fn new_words() -> &'static [&'static str] {
     &NEW_WORDS_DATA
 }
+
+// ─── 词频数据 ───
+// 词频 json（含解释）随 common 编译进各端二进制；解析一次缓存（3.2MB/5.6 万词）
+
+pub const WORD_FREQUENCY_JSON: &str = include_str!("zici_data/word_frequency_list.json");
+
+#[derive(Debug, Clone)]
+pub struct WordFrequencyEntry {
+    pub word: String,
+    pub pinyin: String,
+    pub frequency: u32,
+    pub explanation: String,
+}
+
+thread_local! {
+    static WORDS_CACHE: std::cell::RefCell<Option<Vec<WordFrequencyEntry>>> = const { std::cell::RefCell::new(None) };
+}
+
+fn parse_words() -> Vec<WordFrequencyEntry> {
+    let parsed: Vec<serde_json::Value> =
+        serde_json::from_str(WORD_FREQUENCY_JSON).unwrap_or_default();
+    parsed
+        .into_iter()
+        .filter_map(|item| {
+            let word = item["word"].as_str().unwrap_or("").to_string();
+            if word.is_empty() {
+                return None;
+            }
+            Some(WordFrequencyEntry {
+                word,
+                pinyin: item["pinyin_flat"].as_str().unwrap_or("").to_string(),
+                frequency: item["frequency"].as_u64().unwrap_or(0) as u32,
+                explanation: item["explanation"].as_str().unwrap_or("").to_string(),
+            })
+        })
+        .collect()
+}
+
+/// 词频搜索（首次调用解析 json 并缓存）
+pub fn word_frequency_search(query: &str, limit: usize) -> Vec<WordFrequencyEntry> {
+    WORDS_CACHE.with(|c| {
+        if c.borrow().is_none() {
+            *c.borrow_mut() = Some(parse_words());
+        }
+        let words = c.borrow();
+        let words = words.as_ref().unwrap();
+        let q = query.trim();
+        words
+            .iter()
+            .filter(|w| q.is_empty() || w.word.contains(q))
+            .take(limit.max(1))
+            .cloned()
+            .collect()
+    })
+}

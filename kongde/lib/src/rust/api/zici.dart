@@ -13,3 +13,44 @@ Future<List<String>> ziciNewChars({required int grade, required int term}) =>
 /// 返回全部生词表（2182 个）
 Future<List<String>> ziciNewWords() =>
     RustLib.instance.api.crateApiZiciZiciNewWords();
+
+/// 词频搜索（首次调用解析 3.2MB json 并缓存）
+Future<List<WordFrequencyEntry>> ziciWordFrequencySearch({
+  required String query,
+  required int limit,
+}) => RustLib.instance.api.crateApiZiciZiciWordFrequencySearch(
+  query: query,
+  limit: limit,
+);
+
+/// 词频搜索（返回 word/pinyin/frequency/explanation）
+class WordFrequencyEntry {
+  final String word;
+  final String pinyin;
+  final int frequency;
+  final String explanation;
+
+  const WordFrequencyEntry({
+    required this.word,
+    required this.pinyin,
+    required this.frequency,
+    required this.explanation,
+  });
+
+  @override
+  int get hashCode =>
+      word.hashCode ^
+      pinyin.hashCode ^
+      frequency.hashCode ^
+      explanation.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WordFrequencyEntry &&
+          runtimeType == other.runtimeType &&
+          word == other.word &&
+          pinyin == other.pinyin &&
+          frequency == other.frequency &&
+          explanation == other.explanation;
+}

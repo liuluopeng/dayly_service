@@ -24,6 +24,8 @@ import 'package:kongde/pages/game_tetris_page.dart';
 import 'package:kongde/pages/white_noise_page.dart';
 import 'package:kongde/pages/zici_chars_page.dart';
 import 'package:kongde/pages/zici_words_page.dart';
+import 'package:kongde/pages/zici_dictation_page.dart';
+import 'package:kongde/pages/zici_word_frequency_page.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -101,6 +103,16 @@ class _ContactsPageState extends State<ContactsPage> {
                       'icon': Icons.menu_book,
                       'title': '生词表',
                       'onTap': () => Get.to(() => const ZiciWordsPage()),
+                    },
+                    {
+                      'icon': Icons.record_voice_over,
+                      'title': '听写',
+                      'onTap': () => Get.to(() => const ZiciDictationPage()),
+                    },
+                    {
+                      'icon': Icons.bar_chart,
+                      'title': '词频',
+                      'onTap': () => Get.to(() => const ZiciWordFrequencyPage()),
                     },
                     {
                       'icon': Icons.photo_library,
