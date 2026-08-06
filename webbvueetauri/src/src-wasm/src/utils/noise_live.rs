@@ -4,7 +4,6 @@
 //! wasm 直接写入内部静态缓冲区，worklet 用 Float32Array 视图 + set() 拷贝到输出。
 //! 状态（种子/滤波）全部保留在 wasm 侧，JS 只传指针。
 
-
 const LIVE_BUF_LEN: usize = 256;
 
 static mut LIVE_KIND: i32 = 0;
