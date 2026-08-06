@@ -68,7 +68,7 @@ sifu_axuum/static/
 sifu_axuum/models/
 kongde/lib/models/
 pdf/
-data/
+# sifu_axuum/data/ 为 zici 等数据源（入库，勿忽略）——根 /data/ 规则见上
 
 # === Old WASM output (now in src/src-wasm/pkg/) ===
 wasm_bg.js
