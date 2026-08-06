@@ -20,7 +20,6 @@
     "@tauri-apps/plugin-opener": "^2",
     "cnchar": "^3.2.6",
     "cnchar-all": "^3.2.6",
-    "cnchar-draw": "^3.2.6",
     "cnchar-words": "^3.2.6",
     "dplayer": "^1.27.1",
     "epubjs": "^0.3.93",

@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
+import 'package:kongde/config/app_config.dart';
 import 'package:kongde/src/rust/api/zici.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 
@@ -29,6 +34,43 @@ class _ZiciCharsPageState extends State<ZiciCharsPage> {
       _chars = chars;
       _loading = false;
     });
+  }
+
+  Future<void> _showStrokes(String char) async {
+    try {
+      final url = '${AppConfig.instance.serverUrl}/api/zici/hanzi/svg?char=$char';
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      if (res.statusCode != 200) return;
+      final strokes = (jsonDecode(res.body)['data']['strokes'] as List)
+          .whereType<String>()
+          .where((s) => s.isNotEmpty)
+          .toList();
+      if (strokes.isEmpty) return;
+      final svg = '<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">'
+          '${strokes.map((s) => '<path d="$s" fill="none" stroke="#333" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>').join()}</svg>';
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (ctx) => Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(char, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: 280,
+                  height: 280,
+                  child: SvgPicture.string(svg, fit: BoxFit.contain),
+                ),
+                Text('${strokes.length} 笔', style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (_) {}
   }
 
   void _select(int grade, int term) {
@@ -89,10 +131,19 @@ class _ZiciCharsPageState extends State<ZiciCharsPage> {
                       itemBuilder: (context, i) {
                         final c = _chars[i];
                         return Card(
-                          child: Center(
-                            child: Text(
-                              c,
-                              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(4),
+                            onTap: () => _showStrokes(c),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    c,
+                                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );

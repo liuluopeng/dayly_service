@@ -716,11 +716,35 @@ fn do_zici_show_chars(grade: usize, term: usize) {
             set_text("zici-char-display", "无数据");
             return;
         }
-        let chars: String = chars_list.iter().map(|c| format!("<span style='display:inline-block;padding:4px 6px;margin:2px;background:#2D2D2D;border-radius:4px;font-size:20px'>{}</span>", c)).collect();
+        let chars_html: String = chars_list
+            .iter()
+            .map(|c| format!(
+                "<span style='display:inline-block;padding:4px 6px;margin:2px;background:#2D2D2D;border-radius:4px;font-size:20px;cursor:pointer'>{}</span>",
+                c
+            ))
+            .collect();
         set_html(
             "zici-char-display",
-            &format!("<div style='line-height:2.5'>{}</div>", chars),
+            &format!("<div style='line-height:2.5'>{}</div>", chars_html),
         );
+        // 事件委托：点击生字查笔画（span 动态生成，不能逐个预绑定）
+        let cb = Closure::wrap(Box::new(|e: web_sys::MouseEvent| {
+            let target = e
+                .target()
+                .and_then(|t| t.dyn_into::<web_sys::HtmlElement>().ok());
+            if let Some(el) = target {
+                let char = el.text_content().unwrap_or_default();
+                if !char.is_empty() && char.len() <= 4 {
+                    do_hanzi_strokes(&char);
+                }
+            }
+        }) as Box<dyn FnMut(_)>);
+        if let Some(container) = doc().get_element_by_id("zici-char-display") {
+            container
+                .add_event_listener_with_callback("click", cb.as_ref().unchecked_ref())
+                .ok();
+        }
+        cb.forget();
     });
 }
 
@@ -1856,4 +1880,58 @@ fn escape_html(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+}
+
+// ==================== HANZI STROKES (SVG 笔画展示) ====================
+
+fn do_hanzi_strokes(char: &str) {
+    let client = CLIENT.with(|c| c.borrow().clone());
+    let char_owned = char.to_string();
+    spawn_local(async move {
+        let strokes: Vec<String> = match &client {
+            Some(client) => {
+                let resp = client
+                    .get(&format!(
+                        "/api/zici/hanzi/svg?char={}",
+                        js_sys::encode_uri_component(&char_owned)
+                    ))
+                    .await
+                    .ok();
+                match resp {
+                    Some(r) => {
+                        let json = r.json::<serde_json::Value>().await.ok();
+                        json.and_then(|v| v["data"]["strokes"].as_array().cloned())
+                            .unwrap_or_default()
+                            .into_iter()
+                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                            .filter(|s| !s.is_empty())
+                            .collect()
+                    }
+                    None => Vec::new(),
+                }
+            }
+            None => Vec::new(),
+        };
+        if strokes.is_empty() {
+            log(&format!("[hanzi] {} 无笔画数据", char_owned));
+            return;
+        }
+        let paths: String = strokes
+            .iter()
+            .map(|s| format!("<path d='{}' fill='none' stroke='#333' stroke-width='14' stroke-linecap='round' stroke-linejoin='round'/>", s))
+            .collect();
+        let svg = format!(
+            "<svg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg' style='width:280px;height:280px'>{}</svg>",
+            paths
+        );
+        // 显示在生字页下方
+        if let Some(container) = doc().get_element_by_id("zici-stroke-display") {
+            container.set_inner_html(&svg);
+        }
+        log(&format!(
+            "[hanzi] {} 笔画: {} 笔",
+            char_owned,
+            strokes.len()
+        ));
+    });
 }

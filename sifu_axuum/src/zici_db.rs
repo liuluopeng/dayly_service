@@ -190,3 +190,15 @@ pub fn zici_word_frequency(search: &str, limit: i64) -> Vec<(String, String, i64
         .collect()
     })
 }
+
+/// 汉字笔画 SVG：返回 strokes JSON（每笔一个 SVG path）
+pub fn hanzi_svg(char: &str) -> Option<String> {
+    with_db(|conn| {
+        conn.query_row(
+            "SELECT strokes FROM hanzi_svg WHERE char = ?1",
+            rusqlite::params![char],
+            |row| row.get::<_, String>(0),
+        )
+        .ok()
+    })
+}

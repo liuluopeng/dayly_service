@@ -23,6 +23,11 @@ pub struct FrequencyQuery {
     pub limit: Option<i64>,
 }
 
+#[derive(Deserialize)]
+pub struct HanziSvgQuery {
+    pub char: Option<String>,
+}
+
 pub async fn get_chars(Query(q): Query<CharsQuery>) -> ApiResult<Json<ApiResponse<Vec<String>>>> {
     let chars = zici_db::zici_chars(q.grade.unwrap_or(1), q.term.unwrap_or(1));
     let data: Vec<String> = chars.chars().map(|c| c.to_string()).collect();
@@ -62,11 +67,26 @@ pub async fn get_word_frequency(
     Ok(Json(ApiResponse::ok(data)))
 }
 
+pub async fn get_hanzi_svg(
+    Query(q): Query<HanziSvgQuery>,
+) -> ApiResult<Json<ApiResponse<serde_json::Value>>> {
+    let char = q.char.unwrap_or_default();
+    let data = match zici_db::hanzi_svg(&char) {
+        Some(strokes) => match serde_json::from_str::<Vec<String>>(&strokes) {
+            Ok(paths) => serde_json::json!({ "char": char, "strokes": paths }),
+            Err(_) => serde_json::json!({ "char": char, "strokes": [] }),
+        },
+        None => serde_json::json!({ "char": char, "strokes": [] }),
+    };
+    Ok(Json(ApiResponse::ok(data)))
+}
+
 pub fn zici_routes() -> axum::Router {
     axum::Router::new()
         .route("/chars", axum::routing::get(get_chars))
         .route("/words", axum::routing::get(get_words))
         .route("/word-frequency", axum::routing::get(get_word_frequency))
+        .route("/hanzi/svg", axum::routing::get(get_hanzi_svg))
 }
 
 #[allow(unused)]
