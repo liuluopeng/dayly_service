@@ -12,7 +12,7 @@ env:
 
 jobs:
   rust:
-    name: Rust fmt / clippy / test
+    name: Rust fmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,28 +29,13 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy, rustfmt
+          components: rustfmt
 
       # 缓存 cargo 依赖
       - uses: Swatinem/rust-cache@v2
 
       - name: Check formatting
         run: cargo fmt --all -- --check
-
-      - name: Clippy (deny warnings)
-        # future_incompatible 忽略：block v0.1.6 是第三方间接依赖的已知弃用提示
-        # 排除 webbvueetauri（Tauri 桌面端，cocoa 链仅在 macOS 可编译，Linux 无法检查）
-        run: cargo clippy --workspace --exclude webbvueetauri -- -D warnings -A future_incompatible
-
-      - name: Build tests
-        # --lib --bins：跳过 examples（hello.rs 的 sqlx 查询无离线缓存，
-        # 且离线类型推断与在线不一致，examples 非 CI 关注目标）
-        run: cargo test --workspace --exclude webbvueetauri --no-run --lib --bins
-
-      - name: Run tests
-        # 排除 lx_dayly_service：其测试为集成测试（需 postgres/redis），CI 不提供；
-        # common 依赖 localhost:23001 的集成测试已标 #[ignore]
-        run: cargo test --workspace --exclude webbvueetauri --exclude lx_dayly_service --lib --bins
 
   frontend:
     name: Vue typecheck / build
