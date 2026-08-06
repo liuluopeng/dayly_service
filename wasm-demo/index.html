@@ -38,6 +38,11 @@ body { margin: 0; overflow-x: hidden; }
       <a id="snav-songs" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="songs"><span class="sicon text-base mr-3 w-5 text-center">🎵</span><span class="slabel">音乐</span></a>
 
       <div class="sgroup-label px-4 py-2 text-[#888] text-xs uppercase tracking-wider mt-2">📖 字词</div>
+      <a id="snav-g2048" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="g2048"><span class="sicon text-base mr-3 w-5 text-center">🎮</span><span class="slabel">2048</span></a>
+      <a id="snav-snake" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="snake"><span class="sicon text-base mr-3 w-5 text-center">🐍</span><span class="slabel">贪吃蛇</span></a>
+      <a id="snav-minesweeper" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="minesweeper"><span class="sicon text-base mr-3 w-5 text-center">💣</span><span class="slabel">扫雷</span></a>
+      <a id="snav-tetris" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="tetris"><span class="sicon text-base mr-3 w-5 text-center">🧱</span><span class="slabel">俄罗斯方块</span></a>
+      <a id="snav-noise" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="noise"><span class="sicon text-base mr-3 w-5 text-center">🌊</span><span class="slabel">白噪音</span></a>
       <a id="snav-zici-chars" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="zici-chars"><span class="sicon text-base mr-3 w-5 text-center">🈶</span><span class="slabel">生字表</span></a>
       <a id="snav-zici-words" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="zici-words"><span class="sicon text-base mr-3 w-5 text-center">📝</span><span class="slabel">生词表</span></a>
       <a id="snav-search-history" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="search-history"><span class="sicon text-base mr-3 w-5 text-center">📊</span><span class="slabel">搜索历史</span></a>
@@ -243,6 +248,66 @@ body { margin: 0; overflow-x: hidden; }
         <button id="zc-6-2" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">六年级·下</button>
       </div>
       <div id="zici-char-display" class="bg-[#1A1A1A] p-4 min-h-12 text-lg leading-loose tracking-wider"></div>
+    </div>
+
+
+    <!-- ==================== 2048 ==================== -->
+    <div id="page-g2048" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-2">2048</h2>
+      <div class="flex items-center gap-4 mb-3">
+        <span id="g2048-score" class="text-white text-sm">得分: 0</span>
+        <button id="g2048-restart" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">重新开始</button>
+        <span id="g2048-status" class="text-[#FFB900] text-sm"></span>
+      </div>
+      <canvas id="g2048-canvas" width="320" height="320" class="bg-[#1A1A1A] rounded"></canvas>
+      <p class="text-[#999] text-xs mt-2">方向键 / WASD 移动 · U 撤销</p>
+    </div>
+
+    <!-- ==================== SNAKE ==================== -->
+    <div id="page-snake" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-2">贪吃蛇</h2>
+      <div class="flex items-center gap-4 mb-3">
+        <span id="snake-score" class="text-white text-sm">得分: 0</span>
+        <button id="snake-restart" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">重新开始</button>
+        <span id="snake-status" class="text-[#FFB900] text-sm"></span>
+      </div>
+      <canvas id="snake-canvas" width="400" height="400" class="bg-[#1A1A1A] rounded"></canvas>
+      <p class="text-[#999] text-xs mt-2">方向键 / WASD 控制</p>
+    </div>
+
+    <!-- ==================== MINESWEEPER ==================== -->
+    <div id="page-minesweeper" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-2">扫雷</h2>
+      <div class="flex items-center gap-4 mb-3">
+        <span id="ms-status" class="text-white text-sm">点击翻开 · 右键/长按插旗</span>
+        <button id="ms-restart" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">重新开始</button>
+      </div>
+      <div id="ms-grid" class="grid gap-[1px] w-[400px]" style="grid-template-columns: repeat(20, 1fr);"></div>
+    </div>
+
+    <!-- ==================== TETRIS ==================== -->
+    <div id="page-tetris" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-2">俄罗斯方块</h2>
+      <div class="flex items-center gap-4 mb-3">
+        <span id="tetris-score" class="text-white text-sm">得分: 0</span>
+        <button id="tetris-restart" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">重新开始</button>
+        <span id="tetris-status" class="text-[#FFB900] text-sm"></span>
+      </div>
+      <canvas id="tetris-canvas" width="200" height="400" class="bg-[#1A1A1A] rounded"></canvas>
+      <p class="text-[#999] text-xs mt-2">方向键移动/旋转 · 空格下落</p>
+    </div>
+
+    <!-- ==================== NOISE ==================== -->
+    <div id="page-noise" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-2">白噪音</h2>
+      <p class="text-[#999] text-xs mb-3">Wasm 实时合成 PCM · WebAudio 循环播放</p>
+      <div class="flex flex-wrap gap-3">
+        <button id="noise-white" class="bg-[#0078D4] text-white border-none px-4 py-2 cursor-pointer hover:bg-[#006CBE]">白噪音</button>
+        <button id="noise-pink" class="bg-[#0078D4] text-white border-none px-4 py-2 cursor-pointer hover:bg-[#006CBE]">粉红噪音</button>
+        <button id="noise-brown" class="bg-[#0078D4] text-white border-none px-4 py-2 cursor-pointer hover:bg-[#006CBE]">棕噪音</button>
+        <button id="noise-rain" class="bg-[#0078D4] text-white border-none px-4 py-2 cursor-pointer hover:bg-[#006CBE]">雨声</button>
+      </div>
+      <span id="noise-status" class="text-[#999] text-sm ml-3"></span>
     </div>
 
     <!-- ==================== ZICI WORDS ==================== -->
