@@ -149,10 +149,7 @@ export const scan_qr_from_image_wasm = wasm.scan_qr_from_image_wasm;
 // === zici ===
 export const get_new_chars = wasm.get_new_chars;
 export const get_new_words = wasm.get_new_words;
-export const get_words_data = wasm.get_words_data;
-export const get_word_count = wasm.get_word_count;
-export const get_entry_size = wasm.get_entry_size;
-export const get_explanation_for_word = wasm.get_explanation_for_word;
+export const get_word_frequency_api = wasm.get_word_frequency_api;
 export const get_direction = wasm.get_direction;
 export const my_console_log = wasm.my_console_log;
 

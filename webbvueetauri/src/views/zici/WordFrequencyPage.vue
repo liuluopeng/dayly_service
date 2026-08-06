@@ -17,35 +17,23 @@ const router = useRouter();
 const wordList = shallowRef<WordItem[]>([]);
 const isLoading = shallowRef(true);
 
-// Entry layout (72 bytes): 24(word) + 40(pinyin) + 4(freq) + 1(hasExp) + 3(pad)
-const ENTRY = 72;
-
-const loadWordFrequencyData = () => {
+const loadWordFrequencyData = async () => {
   isLoading.value = true;
-  const [ptr] = wasm.get_words_data() as [number, number];
-  const mem = wasm.get_wasm_memory();
-  const buf = (mem as any).buffer as ArrayBuffer;
-  const count = wasm.get_word_count() as number;
-  const td = new TextDecoder();
-
-  const items: WordItem[] = new Array(count);
-  for (let i = 0; i < count; i++) {
-    const off = i * ENTRY;
-    let end = off;
-    while (end < off + 24 && new Uint8Array(buf, ptr + end, 1)[0] !== 0) end++;
-    const word = td.decode(new Uint8Array(buf, ptr + off, end - off));
-
-    let pe = off + 24;
-    while (pe < off + 64 && new Uint8Array(buf, ptr + pe, 1)[0] !== 0) pe++;
-    const pinyin = td.decode(new Uint8Array(buf, ptr + off + 24, pe - off - 24));
-
-    const dv = new DataView(buf, ptr + off + 64, 4);
-    const freq = dv.getUint32(0, true);
-    const hasExp = new Uint8Array(buf, ptr + off + 68, 1)[0] === 1;
-
-    items[i] = markRaw({ word, pinyin, pinyin_flat: pinyin, frequency: freq, hasExplanation: hasExp });
+  try {
+    const data = (await wasm.get_word_frequency_api('', 500)) as any[];
+    const items: WordItem[] = (data || []).map((d: any) =>
+      markRaw({
+        word: d.word || '',
+        pinyin: d.pinyin || '',
+        pinyin_flat: d.pinyin || '',
+        frequency: d.frequency || 0,
+        hasExplanation: !!(d.explanation && d.explanation.length > 0),
+      }),
+    );
+    wordList.value = items;
+  } catch (e) {
+    console.error('词频加载失败:', e);
   }
-  wordList.value = items;
   isLoading.value = false;
 };
 
