@@ -1,6 +1,7 @@
 //! zici 字词学习数据——SQLite 存储（生字/生词/词频）
-//! 数据源：data/zici_chars.json、zici_words.json、word_frequency_list.json
-//! 首次启动生成 data/zici.db，之后直接查询（与词典 dict.db 同样的离线思路）
+//! 与词典 dict.db 同款方案：宿主机预生成 cold_data/zici.db，
+//! 生产环境由 volume 挂载进容器（docker-compose 已挂 ./cold_data:/app/cold_data），
+//! 容器内只读查询；开发环境缺失时从 data/*.json 自动生成。
 
 use rusqlite::Connection;
 use std::path::Path;
@@ -8,24 +9,39 @@ use std::sync::Mutex;
 
 static DB: Mutex<Option<Connection>> = Mutex::new(None);
 
-const DB_PATH: &str = "data/zici.db";
-
 pub fn ensure_zici_db() {
-    let path = std::env::current_dir().unwrap_or_default().join(DB_PATH);
+    let path = std::env::current_dir()
+        .unwrap_or_default()
+        .join("cold_data/zici.db");
     if !path.exists() {
-        if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
         match generate(&path) {
             Ok(()) => tracing::info!("zici.db 已生成: {}", path.display()),
-            Err(e) => tracing::error!("zici.db 生成失败: {}", e),
+            Err(e) => tracing::error!(
+                "zici.db 不存在且生成失败（{}）——生产环境请先运行 scripts/gen-zici-db.sh 预生成",
+                e
+            ),
         }
     }
-    let conn = Connection::open(&path).expect("无法打开 zici.db");
-    *DB.lock().unwrap() = Some(conn);
+    if let Ok(conn) = Connection::open(&path) {
+        *DB.lock().unwrap() = Some(conn);
+    } else {
+        tracing::error!("无法打开 zici.db: {}", path.display());
+    }
+}
+
+/// 独立生成入口（scripts/gen-zici-db.sh → src/bin/gen_zici_db.rs 调用）
+pub fn generate_db(target: &str) -> Result<(), String> {
+    let path = Path::new(target);
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    generate(path)
 }
 
 fn generate(path: &Path) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
     let mut conn = Connection::open(path).map_err(|e| e.to_string())?;
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS zici_chars (grade INTEGER, term INTEGER, chars TEXT);
@@ -35,7 +51,7 @@ fn generate(path: &Path) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
 
-    let data_dir = std::env::current_dir().unwrap_or_default().join("data");
+    let data_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("data");
 
     // 生字
     let chars_json =
@@ -82,7 +98,9 @@ fn generate(path: &Path) -> Result<(), String> {
         let tx = conn.transaction().map_err(|e| e.to_string())?;
         {
             let mut stmt = tx
-                .prepare("INSERT OR IGNORE INTO word_frequency (word, pinyin, frequency, explanation) VALUES (?1, ?2, ?3, ?4)")
+                .prepare(
+                    "INSERT OR IGNORE INTO word_frequency (word, pinyin, frequency, explanation) VALUES (?1, ?2, ?3, ?4)",
+                )
                 .map_err(|e| e.to_string())?;
             for item in &freq {
                 let word = item["word"].as_str().unwrap_or("");
@@ -134,7 +152,9 @@ pub fn zici_words(search: &str, page: i64, page_size: i64) -> (Vec<String>, i64)
             .unwrap_or(0);
         let offset = (page - 1).max(0) * page_size;
         let mut stmt = conn
-            .prepare("SELECT word FROM zici_words WHERE (?1 = '' OR word LIKE ?2) ORDER BY id LIMIT ?3 OFFSET ?4")
+            .prepare(
+                "SELECT word FROM zici_words WHERE (?1 = '' OR word LIKE ?2) ORDER BY id LIMIT ?3 OFFSET ?4",
+            )
             .unwrap();
         let words: Vec<String> = stmt
             .query_map(rusqlite::params![search, like, page_size, offset], |row| {
