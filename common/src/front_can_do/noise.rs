@@ -13,7 +13,7 @@
 pub struct Rng(pub u32);
 
 impl Rng {
-    pub fn next(&mut self) -> f32 {
+    pub fn next_f32(&mut self) -> f32 {
         let mut x = self.0;
         x ^= x << 13;
         x ^= x >> 17;
@@ -52,7 +52,7 @@ pub fn synth_white_noise(duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f
     let mut out = vec![0f32; n];
     let mut rng = Rng(seed | 1);
     for x in out.iter_mut() {
-        *x = rng.next();
+        *x = rng.next_f32();
     }
     make_loopable(&mut out, sample_rate);
     normalize(&mut out);
@@ -69,7 +69,7 @@ pub fn synth_pink_noise(duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f3
     let mut rng = Rng(seed | 1);
     let mut b = [0f32; 7];
     for x in out.iter_mut() {
-        let white = rng.next();
+        let white = rng.next_f32();
         b[0] = 0.99886f32 * b[0] + white * 0.0555179;
         b[1] = 0.99332f32 * b[1] + white * 0.0750759;
         b[2] = 0.969f32 * b[2] + white * 0.153852f32;
@@ -94,7 +94,7 @@ pub fn synth_brown_noise(duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f
     let mut rng = Rng(seed | 1);
     let mut last = 0f32;
     for x in out.iter_mut() {
-        last = (last + rng.next() * 0.02) * 0.997;
+        last = (last + rng.next_f32() * 0.02) * 0.997;
         *x = last * 3.5;
     }
     make_loopable(&mut out, sample_rate);
@@ -114,10 +114,10 @@ pub fn synth_rain_noise(duration_ms: u32, sample_rate: u32, seed: u32) -> Vec<f3
     let mut phase = 0.0f32;
     for x in out.iter_mut() {
         // 慢速振幅调制（1-3Hz 随机）
-        phase += 0.0002 + rng.next().abs() * 0.0002;
+        phase += 0.0002 + rng.next_f32().abs() * 0.0002;
         let mod_amp = 0.35 + 0.65 * (phase.sin() * 0.5 + 0.5);
         // 低通：一阶 IIR
-        lp = lp * 0.85 + rng.next() * 0.15;
+        lp = lp * 0.85 + rng.next_f32() * 0.15;
         *x = lp * mod_amp;
     }
     make_loopable(&mut out, sample_rate);
