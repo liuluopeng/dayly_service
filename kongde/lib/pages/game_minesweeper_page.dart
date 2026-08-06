@@ -14,7 +14,7 @@ class _GameMinesweeperPageState extends State<GameMinesweeperPage> {
   MinesweeperState _state = MinesweeperState(
     cells: Uint8List(0), revealed: [], flagged: [], over: false, won: false,
   );
-  static const int _size = 20;
+  static const int _size = 9;
 
   @override
   void initState() {

@@ -1174,8 +1174,10 @@ pub fn start() {
 
     // hash routing
     let cb = Closure::wrap(Box::new(route) as Box<dyn FnMut()>);
-    let f: &js_sys::Function = cb.as_ref().unchecked_ref();
-    web_sys::window().unwrap().set_onhashchange(Some(f));
+    web_sys::window()
+        .unwrap()
+        .add_event_listener_with_callback("hashchange", cb.as_ref().unchecked_ref())
+        .ok();
     cb.forget();
 
     // Restore token
@@ -1537,11 +1539,11 @@ fn render_ms() {
         let state = m.borrow();
         if let Some(grid) = doc().get_element_by_id("ms-grid") {
             grid.set_inner_html("");
-            for i in 0..400 {
+            for i in 0..81 {
                 let cell = doc().create_element("div").unwrap();
-                let revealed = state.revealed[i / 20][i % 20];
-                let flagged = state.flagged[i / 20][i % 20];
-                let v = state.cells[i / 20][i % 20];
+                let revealed = state.revealed[i / 9][i % 9];
+                let flagged = state.flagged[i / 9][i % 9];
+                let v = state.cells[i / 9][i % 9];
                 let style = if revealed {
                     if v == 9 {
                         "background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;aspect-ratio:1;"
@@ -1563,11 +1565,11 @@ fn render_ms() {
                 }
                 let idx = i;
                 let click = Closure::wrap(Box::new(move || {
-                    MSWEEP.with(|m| m.borrow_mut().click(idx % 20, idx / 20));
+                    MSWEEP.with(|m| m.borrow_mut().click(idx % 9, idx / 9));
                     render_ms();
                 }) as Box<dyn FnMut()>);
                 let flag = Closure::wrap(Box::new(move || {
-                    MSWEEP.with(|m| m.borrow_mut().toggle_flag(idx % 20, idx / 20));
+                    MSWEEP.with(|m| m.borrow_mut().toggle_flag(idx % 9, idx / 9));
                     render_ms();
                 }) as Box<dyn FnMut()>);
                 cell.add_event_listener_with_callback("click", click.as_ref().unchecked_ref()).ok();
@@ -1729,6 +1731,10 @@ fn noise_play(kind: &str) {
             Some(c) => c,
             None => {
                 let c = web_sys::AudioContext::new().ok();
+                if c.is_none() {
+                    set_text("noise-status", "AudioContext 不可用");
+                    return;
+                }
                 NOISE_CTX.with(|n| *n.borrow_mut() = c.clone());
                 c.unwrap()
             }
