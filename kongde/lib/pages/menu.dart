@@ -17,6 +17,10 @@ import 'package:kongde/pages/piano_keyboard_page.dart';
 import 'package:kongde/pages/surround_listen_page.dart';
 import 'package:kongde/views/note_view.dart';
 import 'package:kongde/pages/clipboard_history_page.dart';
+import 'package:kongde/pages/game_2048_page.dart';
+import 'package:kongde/pages/game_snake_page.dart';
+import 'package:kongde/pages/game_minesweeper_page.dart';
+import 'package:kongde/pages/game_tetris_page.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -146,6 +150,26 @@ class _ContactsPageState extends State<ContactsPage> {
                       'icon': Icons.content_paste,
                       'title': 'menu.clipboardHistory'.tr,
                       'onTap': () => Get.to(() => const ClipboardHistoryPage()),
+                    },
+                    {
+                      'icon': Icons.videogame_asset,
+                      'title': '2048',
+                      'onTap': () => Get.to(() => const Game2048Page()),
+                    },
+                    {
+                      'icon': Icons.linear_scale,
+                      'title': '贪吃蛇',
+                      'onTap': () => Get.to(() => const GameSnakePage()),
+                    },
+                    {
+                      'icon': Icons.grid_on,
+                      'title': '扫雷',
+                      'onTap': () => Get.to(() => const GameMinesweeperPage()),
+                    },
+                    {
+                      'icon': Icons.crop_square,
+                      'title': '俄罗斯方块',
+                      'onTap': () => Get.to(() => const GameTetrisPage()),
                     },
                     {
                       'icon': Icons.qr_code_scanner,

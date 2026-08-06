@@ -8,6 +8,7 @@
 
 import 'api/color.dart';
 import 'api/db.dart';
+import 'api/games.dart';
 import 'api/logger_bridge.dart';
 import 'api/metadata.dart';
 import 'api/music_cache.dart';
@@ -213,6 +214,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileInfoForDart dco_decode_file_info_for_dart(dynamic raw);
 
   @protected
+  Game2048State dco_decode_game_2048_state(dynamic raw);
+
+  @protected
   GgttCode dco_decode_ggtt_code(dynamic raw);
 
   @protected
@@ -240,6 +244,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
+  List<bool> dco_decode_list_bool(dynamic raw);
+
+  @protected
   List<ClipboardEntry> dco_decode_list_clipboard_entry(dynamic raw);
 
   @protected
@@ -264,6 +271,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<NoteSummary> dco_decode_list_note_summary(dynamic raw);
+
+  @protected
+  Uint32List dco_decode_list_prim_u_32_strict(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
@@ -299,6 +309,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MelatoninMovieListForDart dco_decode_melatonin_movie_list_for_dart(
     dynamic raw,
   );
+
+  @protected
+  MinesweeperState dco_decode_minesweeper_state(dynamic raw);
 
   @protected
   NoteSummary dco_decode_note_summary(dynamic raw);
@@ -339,12 +352,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (int, int, int) dco_decode_record_u_8_u_8_u_8(dynamic raw);
 
   @protected
+  SnakeState dco_decode_snake_state(dynamic raw);
+
+  @protected
   SongPaginatedResponseForDart dco_decode_song_paginated_response_for_dart(
     dynamic raw,
   );
 
   @protected
   SongWithUrlForDart dco_decode_song_with_url_for_dart(dynamic raw);
+
+  @protected
+  TetrisState dco_decode_tetris_state(dynamic raw);
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -527,6 +546,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileInfoForDart sse_decode_file_info_for_dart(SseDeserializer deserializer);
 
   @protected
+  Game2048State sse_decode_game_2048_state(SseDeserializer deserializer);
+
+  @protected
   GgttCode sse_decode_ggtt_code(SseDeserializer deserializer);
 
   @protected
@@ -552,6 +574,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<bool> sse_decode_list_bool(SseDeserializer deserializer);
 
   @protected
   List<ClipboardEntry> sse_decode_list_clipboard_entry(
@@ -586,6 +611,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<NoteSummary> sse_decode_list_note_summary(SseDeserializer deserializer);
+
+  @protected
+  Uint32List sse_decode_list_prim_u_32_strict(SseDeserializer deserializer);
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -623,6 +651,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MelatoninMovieListForDart sse_decode_melatonin_movie_list_for_dart(
     SseDeserializer deserializer,
   );
+
+  @protected
+  MinesweeperState sse_decode_minesweeper_state(SseDeserializer deserializer);
 
   @protected
   NoteSummary sse_decode_note_summary(SseDeserializer deserializer);
@@ -665,6 +696,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (int, int, int) sse_decode_record_u_8_u_8_u_8(SseDeserializer deserializer);
 
   @protected
+  SnakeState sse_decode_snake_state(SseDeserializer deserializer);
+
+  @protected
   SongPaginatedResponseForDart sse_decode_song_paginated_response_for_dart(
     SseDeserializer deserializer,
   );
@@ -673,6 +707,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SongWithUrlForDart sse_decode_song_with_url_for_dart(
     SseDeserializer deserializer,
   );
+
+  @protected
+  TetrisState sse_decode_tetris_state(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_16(SseDeserializer deserializer);
@@ -892,6 +929,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_game_2048_state(Game2048State self, SseSerializer serializer);
+
+  @protected
   void sse_encode_ggtt_code(GgttCode self, SseSerializer serializer);
 
   @protected
@@ -921,6 +961,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_bool(List<bool> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_clipboard_entry(
@@ -964,6 +1007,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_note_summary(
     List<NoteSummary> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_u_32_strict(
+    Uint32List self,
     SseSerializer serializer,
   );
 
@@ -1012,6 +1061,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_melatonin_movie_list_for_dart(
     MelatoninMovieListForDart self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_minesweeper_state(
+    MinesweeperState self,
     SseSerializer serializer,
   );
 
@@ -1068,6 +1123,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_snake_state(SnakeState self, SseSerializer serializer);
+
+  @protected
   void sse_encode_song_paginated_response_for_dart(
     SongPaginatedResponseForDart self,
     SseSerializer serializer,
@@ -1078,6 +1136,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     SongWithUrlForDart self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_tetris_state(TetrisState self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
