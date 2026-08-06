@@ -176,6 +176,7 @@ const ALL_PAGES: &[&str] = &[
     "page-search-history",
     "page-short-notes",
     "page-songs",
+    "page-videos",
     "page-g2048",
     "page-snake",
     "page-minesweeper",
@@ -199,6 +200,7 @@ const PAGE_TITLES: &[(&str, &str)] = &[
     ("page-search-history", "搜索历史"),
     ("page-short-notes", "短笔记"),
     ("page-songs", "音乐"),
+    ("page-videos", "视频库"),
     ("page-g2048", "2048"),
     ("page-snake", "贪吃蛇"),
     ("page-minesweeper", "扫雷"),
@@ -221,6 +223,7 @@ const SIDEBAR_IDS: &[&str] = &[
     "snav-clipboard",
     "snav-notes",
     "snav-short-notes",
+    "snav-videos",
     "snav-g2048",
     "snav-snake",
     "snav-minesweeper",
@@ -293,6 +296,10 @@ fn route() {
         }
         "#/search-history" => show_page("page-search-history"),
         "#/short-notes" => show_page("page-short-notes"),
+        "#/videos" => {
+            do_video_load_list();
+            show_page("page-videos");
+        }
         "#/g2048" | "#/game2048" => {
             G2048.with(|g| *g.borrow_mut() = Game2048::new());
             set_text("g2048-status", "");
@@ -1305,6 +1312,10 @@ pub fn start() {
         el("zici-word-search-btn").click();
     });
 
+    // ─── 视频 ───
+    on_click("snav-videos", || navigate("#/videos"));
+    on_click("video-refresh", do_video_load_list);
+
     // ─── 游戏 / 白噪音绑定 ───
     bind_game_keys();
     on_click("g2048-restart", || {
@@ -1740,4 +1751,83 @@ fn noise_play(kind: &str) {
             }
         }
     });
+}
+
+// ==================== VIDEOS (原生 HTML5 video，无任何 JS 库) ====================
+
+fn do_video_load_list() {
+    let client = CLIENT.with(|c| c.borrow().clone());
+    set_text("video-count", "加载中...");
+    spawn_local(async move {
+        match client {
+            Some(client) => {
+                let res = common::api::videos::list_videos(&client, None, Some(1), Some(100)).await;
+                match res {
+                    Ok(ok) => {
+                        let items = match ok.data {
+                            Some(d) => d.data,
+                            None => Vec::new(),
+                        };
+                        set_text("video-count", &format!("共 {} 个视频", items.len()));
+                        if let Some(list) = doc().get_element_by_id("video-list") {
+                            list.set_inner_html("");
+                            for v in items {
+                                let card = doc().create_element("div").unwrap();
+                                card.set_attribute(
+                                    "class",
+                                    "bg-[#2D2D2D] rounded p-2 cursor-pointer hover:bg-[#3A3A3A]",
+                                )
+                                .ok();
+                                let name = v.name.clone();
+                                let path = v.path.clone();
+                                let size_mb = v.size / 1024 / 1024;
+                                let fmt_str = v.format.unwrap_or_default();
+                                card.set_inner_html(&format!(
+                                    "<div class='text-sm text-white overflow-hidden text-ellipsis whitespace-nowrap'>{}</div>\
+                                     <div class='text-[11px] text-[#888]'>{}MB {}</div>",
+                                    escape_html(&name), size_mb, fmt_str
+                                ));
+                                let click =
+                                    Closure::wrap(Box::new(move || do_video_play(&path, &name))
+                                        as Box<dyn FnMut()>);
+                                card.add_event_listener_with_callback(
+                                    "click",
+                                    click.as_ref().unchecked_ref(),
+                                )
+                                .ok();
+                                click.forget();
+                                list.append_child(&card).ok();
+                            }
+                        }
+                    }
+                    Err(e) => set_text("video-count", &format!("加载失败: {}", e)),
+                }
+            }
+            None => set_text("video-count", "未登录"),
+        }
+    });
+}
+
+fn do_video_play(path: &str, name: &str) {
+    let base = default_base_url();
+    let token = load_token().unwrap_or_default();
+    let url = format!(
+        "{}/api/files/serve?path={}&token={}",
+        base,
+        js_sys::encode_uri_component(path),
+        token
+    );
+    if let Some(video) = doc().get_element_by_id("video-player") {
+        if let Ok(v) = video.dyn_into::<web_sys::HtmlVideoElement>() {
+            v.set_src(&url);
+            let _ = v.play();
+        }
+    }
+    log(&format!("播放: {}", name));
+}
+
+fn escape_html(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }

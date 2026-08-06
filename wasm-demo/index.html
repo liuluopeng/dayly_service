@@ -35,6 +35,7 @@ body { margin: 0; overflow-x: hidden; }
       <a id="snav-uuid" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="uuid"><span class="sicon text-base mr-3 w-5 text-center">🆔</span><span class="slabel">UUID</span></a>
       <a id="snav-base64" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="base64"><span class="sicon text-base mr-3 w-5 text-center">🔢</span><span class="slabel">Base64</span></a>
       <a id="snav-timestamp" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="timestamp"><span class="sicon text-base mr-3 w-5 text-center">⏰</span><span class="slabel">时间戳</span></a>
+      <a id="snav-videos" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="videos"><span class="sicon text-base mr-3 w-5 text-center">🎬</span><span class="slabel">视频</span></a>
       <a id="snav-songs" class="sidebar-item flex items-center px-4 py-2.5 text-white hover:bg-[#2D2D2D] cursor-pointer border-l-2 border-transparent" data-page="songs"><span class="sicon text-base mr-3 w-5 text-center">🎵</span><span class="slabel">音乐</span></a>
 
       <div class="sgroup-label px-4 py-2 text-[#888] text-xs uppercase tracking-wider mt-2">📖 字词</div>
@@ -250,6 +251,19 @@ body { margin: 0; overflow-x: hidden; }
       <div id="zici-char-display" class="bg-[#1A1A1A] p-4 min-h-12 text-lg leading-loose tracking-wider"></div>
     </div>
 
+
+    <!-- ==================== VIDEOS ==================== -->
+    <div id="page-videos" class="hidden p-6">
+      <h2 class="text-xl font-light text-white mb-3">视频库</h2>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button id="video-refresh" class="bg-[#0078D4] text-white border-none px-3 py-1.5 text-sm cursor-pointer hover:bg-[#006CBE]">刷新列表</button>
+        <span id="video-count" class="text-[#999] text-sm self-center"></span>
+      </div>
+      <div id="video-list" class="grid gap-2 mb-4" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"></div>
+      <div class="bg-[#1A1A1A] rounded p-3">
+        <video id="video-player" class="w-full rounded" controls></video>
+      </div>
+    </div>
 
     <!-- ==================== 2048 ==================== -->
     <div id="page-g2048" class="hidden p-6">
