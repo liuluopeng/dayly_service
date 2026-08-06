@@ -85,6 +85,8 @@ pub mod front_can_do {
     pub mod snake;
     /// 俄罗斯方块游戏
     pub mod tetris;
+    /// 环境白噪音合成（白/粉红/棕/雨声）
+    pub mod noise;
     /// 时间戳工具
     pub mod timestamp;
     /// UUID 生成与校验

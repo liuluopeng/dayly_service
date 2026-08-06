@@ -21,6 +21,7 @@ import 'package:kongde/pages/game_2048_page.dart';
 import 'package:kongde/pages/game_snake_page.dart';
 import 'package:kongde/pages/game_minesweeper_page.dart';
 import 'package:kongde/pages/game_tetris_page.dart';
+import 'package:kongde/pages/white_noise_page.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -125,6 +126,11 @@ class _ContactsPageState extends State<ContactsPage> {
                       'icon': Icons.hearing,
                       'title': 'menu.surroundListen'.tr,
                       'onTap': () => Get.to(() => const SurroundListenPage()),
+                    },
+                    {
+                      'icon': Icons.waves,
+                      'title': '白噪音',
+                      'onTap': () => Get.to(() => const WhiteNoisePage()),
                     },
                     {
                       'icon': Icons.note,

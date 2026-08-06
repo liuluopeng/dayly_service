@@ -28,6 +28,7 @@ mod utils {
     pub mod image_convert;
     pub mod minesweeper;
     pub mod noise;
+    pub mod noise_live;
     pub mod password;
     pub mod qrcode;
     pub mod qrscan;
