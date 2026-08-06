@@ -2,6 +2,8 @@
 name = "lx_dayly_service"
 version = "0.1.0"
 edition = "2024"
+# 多个 bin（gen_zici_db 等工具）时，cargo run 默认运行主服务
+default-run = "lx_dayly_service"
 
 [dependencies]
 axum = { workspace = true }
