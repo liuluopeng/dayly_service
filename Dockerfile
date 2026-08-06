@@ -206,9 +206,8 @@ RUN rm -rf /app/sifu_axuum/static/dist /app/sifu_axuum/static/flutter /app/sifu_
 WORKDIR /app
 RUN bash /app/scripts/build-vue.sh
 
-# 复制前端 dist 到 static（/dist/ 与 /vue/ 都用容器内新构建产物）
-RUN mkdir -p /app/sifu_axuum/static/dist /app/sifu_axuum/static/vue \
-    && cp -r /app/webbvueetauri/dist/* /app/sifu_axuum/static/dist/ \
+# 复制前端 dist 到 static/vue（/dist/ 已废弃——同一份产物，与 /vue/ 重复）
+RUN mkdir -p /app/sifu_axuum/static/vue \
     && cp -r /app/webbvueetauri/dist/* /app/sifu_axuum/static/vue/
 
 # 构建应用

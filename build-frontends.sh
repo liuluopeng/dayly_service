@@ -12,9 +12,7 @@ echo ""
 echo "--- Vue (webbvueetauri) ---"
 bash "$ROOT/scripts/build-vue.sh"
 rm -rf "$STATIC/vue" && mkdir -p "$STATIC/vue" && cp -r "$ROOT/webbvueetauri/dist"/* "$STATIC/vue/"
-# 与 Docker 一致：同时产出 /dist/
-rm -rf "$STATIC/dist" && mkdir -p "$STATIC/dist" && cp -r "$ROOT/webbvueetauri/dist"/* "$STATIC/dist/"
-echo "  -> $STATIC/vue/ + $STATIC/dist/"
+echo "  -> $STATIC/vue/"
 
 # 2. wasm-demo (Trunk) —— 仅本地使用，无其他调用方，保持内联
 echo ""

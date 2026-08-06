@@ -128,13 +128,6 @@ pub fn create_app(
                 .append_index_html_on_directories(true)
                 .precompressed_gzip(),
         )
-        .route("/dist", get(|| async { Redirect::permanent("/dist/") }))
-        .nest_service(
-            "/dist/",
-            ServeDir::new("static/dist/")
-                .append_index_html_on_directories(true)
-                .precompressed_gzip(),
-        )
         .route("/vue", get(|| async { Redirect::permanent("/vue/") }))
         .nest_service(
             "/vue/",
