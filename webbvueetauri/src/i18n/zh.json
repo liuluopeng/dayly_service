@@ -154,6 +154,14 @@
     "tools": {
       "title": "小工具",
       "desc": "实用工具集合",
+      "calculator": {
+        "title": "计算器",
+        "desc": "四则运算计算器"
+      },
+      "gifCompare": {
+        "title": "GIF 对比",
+        "desc": "两张 GIF 并排对比"
+      },
       "base64": {
         "title": "Base64 工具",
         "desc": "Base64 编码解码"

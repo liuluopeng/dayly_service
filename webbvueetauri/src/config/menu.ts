@@ -11,6 +11,9 @@ export interface MenuItem {
   }>;
 }
 
+// 统一菜单顺序（与 Flutter 客户端 menu.dart 对齐）：
+// 查询 → 词典 → 字词学习 → 历史 → 图片/视频/电影 → 音乐 → 钢琴/白噪音 →
+// 笔记 → 聊天 → 文件/共享/剪贴板 → 游戏 → 工具 → 管理/设置
 export function getMenuItems(t: (key: string) => string): MenuItem[] {
   return [
     {
@@ -24,108 +27,6 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
       title: t('menu.unifiedDict.title'),
       icon: '📖',
       description: t('menu.unifiedDict.desc')
-    },
-    {
-      path: '/songs',
-      title: t('menu.songs.title'),
-      icon: '🎵',
-      description: t('menu.songs.desc')
-    },
-    {
-      path: '/songs?wasm=1',
-      title: t('menu.songsWasm.title'),
-      icon: '⚡',
-      description: t('menu.songsWasm.desc')
-    },
-    {
-      path: '/songs?lyrics=1',
-      title: t('menu.songsLyrics.title'),
-      icon: '🎶',
-      description: t('menu.songsLyrics.desc')
-    },
-    {
-      path: '/files',
-      title: t('menu.files.title'),
-      icon: '📂',
-      description: t('menu.files.desc')
-    },
-    {
-      path: '/short-notes',
-      title: t('menu.shortNotes.title'),
-      icon: '📝',
-      description: t('menu.shortNotes.desc')
-    },
-    {
-      path: '/openai-chat',
-      title: t('menu.chat.title'),
-      icon: '🤖',
-      description: t('menu.chat.desc')
-    },
-    {
-      path: '/chat',
-      title: '聊天',
-      icon: '💬',
-      description: '与其他用户聊天'
-    },
-    {
-      path: '/sharing',
-      title: '局域网共享',
-      icon: '🔗',
-      description: '剪贴板同步和文件传输'
-    },
-    {
-      path: '/clipboard-history',
-      title: t('menu.clipboardHistory.title'),
-      icon: '📋',
-      description: t('menu.clipboardHistory.desc')
-    },
-    {
-      path: '/game2048',
-      title: t('menu.game2048.title'),
-      icon: '🎮',
-      description: t('menu.game2048.desc')
-    },
-    {
-      path: '/game-snake',
-      title: t('menu.snake.title'),
-      icon: '🐍',
-      description: t('menu.snake.desc')
-    },
-    {
-      path: '/game-minesweeper',
-      title: t('menu.minesweeper.title'),
-      icon: '💣',
-      description: t('menu.minesweeper.desc')
-    },
-    {
-      path: '/game-tetris',
-      title: t('menu.tetris.title'),
-      icon: '🧱',
-      description: t('menu.tetris.desc')
-    },
-    {
-      path: '/piano',
-      title: t('menu.piano.title'),
-      icon: '🎹',
-      description: t('menu.piano.desc')
-    },
-    {
-      path: '/white-noise',
-      title: t('menu.whiteNoise.title'),
-      icon: '🌊',
-      description: t('menu.whiteNoise.desc')
-    },
-    {
-      path: '/notes',
-      title: t('menu.notes.title'),
-      icon: '📚',
-      description: t('menu.notes.desc')
-    },
-    {
-      path: '/search-history',
-      title: t('menu.searchHistory.title'),
-      icon: '📊',
-      description: t('menu.searchHistory.desc')
     },
     {
       path: '/zici',
@@ -172,11 +73,143 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
       ]
     },
     {
+      path: '/search-history',
+      title: t('menu.searchHistory.title'),
+      icon: '📊',
+      description: t('menu.searchHistory.desc')
+    },
+    {
+      path: '/images',
+      title: t('menu.images.title'),
+      icon: '🖼️',
+      description: t('menu.images.desc')
+    },
+    {
+      path: '/videos',
+      title: t('menu.videos.title'),
+      icon: '🎬',
+      description: t('menu.videos.desc')
+    },
+    {
+      path: '/melatonin',
+      title: t('melatonin.title'),
+      icon: '🎥',
+      description: t('melatonin.desc')
+    },
+    {
+      path: '/songs',
+      title: t('menu.songs.title'),
+      icon: '🎵',
+      description: t('menu.songs.desc')
+    },
+    {
+      path: '/songs?wasm=1',
+      title: t('menu.songsWasm.title'),
+      icon: '⚡',
+      description: t('menu.songsWasm.desc')
+    },
+    {
+      path: '/songs?lyrics=1',
+      title: t('menu.songsLyrics.title'),
+      icon: '🎶',
+      description: t('menu.songsLyrics.desc')
+    },
+    {
+      path: '/piano',
+      title: t('menu.piano.title'),
+      icon: '🎹',
+      description: t('menu.piano.desc')
+    },
+    {
+      path: '/white-noise',
+      title: t('menu.whiteNoise.title'),
+      icon: '🌊',
+      description: t('menu.whiteNoise.desc')
+    },
+    {
+      path: '/notes',
+      title: t('menu.notes.title'),
+      icon: '📚',
+      description: t('menu.notes.desc')
+    },
+    {
+      path: '/short-notes',
+      title: t('menu.shortNotes.title'),
+      icon: '📝',
+      description: t('menu.shortNotes.desc')
+    },
+    {
+      path: '/chat',
+      title: '聊天',
+      icon: '💬',
+      description: '与其他用户聊天'
+    },
+    {
+      path: '/openai-chat',
+      title: t('menu.chat.title'),
+      icon: '🤖',
+      description: t('menu.chat.desc')
+    },
+    {
+      path: '/files',
+      title: t('menu.files.title'),
+      icon: '📂',
+      description: t('menu.files.desc')
+    },
+    {
+      path: '/sharing',
+      title: '局域网共享',
+      icon: '🔗',
+      description: '剪贴板同步和文件传输'
+    },
+    {
+      path: '/clipboard-history',
+      title: t('menu.clipboardHistory.title'),
+      icon: '📋',
+      description: t('menu.clipboardHistory.desc')
+    },
+    {
+      path: '/game2048',
+      title: t('menu.game2048.title'),
+      icon: '🎮',
+      description: t('menu.game2048.desc')
+    },
+    {
+      path: '/game-snake',
+      title: t('menu.snake.title'),
+      icon: '🐍',
+      description: t('menu.snake.desc')
+    },
+    {
+      path: '/game-minesweeper',
+      title: t('menu.minesweeper.title'),
+      icon: '💣',
+      description: t('menu.minesweeper.desc')
+    },
+    {
+      path: '/game-tetris',
+      title: t('menu.tetris.title'),
+      icon: '🧱',
+      description: t('menu.tetris.desc')
+    },
+    {
       path: '/tools',
       title: t('menu.tools.title'),
       icon: '🔧',
       description: t('menu.tools.desc'),
       children: [
+        {
+          path: '/tools/calculator',
+          title: t('menu.tools.calculator.title'),
+          icon: '🧮',
+          description: t('menu.tools.calculator.desc')
+        },
+        {
+          path: '/tools/gif-compare',
+          title: t('menu.tools.gifCompare.title'),
+          icon: '🎞️',
+          description: t('menu.tools.gifCompare.desc')
+        },
         {
           path: '/tools/base64',
           title: t('menu.tools.base64.title'),
@@ -226,18 +259,6 @@ export function getMenuItems(t: (key: string) => string): MenuItem[] {
           description: t('menu.tools.qrscan.desc')
         }
       ]
-    },
-    {
-      path: '/images',
-      title: t('menu.images.title'),
-      icon: '🖼️',
-      description: t('menu.images.desc')
-    },
-    {
-      path: '/videos',
-      title: t('menu.videos.title'),
-      icon: '🎬',
-      description: t('menu.videos.desc')
     },
     {
       path: '/admin/user-directories',

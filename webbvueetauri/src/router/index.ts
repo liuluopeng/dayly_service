@@ -21,6 +21,9 @@ import NoteList from '../views/NoteList.vue';
 import NoteCreate from '../views/NoteCreate.vue';
 import ImageGallery from '../views/ImageGallery.vue';
 import VideoList from '../views/VideoList.vue';
+import MelatoninMovies from '../views/MelatoninMovies.vue';
+import CalculatorTool from '../views/CalculatorTool.vue';
+import GifCompare from '../views/GifCompare.vue';
 import UserDirectoryAdmin from '../views/UserDirectoryAdmin.vue';
 import Chat from '../views/Chat.vue';
 import Sharing from '../views/Sharing.vue';
@@ -245,6 +248,21 @@ const routes = [
     path: '/videos',
     name: 'VideoList',
     component: VideoList
+  },
+  {
+    path: '/melatonin',
+    name: 'MelatoninMovies',
+    component: MelatoninMovies
+  },
+  {
+    path: '/tools/calculator',
+    name: 'CalculatorTool',
+    component: CalculatorTool
+  },
+  {
+    path: '/tools/gif-compare',
+    name: 'GifCompare',
+    component: GifCompare
   },
   {
     path: '/admin/user-directories',

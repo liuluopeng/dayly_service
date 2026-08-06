@@ -81,9 +81,9 @@ class _ContactsPageState extends State<ContactsPage> {
                       'onTap': () => Get.to(() => WubiQueryPage()),
                     },
                     {
-                      'icon': Icons.video_library,
-                      'title': 'menu.videoLibrary'.tr,
-                      'onTap': () => Get.to(() => VideoLibraryPage()),
+                      'icon': Icons.book,
+                      'title': 'menu.unifiedDict'.tr,
+                      'onTap': () => Get.to(() => const UnifiedDictPage()),
                     },
                     {
                       'icon': Icons.photo_library,
@@ -92,20 +92,15 @@ class _ContactsPageState extends State<ContactsPage> {
                       'borderRadius': 0.0,
                     },
                     {
+                      'icon': Icons.video_library,
+                      'title': 'menu.videoLibrary'.tr,
+                      'onTap': () => Get.to(() => VideoLibraryPage()),
+                    },
+                    {
                       'icon': Icons.movie_creation,
                       'title': 'menu.melatoninMovies'.tr,
                       'onTap': () => Get.to(() => MelatoninMoviesPage()),
                       'borderRadius': 0.0,
-                    },
-                    {
-                      'icon': Icons.qr_code_scanner,
-                      'title': 'menu.scan'.tr,
-                      'onTap': () => Get.to(() => ScanPage()),
-                    },
-                    {
-                      'icon': Icons.book,
-                      'title': 'menu.unifiedDict'.tr,
-                      'onTap': () => Get.to(() => const UnifiedDictPage()),
                     },
                     {
                       'icon': Icons.headphones,
@@ -118,11 +113,6 @@ class _ContactsPageState extends State<ContactsPage> {
                       'onTap': () => Get.to(() => const LocalMusicPage()),
                     },
                     {
-                      'icon': Icons.note,
-                      'title': 'menu.noteManager'.tr,
-                      'onTap': () => Get.to(() => const NoteView()),
-                    },
-                    {
                       'icon': Icons.piano,
                       'title': 'menu.pianoKeyboard'.tr,
                       'onTap': () => Get.to(() => const PianoKeyboardPage()),
@@ -133,19 +123,19 @@ class _ContactsPageState extends State<ContactsPage> {
                       'onTap': () => Get.to(() => const SurroundListenPage()),
                     },
                     {
-                      'icon': Icons.build,
-                      'title': 'menu.tools'.tr,
-                      'onTap': () => Get.to(() => const ToolsHomePage()),
-                    },
-                    {
-                      'icon': Icons.folder,
-                      'title': 'menu.fileManager'.tr,
-                      'onTap': () => Get.to(() => const FileManagerPage()),
+                      'icon': Icons.note,
+                      'title': 'menu.noteManager'.tr,
+                      'onTap': () => Get.to(() => const NoteView()),
                     },
                     {
                       'icon': Icons.chat,
                       'title': '聊天',
                       'onTap': () => Get.to(() => const ChatHomePage()),
+                    },
+                    {
+                      'icon': Icons.folder,
+                      'title': 'menu.fileManager'.tr,
+                      'onTap': () => Get.to(() => const FileManagerPage()),
                     },
                     {
                       'icon': Icons.share,
@@ -156,6 +146,16 @@ class _ContactsPageState extends State<ContactsPage> {
                       'icon': Icons.content_paste,
                       'title': 'menu.clipboardHistory'.tr,
                       'onTap': () => Get.to(() => const ClipboardHistoryPage()),
+                    },
+                    {
+                      'icon': Icons.qr_code_scanner,
+                      'title': 'menu.scan'.tr,
+                      'onTap': () => Get.to(() => ScanPage()),
+                    },
+                    {
+                      'icon': Icons.build,
+                      'title': 'menu.tools'.tr,
+                      'onTap': () => Get.to(() => const ToolsHomePage()),
                     },
                   ];
 
