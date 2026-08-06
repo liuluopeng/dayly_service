@@ -286,15 +286,34 @@ fn route() {
         "#/uuid" => show_page("page-uuid"),
         "#/base64" => show_page("page-base64"),
         "#/timestamp" => show_page("page-timestamp"),
-        "#/clipboard" | "#/clipboard-history" => show_page("page-clipboard"),
-        "#/notes" => show_page("page-notes"),
-        "#/zici-chars" | "#/zici/chars" => show_page("page-zici-chars"),
-        "#/zici-words" | "#/zici/words" => show_page("page-zici-words"),
+        "#/clipboard" | "#/clipboard-history" => {
+            spawn_local(do_clipboard_refresh());
+            show_page("page-clipboard");
+        }
+        "#/notes" => {
+            spawn_local(do_notes_refresh());
+            show_page("page-notes");
+        }
+        "#/zici-chars" | "#/zici/chars" => {
+            do_zici_show_chars(1, 1);
+            show_page("page-zici-chars");
+        }
+        "#/zici-words" | "#/zici/words" => {
+            do_zici_word_search();
+            show_page("page-zici-words");
+        }
         "#/songs" => {
+            spawn_local(do_songs_list());
             show_page("page-songs");
         }
-        "#/search-history" => show_page("page-search-history"),
-        "#/short-notes" => show_page("page-short-notes"),
+        "#/search-history" => {
+            spawn_local(do_search_history());
+            show_page("page-search-history");
+        }
+        "#/short-notes" => {
+            spawn_local(do_short_notes_refresh());
+            show_page("page-short-notes");
+        }
         "#/videos" => {
             do_video_load_list();
             show_page("page-videos");
