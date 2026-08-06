@@ -47,7 +47,10 @@ fn generate(path: &Path) -> Result<(), String> {
         "CREATE TABLE IF NOT EXISTS zici_chars (grade INTEGER, term INTEGER, chars TEXT);
          CREATE TABLE IF NOT EXISTS zici_words (id INTEGER PRIMARY KEY AUTOINCREMENT, word TEXT UNIQUE);
          CREATE TABLE IF NOT EXISTS word_frequency (id INTEGER PRIMARY KEY AUTOINCREMENT, word TEXT UNIQUE, pinyin TEXT, frequency INTEGER, explanation TEXT);
-         CREATE INDEX IF NOT EXISTS idx_wf_word ON word_frequency(word);",
+         CREATE INDEX IF NOT EXISTS idx_wf_word ON word_frequency(word);
+         CREATE TABLE IF NOT EXISTS pinyin_initial (pinyin TEXT PRIMARY KEY, char TEXT, example TEXT);
+         CREATE TABLE IF NOT EXISTS pinyin_final (pinyin TEXT PRIMARY KEY, char TEXT, example TEXT);
+         CREATE TABLE IF NOT EXISTS pinyin_combo (initial TEXT, final TEXT, combo TEXT, PRIMARY KEY (initial, final));",
     )
     .map_err(|e| e.to_string())?;
 
@@ -85,6 +88,49 @@ fn generate(path: &Path) -> Result<(), String> {
                 rusqlite::params![w],
             )
             .map_err(|e| e.to_string())?;
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+    }
+
+    // 拼音声母/韵母/组合
+    let pinyin_json = std::fs::read_to_string(data_dir.join("pinyin_combos.json"))
+        .map_err(|e| e.to_string())?;
+    let pinyin_data: serde_json::Value =
+        serde_json::from_str(&pinyin_json).map_err(|e| e.to_string())?;
+    {
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
+        for item in pinyin_data["initials"].as_array().unwrap_or(&vec![]) {
+            let pinyin = item["pinyin"].as_str().unwrap_or("");
+            let char = item["char"].as_str().unwrap_or("");
+            let example = item["example"].as_str().unwrap_or("");
+            tx.execute(
+                "INSERT OR IGNORE INTO pinyin_initial (pinyin, char, example) VALUES (?1, ?2, ?3)",
+                rusqlite::params![pinyin, char, example],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        for item in pinyin_data["finals"].as_array().unwrap_or(&vec![]) {
+            let pinyin = item["pinyin"].as_str().unwrap_or("");
+            let char = item["char"].as_str().unwrap_or("");
+            let example = item["example"].as_str().unwrap_or("");
+            tx.execute(
+                "INSERT OR IGNORE INTO pinyin_final (pinyin, char, example) VALUES (?1, ?2, ?3)",
+                rusqlite::params![pinyin, char, example],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        if let Some(combos) = pinyin_data["combos"].as_object() {
+            for (initial, finals_map) in combos {
+                if let Some(finals_map) = finals_map.as_object() {
+                    for (final_py, combo) in finals_map {
+                        tx.execute(
+                            "INSERT OR IGNORE INTO pinyin_combo (initial, final, combo) VALUES (?1, ?2, ?3)",
+                            rusqlite::params![initial, final_py, combo.as_str().unwrap_or("")],
+                        )
+                        .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
         }
         tx.commit().map_err(|e| e.to_string())?;
     }
@@ -200,5 +246,34 @@ pub fn hanzi_svg(char: &str) -> Option<String> {
             |row| row.get::<_, String>(0),
         )
         .ok()
+    })
+}
+
+
+/// 拼音声母/韵母/合法组合（拼音组合学习）
+pub fn pinyin_combos() -> (Vec<(String, String, String)>, Vec<(String, String, String)>, Vec<(String, String, String)>) {
+    with_db(|conn| {
+        let initials = {
+            let mut stmt = conn.prepare("SELECT pinyin, char, example FROM pinyin_initial").unwrap();
+            stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .collect()
+        };
+        let finals = {
+            let mut stmt = conn.prepare("SELECT pinyin, char, example FROM pinyin_final").unwrap();
+            stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .collect()
+        };
+        let combos = {
+            let mut stmt = conn.prepare("SELECT initial, final, combo FROM pinyin_combo").unwrap();
+            stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .collect()
+        };
+        (initials, finals, combos)
     })
 }

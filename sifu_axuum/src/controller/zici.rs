@@ -67,6 +67,33 @@ pub async fn get_word_frequency(
     Ok(Json(ApiResponse::ok(data)))
 }
 
+pub async fn get_pinyin_data() -> ApiResult<Json<ApiResponse<serde_json::Value>>> {
+    let (initials, finals, combos) = zici_db::pinyin_combos();
+    let initial_list: Vec<serde_json::Value> = initials
+        .into_iter()
+        .map(|(pinyin, char, example)| serde_json::json!({"pinyin": pinyin, "char": char, "example": example}))
+        .collect();
+    let final_list: Vec<serde_json::Value> = finals
+        .into_iter()
+        .map(|(pinyin, char, example)| serde_json::json!({"pinyin": pinyin, "char": char, "example": example}))
+        .collect();
+    let combo_map: serde_json::Map<String, serde_json::Value> = {
+        let mut map = serde_json::Map::new();
+        for (initial, final_py, combo) in combos {
+            map.entry(initial)
+                .or_insert_with(|| serde_json::json!({}))
+                .as_object_mut()
+                .map(|m| m.insert(final_py, serde_json::Value::String(combo)));
+        }
+        map
+    };
+    Ok(Json(ApiResponse::ok(serde_json::json!({
+        "initials": initial_list,
+        "finals": final_list,
+        "combos": serde_json::Value::Object(combo_map),
+    }))))
+}
+
 pub async fn get_hanzi_svg(
     Query(q): Query<HanziSvgQuery>,
 ) -> ApiResult<Json<ApiResponse<serde_json::Value>>> {
@@ -87,6 +114,7 @@ pub fn zici_routes() -> axum::Router {
         .route("/words", axum::routing::get(get_words))
         .route("/word-frequency", axum::routing::get(get_word_frequency))
         .route("/hanzi/svg", axum::routing::get(get_hanzi_svg))
+        .route("/pinyin", axum::routing::get(get_pinyin_data))
 }
 
 #[allow(unused)]
