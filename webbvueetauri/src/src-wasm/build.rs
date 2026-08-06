@@ -2,7 +2,7 @@ use std::io::Write;
 
 fn main() {
     let json_path = format!(
-        "{}/../../public/word_frequency_list.json",
+        "{}/../../../common/src/front_can_do/zici_data/word_frequency_list.json",
         std::env::var("CARGO_MANIFEST_DIR").unwrap()
     );
     let json =

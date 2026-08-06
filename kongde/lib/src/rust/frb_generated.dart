@@ -29,6 +29,7 @@ import 'api/wifi_api/note.dart';
 import 'api/wifi_api/song.dart';
 import 'api/wifi_api/user.dart';
 import 'api/wifi_api/webrtc.dart';
+import 'api/zici.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -92,7 +93,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1616103180;
+  int get rustContentHash => -1915617743;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -514,6 +515,13 @@ abstract class RustLibApi extends BaseApi {
   Future<Uint8List> crateApiWifiApiDictXiandaihanyuResourceForDart({
     required String resourcePath,
   });
+
+  Future<List<String>> crateApiZiciZiciNewChars({
+    required int grade,
+    required int term,
+  });
+
+  Future<List<String>> crateApiZiciZiciNewWords();
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_ApiClient;
@@ -4278,6 +4286,67 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         debugName: "xiandaihanyu_resource_for_dart",
         argNames: ["resourcePath"],
       );
+
+  @override
+  Future<List<String>> crateApiZiciZiciNewChars({
+    required int grade,
+    required int term,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_u_8(grade, serializer);
+          sse_encode_u_8(term, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 120,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiZiciZiciNewCharsConstMeta,
+        argValues: [grade, term],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiZiciZiciNewCharsConstMeta => const TaskConstMeta(
+    debugName: "zici_new_chars",
+    argNames: ["grade", "term"],
+  );
+
+  @override
+  Future<List<String>> crateApiZiciZiciNewWords() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 121,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiZiciZiciNewWordsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiZiciZiciNewWordsConstMeta =>
+      const TaskConstMeta(debugName: "zici_new_words", argNames: []);
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_ApiClient => wire

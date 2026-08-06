@@ -29,6 +29,7 @@ import 'api/wifi_api/note.dart';
 import 'api/wifi_api/song.dart';
 import 'api/wifi_api/user.dart';
 import 'api/wifi_api/webrtc.dart';
+import 'api/zici.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;

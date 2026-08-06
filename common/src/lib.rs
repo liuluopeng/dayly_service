@@ -85,6 +85,8 @@ pub mod front_can_do {
     pub mod snake;
     /// 俄罗斯方块游戏
     pub mod tetris;
+    /// 字词学习数据（生字表/生词表）
+    pub mod zici;
     /// 环境白噪音合成（白/粉红/棕/雨声）
     pub mod noise;
     /// 时间戳工具
