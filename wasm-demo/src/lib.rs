@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use common::api::{
     client::ApiClient,
     clipboard::get_clipboard_history,
@@ -1357,8 +1358,8 @@ thread_local! {
     static SNAKE_G: RefCell<Snake> = RefCell::new(Snake::new());
     static MSWEEP: RefCell<Minesweeper> = RefCell::new(Minesweeper::new());
     static TETRIS_G: RefCell<Tetris> = RefCell::new(Tetris::new());
-    static GAME_SNAKE_TIMER: RefCell<Option<i32>> = RefCell::new(None);
-    static GAME_TETRIS_TIMER: RefCell<Option<i32>> = RefCell::new(None);
+    static GAME_SNAKE_TIMER: RefCell<Option<i32>> = const { RefCell::new(None) };
+    static GAME_TETRIS_TIMER: RefCell<Option<i32>> = const { RefCell::new(None) };
 }
 
 fn canvas2d(id: &str) -> web_sys::CanvasRenderingContext2d {
