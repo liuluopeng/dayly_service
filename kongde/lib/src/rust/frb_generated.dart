@@ -521,7 +521,7 @@ abstract class RustLibApi extends BaseApi {
     required int term,
   });
 
-  Future<List<String>> crateApiZiciZiciNewWords();
+  Future<List<String>> crateApiZiciZiciNewWords({required String query});
 
   Future<List<WordFrequencyEntry>> crateApiZiciZiciWordFrequencySearch({
     required String query,
@@ -4301,8 +4301,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_u_8(grade, serializer);
-          sse_encode_u_8(term, serializer);
+          sse_encode_u_32(grade, serializer);
+          sse_encode_u_32(term, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -4312,7 +4312,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_String,
-          decodeErrorData: null,
+          decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiZiciZiciNewCharsConstMeta,
         argValues: [grade, term],
@@ -4327,11 +4327,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  Future<List<String>> crateApiZiciZiciNewWords() {
+  Future<List<String>> crateApiZiciZiciNewWords({required String query}) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(query, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -4341,17 +4342,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_String,
-          decodeErrorData: null,
+          decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiZiciZiciNewWordsConstMeta,
-        argValues: [],
+        argValues: [query],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta get kCrateApiZiciZiciNewWordsConstMeta =>
-      const TaskConstMeta(debugName: "zici_new_words", argNames: []);
+      const TaskConstMeta(debugName: "zici_new_words", argNames: ["query"]);
 
   @override
   Future<List<WordFrequencyEntry>> crateApiZiciZiciWordFrequencySearch({
@@ -4373,7 +4374,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_word_frequency_entry,
-          decodeErrorData: null,
+          decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiZiciZiciWordFrequencySearchConstMeta,
         argValues: [query, limit],

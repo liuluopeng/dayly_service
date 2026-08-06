@@ -19,7 +19,6 @@ use common::front_can_do::{
     snake::Snake,
     tetris::Tetris,
     timestamp, uuid,
-    zici::{new_chars_for_grade, NEW_WORDS_DATA},
 };
 use my_type::dto::SongWithUrl;
 use std::cell::RefCell;
@@ -702,36 +701,57 @@ async fn do_notes_refresh() {
 // ==================== ZICI CHARS ====================
 
 fn do_zici_show_chars(grade: usize, term: usize) {
-    let chars_list = new_chars_for_grade(grade, term);
-    if chars_list.is_empty() {
-        set_text("zici-char-display", "无数据");
-        return;
-    }
-    let chars: String = chars_list.into_iter().map(|c| format!("<span style='display:inline-block;padding:4px 6px;margin:2px;background:#2D2D2D;border-radius:4px;font-size:20px'>{}</span>", c)).collect();
-    set_html(
-        "zici-char-display",
-        &format!("<div style='line-height:2.5'>{}</div>", chars),
-    );
+    let client = CLIENT.with(|c| c.borrow().clone());
+    set_text("zici-char-display", "加载中...");
+    spawn_local(async move {
+        let chars_list: Vec<String> = match &client {
+            Some(client) => common::api::zici::zici_chars(client, grade as u32, term as u32)
+                .await
+                .ok()
+                .and_then(|r| r.data)
+                .unwrap_or_default(),
+            None => Vec::new(),
+        };
+        if chars_list.is_empty() {
+            set_text("zici-char-display", "无数据");
+            return;
+        }
+        let chars: String = chars_list.iter().map(|c| format!("<span style='display:inline-block;padding:4px 6px;margin:2px;background:#2D2D2D;border-radius:4px;font-size:20px'>{}</span>", c)).collect();
+        set_html(
+            "zici-char-display",
+            &format!("<div style='line-height:2.5'>{}</div>", chars),
+        );
+    });
 }
 
 // ==================== ZICI WORDS ====================
 
 fn do_zici_word_search() {
     let q = input("zici-word-search");
-    let html: String = if q.is_empty() {
-        NEW_WORDS_DATA.iter().enumerate().map(|(i, w)| {
+    let client = CLIENT.with(|c| c.borrow().clone());
+    set_text("zici-word-display", "加载中...");
+    spawn_local(async move {
+        let words: Vec<String> = match &client {
+            Some(client) => common::api::zici::zici_words(client, &q, 1, 500)
+                .await
+                .ok()
+                .and_then(|r| r.data)
+                .and_then(|v| v["data"].as_array().cloned())
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect(),
+            None => Vec::new(),
+        };
+        let html: String = words.iter().enumerate().map(|(i, w)| {
             format!("<span style='display:inline-block;padding:4px 8px;margin:3px;background:#2D2D2D;border-radius:4px;font-size:14px'>{} <span style='color:#888'>({})</span></span>", w, i + 1)
-        }).collect()
-    } else {
-        NEW_WORDS_DATA.iter().enumerate().filter(|(_, w)| w.contains(&q)).map(|(i, w)| {
-            format!("<span style='display:inline-block;padding:4px 8px;margin:3px;background:#2D2D2D;border-radius:4px;font-size:14px'>{} <span style='color:#888'>({})</span></span>", w, i + 1)
-        }).collect::<Vec<_>>().join("")
-    };
-    if html.is_empty() {
-        set_text("zici-word-display", "无匹配结果");
-    } else {
-        set_html("zici-word-display", &html);
-    }
+        }).collect();
+        if html.is_empty() {
+            set_text("zici-word-display", "无匹配结果");
+        } else {
+            set_html("zici-word-display", &html);
+        }
+    });
 }
 
 // ==================== SEARCH HISTORY ====================

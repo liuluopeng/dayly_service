@@ -49,6 +49,8 @@ pub mod api {
     pub mod videos;
     /// 白噪音资源 API
     pub mod whitenoise;
+    /// 字词学习 API
+    pub mod zici;
 }
 
 /// 图片主色提取（非 wasm 目标）
@@ -91,6 +93,4 @@ pub mod front_can_do {
     pub mod timestamp;
     /// UUID 生成与校验
     pub mod uuid;
-    /// 字词学习数据（生字表/生词表）
-    pub mod zici;
 }

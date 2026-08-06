@@ -6,15 +6,14 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 按年级/学期返回生字表（grade 1-6，term 1-2）
+/// 生字表：按年级/学期（grade 1-6，term 1-2）
 Future<List<String>> ziciNewChars({required int grade, required int term}) =>
     RustLib.instance.api.crateApiZiciZiciNewChars(grade: grade, term: term);
 
-/// 返回全部生词表（2182 个）
-Future<List<String>> ziciNewWords() =>
-    RustLib.instance.api.crateApiZiciZiciNewWords();
+/// 生词表：搜索（返回最多 500 个）
+Future<List<String>> ziciNewWords({required String query}) =>
+    RustLib.instance.api.crateApiZiciZiciNewWords(query: query);
 
-/// 词频搜索（首次调用解析 3.2MB json 并缓存）
 Future<List<WordFrequencyEntry>> ziciWordFrequencySearch({
   required String query,
   required int limit,
@@ -23,7 +22,7 @@ Future<List<WordFrequencyEntry>> ziciWordFrequencySearch({
   limit: limit,
 );
 
-/// 词频搜索（返回 word/pinyin/frequency/explanation）
+/// 词频搜索（含释义）
 class WordFrequencyEntry {
   final String word;
   final String pinyin;

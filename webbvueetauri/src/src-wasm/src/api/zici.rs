@@ -4,7 +4,9 @@ use wasm_bindgen::prelude::*;
 
 use web_sys::console;
 
-use common::front_can_do::zici::{NEW_CHARS_DATA, NEW_WORDS_DATA};
+#[path = "zici_data.rs"]
+mod zici_data;
+pub use zici_data::{NEW_CHARS_DATA, NEW_WORDS_DATA};
 
 #[wasm_bindgen]
 pub fn my_console_log(s: &str) {

@@ -22,7 +22,7 @@ class _ZiciWordsPageState extends State<ZiciWordsPage> {
   }
 
   Future<void> _load() async {
-    final words = await ziciNewWords();
+    final words = await ziciNewWords(query: "");
     if (mounted) {
       setState(() {
         _allWords = words;
