@@ -93,8 +93,8 @@ fn generate(path: &Path) -> Result<(), String> {
     }
 
     // 拼音声母/韵母/组合
-    let pinyin_json = std::fs::read_to_string(data_dir.join("pinyin_combos.json"))
-        .map_err(|e| e.to_string())?;
+    let pinyin_json =
+        std::fs::read_to_string(data_dir.join("pinyin_combos.json")).map_err(|e| e.to_string())?;
     let pinyin_data: serde_json::Value =
         serde_json::from_str(&pinyin_json).map_err(|e| e.to_string())?;
     {
@@ -249,26 +249,35 @@ pub fn hanzi_svg(char: &str) -> Option<String> {
     })
 }
 
-
 /// 拼音声母/韵母/合法组合（拼音组合学习）
-pub fn pinyin_combos() -> (Vec<(String, String, String)>, Vec<(String, String, String)>, Vec<(String, String, String)>) {
+pub fn pinyin_combos() -> (
+    Vec<(String, String, String)>,
+    Vec<(String, String, String)>,
+    Vec<(String, String, String)>,
+) {
     with_db(|conn| {
         let initials = {
-            let mut stmt = conn.prepare("SELECT pinyin, char, example FROM pinyin_initial").unwrap();
+            let mut stmt = conn
+                .prepare("SELECT pinyin, char, example FROM pinyin_initial")
+                .unwrap();
             stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
                 .unwrap()
                 .filter_map(|r| r.ok())
                 .collect()
         };
         let finals = {
-            let mut stmt = conn.prepare("SELECT pinyin, char, example FROM pinyin_final").unwrap();
+            let mut stmt = conn
+                .prepare("SELECT pinyin, char, example FROM pinyin_final")
+                .unwrap();
             stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
                 .unwrap()
                 .filter_map(|r| r.ok())
                 .collect()
         };
         let combos = {
-            let mut stmt = conn.prepare("SELECT initial, final, combo FROM pinyin_combo").unwrap();
+            let mut stmt = conn
+                .prepare("SELECT initial, final, combo FROM pinyin_combo")
+                .unwrap();
             stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
                 .unwrap()
                 .filter_map(|r| r.ok())
