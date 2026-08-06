@@ -7,7 +7,6 @@ import 'package:kongde/widgets/common_app_bar.dart';
 import 'package:kongde/pages/universal_video_player_page.dart';
 import 'package:kongde/pages/image_viewer_page.dart';
 import 'package:kongde/pages/pdf_viewer_page.dart';
-import 'package:kongde/pages/epub_reader_page.dart';
 import 'package:kongde/utils.dart';
 
 class FileManagerPage extends StatefulWidget {
@@ -76,8 +75,6 @@ class _FileManagerPageState extends State<FileManagerPage> {
       _openVideo(entry);
     } else if (type == _FileType.pdf) {
       _openPdf(entry);
-    } else if (type == _FileType.epub) {
-      _openEpub(entry);
     } else {
       setState(() {
         _selectedFile = entry;
@@ -121,12 +118,6 @@ class _FileManagerPageState extends State<FileManagerPage> {
     final url = await getFileUrlForDart(path: entry.path);
     if (!mounted) return;
     Get.to(() => PdfViewerPage(url: url, fileName: entry.name));
-  }
-
-  void _openEpub(FileEntryForDart entry) async {
-    final url = await getFileUrlForDart(path: entry.path);
-    if (!mounted) return;
-    Get.to(() => EpubReaderPage(url: url, fileName: entry.name));
   }
 
   @override
@@ -349,15 +340,13 @@ class _FileManagerPageState extends State<FileManagerPage> {
         return Center(child: Text('fileManager.audioPreview'.tr));
       case _FileType.pdf:
         return Center(child: Text('fileManager.pdfPreview'.tr));
-      case _FileType.epub:
-        return Center(child: Text('fileManager.epubPreview'.tr));
       default:
         return Center(child: Text('fileManager.noPreview'.tr, style: TextStyle(color: Colors.grey[600])));
     }
   }
 }
 
-enum _FileType { video, image, audio, pdf, epub, text, other }
+enum _FileType { video, image, audio, pdf, text, other }
 
 _FileType _getFileType(String name) {
   final ext = name.split('.').last.toLowerCase();
@@ -365,7 +354,6 @@ _FileType _getFileType(String name) {
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].contains(ext)) return _FileType.image;
   if (['mp3', 'flac', 'wav', 'ogg', 'aac', 'm4a'].contains(ext)) return _FileType.audio;
   if (['pdf'].contains(ext)) return _FileType.pdf;
-  if (['epub'].contains(ext)) return _FileType.epub;
   if (['txt', 'md', 'log', 'nfo', 'srt', 'ass', 'json', 'xml', 'csv'].contains(ext)) return _FileType.text;
   return _FileType.other;
 }
@@ -377,7 +365,6 @@ String _getFileIcon(String name, bool isDir) {
     case _FileType.image: return '🖼️';
     case _FileType.audio: return '🎵';
     case _FileType.pdf: return '📄';
-    case _FileType.epub: return '📖';
     case _FileType.text: return '📝';
     default: return '📄';
   }
