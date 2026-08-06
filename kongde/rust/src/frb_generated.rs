@@ -43,7 +43,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1211351968;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -2114646350;
 
 // Section: executor
 
@@ -213,6 +213,45 @@ fn wire__crate__api__utils__base64__base64_encode_wasm_impl(
                     Result::<_, ()>::Ok(crate::api::utils::base64::base64_encode_wasm(&api_input))?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__noise__brown_noise_pcm_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "brown_noise_pcm",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_duration_ms = <u32>::sse_decode(&mut deserializer);
+            let api_sample_rate = <u32>::sse_decode(&mut deserializer);
+            let api_seed = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::noise::brown_noise_pcm(
+                        api_duration_ms,
+                        api_sample_rate,
+                        api_seed,
+                    ))?;
+                    Ok(output_ok)
+                })())
+            }
         },
     )
 }
@@ -831,6 +870,171 @@ fn wire__crate__api__color__extract_colors_from_paths_impl(
                     let output_ok = Result::<_, ()>::Ok(
                         crate::api::color::extract_colors_from_paths(api_image_paths),
                     )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__game2048_can_move_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "game2048_can_move",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok =
+                        Result::<_, ()>::Ok(crate::api::games::game2048_can_move(api_dir))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__game2048_get_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "game2048_get",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::game2048_get())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__game2048_move_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "game2048_move",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::game2048_move(api_dir))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__game2048_new_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "game2048_new",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::api::games::game2048_new();
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__game2048_undo_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "game2048_undo",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::game2048_undo())?;
                     Ok(output_ok)
                 })())
             }
@@ -2811,6 +3015,143 @@ fn wire__crate__api__color__merge_similar_colors_impl(
         },
     )
 }
+fn wire__crate__api__games__minesweeper_click_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "minesweeper_click",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_x = <usize>::sse_decode(&mut deserializer);
+            let api_y = <usize>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok =
+                        Result::<_, ()>::Ok(crate::api::games::minesweeper_click(api_x, api_y))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__minesweeper_get_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "minesweeper_get",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::minesweeper_get())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__minesweeper_new_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "minesweeper_new",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::api::games::minesweeper_new();
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__minesweeper_toggle_flag_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "minesweeper_toggle_flag",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_x = <usize>::sse_decode(&mut deserializer);
+            let api_y = <usize>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::games::minesweeper_toggle_flag(api_x, api_y),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__utils__calculator__multiply_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2840,6 +3181,84 @@ fn wire__crate__api__utils__calculator__multiply_impl(
                     Result::<_, ()>::Ok(crate::api::utils::calculator::multiply(api_a, api_b))?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__noise__pink_noise_pcm_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "pink_noise_pcm",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_duration_ms = <u32>::sse_decode(&mut deserializer);
+            let api_sample_rate = <u32>::sse_decode(&mut deserializer);
+            let api_seed = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::noise::pink_noise_pcm(
+                        api_duration_ms,
+                        api_sample_rate,
+                        api_seed,
+                    ))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__noise__rain_noise_pcm_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "rain_noise_pcm",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_duration_ms = <u32>::sse_decode(&mut deserializer);
+            let api_sample_rate = <u32>::sse_decode(&mut deserializer);
+            let api_seed = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::noise::rain_noise_pcm(
+                        api_duration_ms,
+                        api_sample_rate,
+                        api_seed,
+                    ))?;
+                    Ok(output_ok)
+                })())
+            }
         },
     )
 }
@@ -3347,6 +3766,270 @@ fn wire__crate__api__runtime__shared_rt_impl(
         },
     )
 }
+fn wire__crate__api__games__snake_get_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "snake_get",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::snake_get())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__snake_new_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "snake_new",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::api::games::snake_new();
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__snake_set_dir_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "snake_set_dir",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::api::games::snake_set_dir(api_dir);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__snake_tick_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "snake_tick",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::snake_tick())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__tetris_get_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "tetris_get",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::tetris_get())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__tetris_move_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "tetris_move",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::tetris_move(api_dir))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__tetris_new_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "tetris_new",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::api::games::tetris_new();
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__games__tetris_tick_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "tetris_tick",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::games::tetris_tick())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__utils__timestamp__timestamp_to_local_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -3533,6 +4216,45 @@ fn wire__crate__api__utils__uuid__validate_uuid_impl(
         },
     )
 }
+fn wire__crate__api__noise__white_noise_pcm_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "white_noise_pcm",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_duration_ms = <u32>::sse_decode(&mut deserializer);
+            let api_sample_rate = <u32>::sse_decode(&mut deserializer);
+            let api_seed = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::noise::white_noise_pcm(
+                        api_duration_ms,
+                        api_sample_rate,
+                        api_seed,
+                    ))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__wifi_api__dict__xiandaihanyu_resource_for_dart_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -3564,6 +4286,119 @@ fn wire__crate__api__wifi_api__dict__xiandaihanyu_resource_for_dart_impl(
                             api_resource_path,
                         )
                         .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__zici__zici_new_chars_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "zici_new_chars",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_grade = <u32>::sse_decode(&mut deserializer);
+            let api_term = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::zici::zici_new_chars(api_grade, api_term).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__zici__zici_new_words_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "zici_new_words",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_query = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::zici::zici_new_words(api_query).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__zici__zici_word_frequency_search_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "zici_word_frequency_search",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_query = <String>::sse_decode(&mut deserializer);
+            let api_limit = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::zici::zici_word_frequency_search(api_query, api_limit)
+                                .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3920,6 +4755,13 @@ impl SseDecode for crate::api::wifi_api::files::DirListingForDart {
     }
 }
 
+impl SseDecode for f32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_f32::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for f64 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3961,6 +4803,20 @@ impl SseDecode for crate::api::wifi_api::files::FileInfoForDart {
             size: var_size,
             last_modified: var_lastModified,
             content_type: var_contentType,
+        };
+    }
+}
+
+impl SseDecode for crate::api::games::Game2048State {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_board = <Vec<u32>>::sse_decode(deserializer);
+        let mut var_score = <u64>::sse_decode(deserializer);
+        let mut var_over = <bool>::sse_decode(deserializer);
+        return crate::api::games::Game2048State {
+            board: var_board,
+            score: var_score,
+            over: var_over,
         };
     }
 }
@@ -4066,6 +4922,18 @@ impl SseDecode for Vec<String> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<String>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<bool> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<bool>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -4181,6 +5049,30 @@ impl SseDecode for Vec<crate::api::wifi_api::note::NoteSummary> {
     }
 }
 
+impl SseDecode for Vec<f32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<f32>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<u32>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -4224,6 +5116,20 @@ impl SseDecode for Vec<crate::api::wifi_api::dict::Word> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<crate::api::wifi_api::dict::Word>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::api::zici::WordFrequencyEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::zici::WordFrequencyEntry>::sse_decode(
+                deserializer,
+            ));
         }
         return ans_;
     }
@@ -4321,6 +5227,24 @@ impl SseDecode for crate::api::wifi_api::melatonin::MelatoninMovieListForDart {
             video_paths: var_videoPaths,
             cover_url: var_coverUrl,
             video_urls: var_videoUrls,
+        };
+    }
+}
+
+impl SseDecode for crate::api::games::MinesweeperState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_cells = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_revealed = <Vec<bool>>::sse_decode(deserializer);
+        let mut var_flagged = <Vec<bool>>::sse_decode(deserializer);
+        let mut var_over = <bool>::sse_decode(deserializer);
+        let mut var_won = <bool>::sse_decode(deserializer);
+        return crate::api::games::MinesweeperState {
+            cells: var_cells,
+            revealed: var_revealed,
+            flagged: var_flagged,
+            over: var_over,
+            won: var_won,
         };
     }
 }
@@ -4470,6 +5394,20 @@ impl SseDecode for (u8, u8, u8) {
     }
 }
 
+impl SseDecode for crate::api::games::SnakeState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_cells = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_score = <u32>::sse_decode(deserializer);
+        let mut var_over = <bool>::sse_decode(deserializer);
+        return crate::api::games::SnakeState {
+            cells: var_cells,
+            score: var_score,
+            over: var_over,
+        };
+    }
+}
+
 impl SseDecode for crate::api::wifi_api::song::SongPaginatedResponseForDart {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -4507,6 +5445,20 @@ impl SseDecode for crate::api::wifi_api::song::SongWithUrlForDart {
             artist: var_artist,
             cover_path: var_coverPath,
             cover_url: var_coverUrl,
+        };
+    }
+}
+
+impl SseDecode for crate::api::games::TetrisState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_board = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_score = <u32>::sse_decode(deserializer);
+        let mut var_over = <bool>::sse_decode(deserializer);
+        return crate::api::games::TetrisState {
+            board: var_board,
+            score: var_score,
+            over: var_over,
         };
     }
 }
@@ -4577,6 +5529,22 @@ impl SseDecode for crate::api::wifi_api::dict::Word {
     }
 }
 
+impl SseDecode for crate::api::zici::WordFrequencyEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_word = <String>::sse_decode(deserializer);
+        let mut var_pinyin = <String>::sse_decode(deserializer);
+        let mut var_frequency = <u32>::sse_decode(deserializer);
+        let mut var_explanation = <String>::sse_decode(deserializer);
+        return crate::api::zici::WordFrequencyEntry {
+            word: var_word,
+            pinyin: var_pinyin,
+            frequency: var_frequency,
+            explanation: var_explanation,
+        };
+    }
+}
+
 impl SseDecode for crate::api::wifi_api::dict::WordHistory {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -4603,353 +5571,384 @@ fn pde_ffi_dispatcher_primary_impl(
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
         3 => wire__crate__api__color__are_colors_similar_impl(port, ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__wifi_api__init__clear_client_token_impl(
+        6 => wire__crate__api__noise__brown_noise_pcm_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__wifi_api__init__clear_client_token_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__db__clear_local_songs_impl(port, ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__wifi_api__dict__collins_resource_for_dart_impl(
+        8 => wire__crate__api__db__clear_local_songs_impl(port, ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__wifi_api__dict__collins_resource_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__color__color_distance_impl(port, ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__color__color_to_int_impl(port, ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__wifi_api__chat__connect_chat_ws_impl(
+        10 => wire__crate__api__color__color_distance_impl(port, ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__color__color_to_int_impl(port, ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__wifi_api__chat__connect_chat_ws_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__wifi_api__webrtc__connect_webrtc_impl(
+        13 => wire__crate__api__wifi_api__webrtc__connect_webrtc_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__color__contrast_ratio_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__wifi_api__note__create_note_for_dart_impl(
+        14 => wire__crate__api__color__contrast_ratio_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__wifi_api__note__create_note_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__utils__gif_decode__decode_gif_all_frames_impl(
+        16 => wire__crate__api__utils__gif_decode__decode_gif_all_frames_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__utils__gif_decode__decode_gif_frame_impl(
+        17 => wire__crate__api__utils__gif_decode__decode_gif_frame_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__utils__gif_decode__decode_gif_frame_count_impl(
+        18 => wire__crate__api__utils__gif_decode__decode_gif_frame_count_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__utils__gif_decode__decode_gif_preview_frames_impl(
+        19 => wire__crate__api__utils__gif_decode__decode_gif_preview_frames_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__utils__gif_decode__decode_gif_stream_impl(
+        20 => wire__crate__api__utils__gif_decode__decode_gif_stream_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        20 => wire__crate__api__color__extract_colors_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__color__extract_colors_from_path_impl(
+        21 => wire__crate__api__color__extract_colors_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__color__extract_colors_from_path_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__color__extract_colors_from_paths_impl(
+        23 => wire__crate__api__color__extract_colors_from_paths_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        25 => {
+        24 => wire__crate__api__games__game2048_can_move_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__games__game2048_get_impl(port, ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__games__game2048_move_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__games__game2048_new_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__games__game2048_undo_impl(port, ptr, rust_vec_len, data_len),
+        31 => {
             wire__crate__api__utils__uuid__generate_uuid_v4_impl(port, ptr, rust_vec_len, data_len)
         }
-        26 => {
+        32 => {
             wire__crate__api__utils__uuid__generate_uuid_v5_impl(port, ptr, rust_vec_len, data_len)
         }
-        27 => {
+        33 => {
             wire__crate__api__utils__uuid__generate_uuid_v6_impl(port, ptr, rust_vec_len, data_len)
         }
-        28 => {
+        34 => {
             wire__crate__api__utils__uuid__generate_uuid_v7_impl(port, ptr, rust_vec_len, data_len)
         }
-        29 => wire__crate__api__wifi_api__song__get_all_songs_for_dart_impl(
+        35 => wire__crate__api__wifi_api__song__get_all_songs_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        30 => wire__crate__api__wifi_api__melatonin__get_bt_list_for_dart_impl(
+        36 => wire__crate__api__wifi_api__melatonin__get_bt_list_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__wifi_api__init__get_client_base_url_impl(
+        37 => wire__crate__api__wifi_api__init__get_client_base_url_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        32 => wire__crate__api__wifi_api__init__get_client_clone_impl(
+        38 => wire__crate__api__wifi_api__init__get_client_clone_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        33 => wire__crate__api__wifi_api__clipboard__get_clipboard_history_for_dart_impl(
+        39 => wire__crate__api__wifi_api__clipboard__get_clipboard_history_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        34 => wire__crate__api__utils__timestamp__get_current_local_time_impl(
+        40 => wire__crate__api__utils__timestamp__get_current_local_time_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__utils__timestamp__get_current_timestamp_impl(
+        41 => wire__crate__api__utils__timestamp__get_current_timestamp_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        36 => wire__crate__api__utils__timestamp__get_current_utc_time_impl(
+        42 => wire__crate__api__utils__timestamp__get_current_utc_time_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__wifi_api__files__get_file_info_for_dart_impl(
+        43 => wire__crate__api__wifi_api__files__get_file_info_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        38 => wire__crate__api__wifi_api__files__get_file_url_for_dart_impl(
+        44 => wire__crate__api__wifi_api__files__get_file_url_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => wire__crate__api__db__get_local_songs_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__wifi_api__melatonin__get_melatonin_movie_by_id_for_dart_impl(
+        45 => wire__crate__api__db__get_local_songs_impl(port, ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__wifi_api__melatonin__get_melatonin_movie_by_id_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        41 => wire__crate__api__wifi_api__melatonin__get_melatonin_movies_for_dart_impl(
+        47 => wire__crate__api__wifi_api__melatonin__get_melatonin_movies_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        42 => wire__crate__api__wifi_api__melatonin__get_movies_by_actor_for_dart_impl(
+        48 => wire__crate__api__wifi_api__melatonin__get_movies_by_actor_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        43 => wire__crate__api__wifi_api__melatonin__get_movies_by_genre_for_dart_impl(
+        49 => wire__crate__api__wifi_api__melatonin__get_movies_by_genre_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        44 => wire__crate__api__wifi_api__note__get_note_for_dart_impl(
+        50 => wire__crate__api__wifi_api__note__get_note_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => wire__crate__api__wifi_api__dict__get_recent_history_for_dart_impl(
+        51 => wire__crate__api__wifi_api__dict__get_recent_history_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        46 => wire__crate__api__wifi_api__song__get_song_file_for_dart_impl(
+        52 => wire__crate__api__wifi_api__song__get_song_file_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        47 => wire__crate__api__wifi_api__song__get_song_lyrics_for_dart_impl(
+        53 => wire__crate__api__wifi_api__song__get_song_lyrics_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        48 => wire__crate__api__wifi_api__dict__get_top_words_for_dart_impl(
+        54 => wire__crate__api__wifi_api__dict__get_top_words_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        49 => wire__crate__api__wifi_api__user__get_user_settings_for_dart_impl(
+        55 => wire__crate__api__wifi_api__user__get_user_settings_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        52 => wire__crate__api__db__import_local_songs_impl(port, ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__wifi_api__init__init_client_impl(port, ptr, rust_vec_len, data_len),
-        55 => wire__crate__api__db__init_db_impl(port, ptr, rust_vec_len, data_len),
-        57 => wire__crate__api__color__invert_color_impl(port, ptr, rust_vec_len, data_len),
-        58 => wire__crate__api__color__is_monochromatic_impl(port, ptr, rust_vec_len, data_len),
-        59 => wire__crate__api__color__is_too_dark_impl(port, ptr, rust_vec_len, data_len),
-        60 => wire__crate__api__color__is_vibrant_impl(port, ptr, rust_vec_len, data_len),
-        61 => wire__crate__api__db__kv_clear_impl(port, ptr, rust_vec_len, data_len),
-        62 => wire__crate__api__db__kv_delete_impl(port, ptr, rust_vec_len, data_len),
-        63 => wire__crate__api__db__kv_get_impl(port, ptr, rust_vec_len, data_len),
-        64 => wire__crate__api__db__kv_get_double_impl(port, ptr, rust_vec_len, data_len),
-        65 => wire__crate__api__db__kv_get_int_impl(port, ptr, rust_vec_len, data_len),
-        66 => wire__crate__api__db__kv_json_get_impl(port, ptr, rust_vec_len, data_len),
-        67 => wire__crate__api__db__kv_json_set_impl(port, ptr, rust_vec_len, data_len),
-        68 => wire__crate__api__db__kv_keys_impl(port, ptr, rust_vec_len, data_len),
-        69 => wire__crate__api__db__kv_set_impl(port, ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__db__kv_set_double_impl(port, ptr, rust_vec_len, data_len),
-        71 => wire__crate__api__db__kv_set_int_impl(port, ptr, rust_vec_len, data_len),
-        72 => wire__crate__api__wifi_api__dict__ldoce_resource_for_dart_impl(
+        58 => wire__crate__api__db__import_local_songs_impl(port, ptr, rust_vec_len, data_len),
+        59 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
+        60 => wire__crate__api__wifi_api__init__init_client_impl(port, ptr, rust_vec_len, data_len),
+        61 => wire__crate__api__db__init_db_impl(port, ptr, rust_vec_len, data_len),
+        63 => wire__crate__api__color__invert_color_impl(port, ptr, rust_vec_len, data_len),
+        64 => wire__crate__api__color__is_monochromatic_impl(port, ptr, rust_vec_len, data_len),
+        65 => wire__crate__api__color__is_too_dark_impl(port, ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__color__is_vibrant_impl(port, ptr, rust_vec_len, data_len),
+        67 => wire__crate__api__db__kv_clear_impl(port, ptr, rust_vec_len, data_len),
+        68 => wire__crate__api__db__kv_delete_impl(port, ptr, rust_vec_len, data_len),
+        69 => wire__crate__api__db__kv_get_impl(port, ptr, rust_vec_len, data_len),
+        70 => wire__crate__api__db__kv_get_double_impl(port, ptr, rust_vec_len, data_len),
+        71 => wire__crate__api__db__kv_get_int_impl(port, ptr, rust_vec_len, data_len),
+        72 => wire__crate__api__db__kv_json_get_impl(port, ptr, rust_vec_len, data_len),
+        73 => wire__crate__api__db__kv_json_set_impl(port, ptr, rust_vec_len, data_len),
+        74 => wire__crate__api__db__kv_keys_impl(port, ptr, rust_vec_len, data_len),
+        75 => wire__crate__api__db__kv_set_impl(port, ptr, rust_vec_len, data_len),
+        76 => wire__crate__api__db__kv_set_double_impl(port, ptr, rust_vec_len, data_len),
+        77 => wire__crate__api__db__kv_set_int_impl(port, ptr, rust_vec_len, data_len),
+        78 => wire__crate__api__wifi_api__dict__ldoce_resource_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        73 => wire__crate__api__wifi_api__files__list_files_for_dart_impl(
+        79 => wire__crate__api__wifi_api__files__list_files_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        74 => wire__crate__api__wifi_api__note__list_notes_for_dart_impl(
+        80 => wire__crate__api__wifi_api__note__list_notes_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        75 => wire__crate__api__utils__timestamp__local_to_timestamp_impl(
+        81 => wire__crate__api__utils__timestamp__local_to_timestamp_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        76 => wire__crate__api__color__luminance_impl(port, ptr, rust_vec_len, data_len),
-        77 => wire__crate__api__color__merge_similar_colors_impl(port, ptr, rust_vec_len, data_len),
-        79 => wire__crate__api__metadata__read_metadata_impl(port, ptr, rust_vec_len, data_len),
-        80 => {
+        82 => wire__crate__api__color__luminance_impl(port, ptr, rust_vec_len, data_len),
+        83 => wire__crate__api__color__merge_similar_colors_impl(port, ptr, rust_vec_len, data_len),
+        84 => wire__crate__api__games__minesweeper_click_impl(port, ptr, rust_vec_len, data_len),
+        85 => wire__crate__api__games__minesweeper_get_impl(port, ptr, rust_vec_len, data_len),
+        86 => wire__crate__api__games__minesweeper_new_impl(port, ptr, rust_vec_len, data_len),
+        87 => {
+            wire__crate__api__games__minesweeper_toggle_flag_impl(port, ptr, rust_vec_len, data_len)
+        }
+        89 => wire__crate__api__noise__pink_noise_pcm_impl(port, ptr, rust_vec_len, data_len),
+        90 => wire__crate__api__noise__rain_noise_pcm_impl(port, ptr, rust_vec_len, data_len),
+        91 => wire__crate__api__metadata__read_metadata_impl(port, ptr, rust_vec_len, data_len),
+        92 => {
             wire__crate__api__metadata__read_metadata_batch_impl(port, ptr, rust_vec_len, data_len)
         }
-        81 => wire__crate__api__music_cache__read_metadata_cached_impl(
+        93 => wire__crate__api__music_cache__read_metadata_cached_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        82 => wire__crate__api__color__saturation_impl(port, ptr, rust_vec_len, data_len),
-        83 => wire__crate__api__wifi_api__note__save_note_for_dart_impl(
+        94 => wire__crate__api__color__saturation_impl(port, ptr, rust_vec_len, data_len),
+        95 => wire__crate__api__wifi_api__note__save_note_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        84 => wire__crate__api__wifi_api__dict__search_collins_for_dart_impl(
+        96 => wire__crate__api__wifi_api__dict__search_collins_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        85 => wire__crate__api__wifi_api__ggtt__search_ggtt_code_for_dart_impl(
+        97 => wire__crate__api__wifi_api__ggtt__search_ggtt_code_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        86 => wire__crate__api__wifi_api__dict__search_ldoce_for_dart_impl(
+        98 => wire__crate__api__wifi_api__dict__search_ldoce_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        87 => wire__crate__api__wifi_api__note__search_notes_for_dart_impl(
+        99 => wire__crate__api__wifi_api__note__search_notes_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        88 => wire__crate__api__wifi_api__dict__search_xianzaihanyu_for_dart_impl(
+        100 => wire__crate__api__wifi_api__dict__search_xianzaihanyu_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        89 => wire__crate__api__wifi_api__webrtc__send_webrtc_message_impl(
+        101 => wire__crate__api__wifi_api__webrtc__send_webrtc_message_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        90 => wire__crate__api__wifi_api__init__set_client_base_url_impl(
+        102 => wire__crate__api__wifi_api__init__set_client_base_url_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        91 => wire__crate__api__wifi_api__init__set_client_token_impl(
+        103 => wire__crate__api__wifi_api__init__set_client_token_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        92 => wire__crate__api__runtime__shared_rt_impl(port, ptr, rust_vec_len, data_len),
-        93 => wire__crate__api__utils__timestamp__timestamp_to_local_impl(
+        104 => wire__crate__api__runtime__shared_rt_impl(port, ptr, rust_vec_len, data_len),
+        105 => wire__crate__api__games__snake_get_impl(port, ptr, rust_vec_len, data_len),
+        106 => wire__crate__api__games__snake_new_impl(port, ptr, rust_vec_len, data_len),
+        107 => wire__crate__api__games__snake_set_dir_impl(port, ptr, rust_vec_len, data_len),
+        108 => wire__crate__api__games__snake_tick_impl(port, ptr, rust_vec_len, data_len),
+        109 => wire__crate__api__games__tetris_get_impl(port, ptr, rust_vec_len, data_len),
+        110 => wire__crate__api__games__tetris_move_impl(port, ptr, rust_vec_len, data_len),
+        111 => wire__crate__api__games__tetris_new_impl(port, ptr, rust_vec_len, data_len),
+        112 => wire__crate__api__games__tetris_tick_impl(port, ptr, rust_vec_len, data_len),
+        113 => wire__crate__api__utils__timestamp__timestamp_to_local_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        94 => wire__crate__api__utils__timestamp__timestamp_to_utc_impl(
+        114 => wire__crate__api__utils__timestamp__timestamp_to_utc_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        95 => wire__crate__api__wifi_api__user__update_user_settings_for_dart_impl(
+        115 => wire__crate__api__wifi_api__user__update_user_settings_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        96 => wire__crate__api__wifi_api__user__user_login_for_dart_impl(
+        116 => wire__crate__api__wifi_api__user__user_login_for_dart_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        97 => wire__crate__api__utils__uuid__validate_uuid_impl(port, ptr, rust_vec_len, data_len),
-        98 => wire__crate__api__wifi_api__dict__xiandaihanyu_resource_for_dart_impl(
+        117 => wire__crate__api__utils__uuid__validate_uuid_impl(port, ptr, rust_vec_len, data_len),
+        118 => wire__crate__api__noise__white_noise_pcm_impl(port, ptr, rust_vec_len, data_len),
+        119 => wire__crate__api__wifi_api__dict__xiandaihanyu_resource_for_dart_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        120 => wire__crate__api__zici__zici_new_chars_impl(port, ptr, rust_vec_len, data_len),
+        121 => wire__crate__api__zici__zici_new_words_impl(port, ptr, rust_vec_len, data_len),
+        122 => wire__crate__api__zici__zici_word_frequency_search_impl(
             port,
             ptr,
             rust_vec_len,
@@ -4971,18 +5970,18 @@ fn pde_ffi_dispatcher_sync_impl(
         2 => wire__crate__api__utils__calculator__add22_impl(ptr, rust_vec_len, data_len),
         4 => wire__crate__api__utils__base64__base64_decode_wasm_impl(ptr, rust_vec_len, data_len),
         5 => wire__crate__api__utils__base64__base64_encode_wasm_impl(ptr, rust_vec_len, data_len),
-        23 => {
+        29 => {
             wire__crate__api__utils__password__generate_password_impl(ptr, rust_vec_len, data_len)
         }
-        24 => wire__crate__api__utils__password__generate_strong_password_impl(
+        30 => wire__crate__api__utils__password__generate_strong_password_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        50 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__simple__greet2_impl(ptr, rust_vec_len, data_len),
-        56 => wire__crate__api__logger_bridge__init_rust_logger_impl(ptr, rust_vec_len, data_len),
-        78 => wire__crate__api__utils__calculator__multiply_impl(ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
+        57 => wire__crate__api__simple__greet2_impl(ptr, rust_vec_len, data_len),
+        62 => wire__crate__api__logger_bridge__init_rust_logger_impl(ptr, rust_vec_len, data_len),
+        88 => wire__crate__api__utils__calculator__multiply_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -5213,6 +6212,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::wifi_api::files::FileInfoForD
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::games::Game2048State {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.board.into_into_dart().into_dart(),
+            self.score.into_into_dart().into_dart(),
+            self.over.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::games::Game2048State
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::games::Game2048State>
+    for crate::api::games::Game2048State
+{
+    fn into_into_dart(self) -> crate::api::games::Game2048State {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::api::wifi_api::ggtt::GgttCode> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -5405,6 +6426,30 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::wifi_api::melatonin::Melatoni
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::games::MinesweeperState {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.cells.into_into_dart().into_dart(),
+            self.revealed.into_into_dart().into_dart(),
+            self.flagged.into_into_dart().into_dart(),
+            self.over.into_into_dart().into_dart(),
+            self.won.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::games::MinesweeperState
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::games::MinesweeperState>
+    for crate::api::games::MinesweeperState
+{
+    fn into_into_dart(self) -> crate::api::games::MinesweeperState {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::api::wifi_api::note::NoteSummary> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -5453,6 +6498,25 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::wifi_api::melatonin::Paginate
     for crate::api::wifi_api::melatonin::PaginatedResponseForDart
 {
     fn into_into_dart(self) -> crate::api::wifi_api::melatonin::PaginatedResponseForDart {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::games::SnakeState {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.cells.into_into_dart().into_dart(),
+            self.score.into_into_dart().into_dart(),
+            self.over.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::games::SnakeState {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::games::SnakeState>
+    for crate::api::games::SnakeState
+{
+    fn into_into_dart(self) -> crate::api::games::SnakeState {
         self
     }
 }
@@ -5507,6 +6571,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::wifi_api::song::SongWithUrlFo
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::games::TetrisState {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.board.into_into_dart().into_dart(),
+            self.score.into_into_dart().into_dart(),
+            self.over.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::games::TetrisState
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::games::TetrisState>
+    for crate::api::games::TetrisState
+{
+    fn into_into_dart(self) -> crate::api::games::TetrisState {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::api::wifi_api::user::UserSettings> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -5547,6 +6633,29 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::api::wifi_api::dict::Wo
 {
     fn into_into_dart(self) -> FrbWrapper<crate::api::wifi_api::dict::Word> {
         self.into()
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::zici::WordFrequencyEntry {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.word.into_into_dart().into_dart(),
+            self.pinyin.into_into_dart().into_dart(),
+            self.frequency.into_into_dart().into_dart(),
+            self.explanation.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::zici::WordFrequencyEntry
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::zici::WordFrequencyEntry>
+    for crate::api::zici::WordFrequencyEntry
+{
+    fn into_into_dart(self) -> crate::api::zici::WordFrequencyEntry {
+        self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -5790,6 +6899,13 @@ impl SseEncode for crate::api::wifi_api::files::DirListingForDart {
     }
 }
 
+impl SseEncode for f32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_f32::<NativeEndian>(self).unwrap();
+    }
+}
+
 impl SseEncode for f64 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -5817,6 +6933,15 @@ impl SseEncode for crate::api::wifi_api::files::FileInfoForDart {
         <u64>::sse_encode(self.size, serializer);
         <Option<String>>::sse_encode(self.last_modified, serializer);
         <String>::sse_encode(self.content_type, serializer);
+    }
+}
+
+impl SseEncode for crate::api::games::Game2048State {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<u32>>::sse_encode(self.board, serializer);
+        <u64>::sse_encode(self.score, serializer);
+        <bool>::sse_encode(self.over, serializer);
     }
 }
 
@@ -5892,6 +7017,16 @@ impl SseEncode for Vec<String> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <String>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<bool> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <bool>::sse_encode(item, serializer);
         }
     }
 }
@@ -5978,6 +7113,26 @@ impl SseEncode for Vec<crate::api::wifi_api::note::NoteSummary> {
     }
 }
 
+impl SseEncode for Vec<f32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <f32>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <u32>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -6014,6 +7169,16 @@ impl SseEncode for Vec<crate::api::wifi_api::dict::Word> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::api::wifi_api::dict::Word>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::api::zici::WordFrequencyEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::zici::WordFrequencyEntry>::sse_encode(item, serializer);
         }
     }
 }
@@ -6074,6 +7239,17 @@ impl SseEncode for crate::api::wifi_api::melatonin::MelatoninMovieListForDart {
         <Vec<String>>::sse_encode(self.video_paths, serializer);
         <Option<String>>::sse_encode(self.cover_url, serializer);
         <Vec<String>>::sse_encode(self.video_urls, serializer);
+    }
+}
+
+impl SseEncode for crate::api::games::MinesweeperState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<u8>>::sse_encode(self.cells, serializer);
+        <Vec<bool>>::sse_encode(self.revealed, serializer);
+        <Vec<bool>>::sse_encode(self.flagged, serializer);
+        <bool>::sse_encode(self.over, serializer);
+        <bool>::sse_encode(self.won, serializer);
     }
 }
 
@@ -6192,6 +7368,15 @@ impl SseEncode for (u8, u8, u8) {
     }
 }
 
+impl SseEncode for crate::api::games::SnakeState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<u8>>::sse_encode(self.cells, serializer);
+        <u32>::sse_encode(self.score, serializer);
+        <bool>::sse_encode(self.over, serializer);
+    }
+}
+
 impl SseEncode for crate::api::wifi_api::song::SongPaginatedResponseForDart {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -6213,6 +7398,15 @@ impl SseEncode for crate::api::wifi_api::song::SongWithUrlForDart {
         <Option<String>>::sse_encode(self.artist, serializer);
         <Option<String>>::sse_encode(self.cover_path, serializer);
         <Option<String>>::sse_encode(self.cover_url, serializer);
+    }
+}
+
+impl SseEncode for crate::api::games::TetrisState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<u8>>::sse_encode(self.board, serializer);
+        <u32>::sse_encode(self.score, serializer);
+        <bool>::sse_encode(self.over, serializer);
     }
 }
 
@@ -6273,6 +7467,16 @@ impl SseEncode for crate::api::wifi_api::dict::Word {
         <uuid::Uuid>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.word, serializer);
         <i32>::sse_encode(self.has_searched_times, serializer);
+    }
+}
+
+impl SseEncode for crate::api::zici::WordFrequencyEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.word, serializer);
+        <String>::sse_encode(self.pinyin, serializer);
+        <u32>::sse_encode(self.frequency, serializer);
+        <String>::sse_encode(self.explanation, serializer);
     }
 }
 

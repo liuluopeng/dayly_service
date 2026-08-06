@@ -8,7 +8,18 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
-const allInitials = ['zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'y', 'w'];
+let allInitials = [];
+async function loadInitials() {
+  try {
+    const base = (await import('../../types/wasm-typed')).get_base_url_wasm();
+    const res = await fetch(`${base}/api/zici/pinyin`);
+    const json = await res.json();
+    allInitials = ((json.data || {}).initials || []).map((i) => i.pinyin);
+  } catch (e) {
+    console.error('声母加载失败:', e);
+  }
+}
+loadInitials();
 
 const wordParam = computed(() => route.query.word || '');
 const pinyinParam = computed(() => route.query.pinyin || '');

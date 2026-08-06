@@ -1,5 +1,8 @@
 pub mod api {
     pub mod color;
+    pub mod games;
+    pub mod noise;
+    pub mod zici;
 
     pub mod logger_bridge;
     pub mod metadata;

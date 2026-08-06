@@ -10,6 +10,7 @@ async fn main() {
     // .env 在 sifu_axuum/ 下，cargo run 从 workspace root 启动时优先找它
     dotenv::from_filename(crate_dir.join(".env")).ok();
     dotenv::dotenv().ok();
+    lx_dayly_service::zici_db::ensure_zici_db();
     let config = lx_dayly_service::config::env::PgConfig::parse();
     let uri = format!(
         "postgres://{}:{}@{}:{}/{}",

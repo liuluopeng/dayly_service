@@ -49,6 +49,8 @@ pub mod api {
     pub mod videos;
     /// 白噪音资源 API
     pub mod whitenoise;
+    /// 字词学习 API
+    pub mod zici;
 }
 
 /// 图片主色提取（非 wasm 目标）
@@ -75,6 +77,8 @@ pub mod front_can_do {
     pub mod image_convert;
     /// 扫雷游戏
     pub mod minesweeper;
+    /// 环境白噪音合成（白/粉红/棕/雨声）
+    pub mod noise;
     /// 密码生成
     pub mod password;
     /// QR 码生成

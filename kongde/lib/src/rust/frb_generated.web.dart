@@ -8,9 +8,11 @@
 
 import 'api/color.dart';
 import 'api/db.dart';
+import 'api/games.dart';
 import 'api/logger_bridge.dart';
 import 'api/metadata.dart';
 import 'api/music_cache.dart';
+import 'api/noise.dart';
 import 'api/runtime.dart';
 import 'api/simple.dart';
 import 'api/utils/base64.dart';
@@ -30,6 +32,7 @@ import 'api/wifi_api/note.dart';
 import 'api/wifi_api/song.dart';
 import 'api/wifi_api/user.dart';
 import 'api/wifi_api/webrtc.dart';
+import 'api/zici.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -204,6 +207,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   DirListingForDart dco_decode_dir_listing_for_dart(dynamic raw);
 
   @protected
+  double dco_decode_f_32(dynamic raw);
+
+  @protected
   double dco_decode_f_64(dynamic raw);
 
   @protected
@@ -211,6 +217,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   FileInfoForDart dco_decode_file_info_for_dart(dynamic raw);
+
+  @protected
+  Game2048State dco_decode_game_2048_state(dynamic raw);
 
   @protected
   GgttCode dco_decode_ggtt_code(dynamic raw);
@@ -240,6 +249,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
+  List<bool> dco_decode_list_bool(dynamic raw);
+
+  @protected
   List<ClipboardEntry> dco_decode_list_clipboard_entry(dynamic raw);
 
   @protected
@@ -266,6 +278,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<NoteSummary> dco_decode_list_note_summary(dynamic raw);
 
   @protected
+  Float32List dco_decode_list_prim_f_32_strict(dynamic raw);
+
+  @protected
+  Uint32List dco_decode_list_prim_u_32_strict(dynamic raw);
+
+  @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
 
   @protected
@@ -280,6 +298,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<Word> dco_decode_list_word(dynamic raw);
+
+  @protected
+  List<WordFrequencyEntry> dco_decode_list_word_frequency_entry(dynamic raw);
 
   @protected
   List<WordHistory> dco_decode_list_word_history(dynamic raw);
@@ -299,6 +320,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MelatoninMovieListForDart dco_decode_melatonin_movie_list_for_dart(
     dynamic raw,
   );
+
+  @protected
+  MinesweeperState dco_decode_minesweeper_state(dynamic raw);
 
   @protected
   NoteSummary dco_decode_note_summary(dynamic raw);
@@ -339,12 +363,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (int, int, int) dco_decode_record_u_8_u_8_u_8(dynamic raw);
 
   @protected
+  SnakeState dco_decode_snake_state(dynamic raw);
+
+  @protected
   SongPaginatedResponseForDart dco_decode_song_paginated_response_for_dart(
     dynamic raw,
   );
 
   @protected
   SongWithUrlForDart dco_decode_song_with_url_for_dart(dynamic raw);
+
+  @protected
+  TetrisState dco_decode_tetris_state(dynamic raw);
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -369,6 +399,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Word dco_decode_word(dynamic raw);
+
+  @protected
+  WordFrequencyEntry dco_decode_word_frequency_entry(dynamic raw);
 
   @protected
   WordHistory dco_decode_word_history(dynamic raw);
@@ -518,6 +551,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  double sse_decode_f_32(SseDeserializer deserializer);
+
+  @protected
   double sse_decode_f_64(SseDeserializer deserializer);
 
   @protected
@@ -525,6 +561,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   FileInfoForDart sse_decode_file_info_for_dart(SseDeserializer deserializer);
+
+  @protected
+  Game2048State sse_decode_game_2048_state(SseDeserializer deserializer);
 
   @protected
   GgttCode sse_decode_ggtt_code(SseDeserializer deserializer);
@@ -552,6 +591,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<bool> sse_decode_list_bool(SseDeserializer deserializer);
 
   @protected
   List<ClipboardEntry> sse_decode_list_clipboard_entry(
@@ -588,6 +630,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<NoteSummary> sse_decode_list_note_summary(SseDeserializer deserializer);
 
   @protected
+  Float32List sse_decode_list_prim_f_32_strict(SseDeserializer deserializer);
+
+  @protected
+  Uint32List sse_decode_list_prim_u_32_strict(SseDeserializer deserializer);
+
+  @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
 
   @protected
@@ -604,6 +652,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<Word> sse_decode_list_word(SseDeserializer deserializer);
+
+  @protected
+  List<WordFrequencyEntry> sse_decode_list_word_frequency_entry(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<WordHistory> sse_decode_list_word_history(SseDeserializer deserializer);
@@ -623,6 +676,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MelatoninMovieListForDart sse_decode_melatonin_movie_list_for_dart(
     SseDeserializer deserializer,
   );
+
+  @protected
+  MinesweeperState sse_decode_minesweeper_state(SseDeserializer deserializer);
 
   @protected
   NoteSummary sse_decode_note_summary(SseDeserializer deserializer);
@@ -665,6 +721,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (int, int, int) sse_decode_record_u_8_u_8_u_8(SseDeserializer deserializer);
 
   @protected
+  SnakeState sse_decode_snake_state(SseDeserializer deserializer);
+
+  @protected
   SongPaginatedResponseForDart sse_decode_song_paginated_response_for_dart(
     SseDeserializer deserializer,
   );
@@ -673,6 +732,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SongWithUrlForDart sse_decode_song_with_url_for_dart(
     SseDeserializer deserializer,
   );
+
+  @protected
+  TetrisState sse_decode_tetris_state(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_16(SseDeserializer deserializer);
@@ -697,6 +759,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Word sse_decode_word(SseDeserializer deserializer);
+
+  @protected
+  WordFrequencyEntry sse_decode_word_frequency_entry(
+    SseDeserializer deserializer,
+  );
 
   @protected
   WordHistory sse_decode_word_history(SseDeserializer deserializer);
@@ -877,6 +944,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_f_32(double self, SseSerializer serializer);
+
+  @protected
   void sse_encode_f_64(double self, SseSerializer serializer);
 
   @protected
@@ -890,6 +960,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     FileInfoForDart self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_game_2048_state(Game2048State self, SseSerializer serializer);
 
   @protected
   void sse_encode_ggtt_code(GgttCode self, SseSerializer serializer);
@@ -921,6 +994,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_bool(List<bool> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_clipboard_entry(
@@ -968,6 +1044,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_prim_f_32_strict(
+    Float32List self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_u_32_strict(
+    Uint32List self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
 
   @protected
@@ -992,6 +1080,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_word(List<Word> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_word_frequency_entry(
+    List<WordFrequencyEntry> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_word_history(
     List<WordHistory> self,
     SseSerializer serializer,
@@ -1012,6 +1106,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_melatonin_movie_list_for_dart(
     MelatoninMovieListForDart self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_minesweeper_state(
+    MinesweeperState self,
     SseSerializer serializer,
   );
 
@@ -1068,6 +1168,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_snake_state(SnakeState self, SseSerializer serializer);
+
+  @protected
   void sse_encode_song_paginated_response_for_dart(
     SongPaginatedResponseForDart self,
     SseSerializer serializer,
@@ -1078,6 +1181,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     SongWithUrlForDart self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_tetris_state(TetrisState self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
@@ -1102,6 +1208,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_word(Word self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_word_frequency_entry(
+    WordFrequencyEntry self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_word_history(WordHistory self, SseSerializer serializer);

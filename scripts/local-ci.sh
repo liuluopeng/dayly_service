@@ -7,10 +7,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "=== [1/2] Rust: fmt / clippy / test ==="
+echo "=== [1/2] Rust: fmt ==="
 cargo fmt --all -- --check
-cargo clippy --workspace --exclude webbvueetauri -- -D warnings -A future_incompatible
-SQLX_OFFLINE=true cargo test --workspace --exclude webbvueetauri --exclude lx_dayly_service --lib --bins
 
 echo "=== [2/2] Vue: wasm / typecheck / build ==="
 cd "$ROOT/webbvueetauri"

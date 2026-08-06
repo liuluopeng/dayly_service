@@ -109,6 +109,7 @@ pub fn create_app(
         )
         .layer(Extension(schema))
         .nest("/api/user", crate::controller::user_routes())
+        .nest("/api/zici", crate::controller::zici::zici_routes())
         .merge(secured_routes)
         .merge(crate::controller::dict_resource_routes())
         .nest("/api/pinyin", crate::controller::pinyin::pinyin_routes())

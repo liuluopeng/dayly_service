@@ -76,7 +76,7 @@ const closeKeyboardMask = () => {
 };
 
 // 从wasm加载当前学期的汉字
-const getCurrentTermChars = () => {
+const getCurrentTermChars = async () => {
   if (!wasmInitialized.value) {
     console.warn('wasm模块未初始化，跳过汉字加载');
     return [];
@@ -85,7 +85,7 @@ const getCurrentTermChars = () => {
   try {
     getTermFromRoute(); // 从路由获取学期信息
     // 调用wasm的get_new_chars函数获取对应学期的汉字
-    const chars = get_new_chars(currentGrade.value, currentTerm.value);
+    const chars = await get_new_chars(currentGrade.value, currentTerm.value);
     // 确保返回的是数组
     if (Array.isArray(chars) && chars.length > 0) {
       return chars;
@@ -132,9 +132,9 @@ const selectRandomChar = () => {
 };
 
 // 加载下一个汉字的实际逻辑
-const loadNextChar = () => {
+const loadNextChar = async () => {
   // 获取当前学期的汉字
-  const chars = getCurrentTermChars();
+  const chars = await getCurrentTermChars();
   if (chars.length === 0) return;
 
   // 随机选择一个汉字

@@ -22,6 +22,7 @@ pub mod controller {
     pub mod user_directories;
     pub mod videos;
     pub mod webrtc;
+    pub mod zici;
 
     pub use chat::chat_routes;
     pub use clipboard::clipboard_routes;
@@ -42,6 +43,7 @@ pub mod controller {
     pub use user_directories::admin_user_dir_routes;
     pub use videos::videos_routes;
     pub use webrtc::{SignalingState, webrtc_routes};
+    pub use zici::zici_routes;
 
     pub mod pinyin;
 }
@@ -58,3 +60,5 @@ pub use route::create_app;
 
 #[cfg(test)]
 pub mod test_helpers;
+
+pub mod zici_db;

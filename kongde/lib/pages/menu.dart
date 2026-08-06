@@ -17,6 +17,15 @@ import 'package:kongde/pages/piano_keyboard_page.dart';
 import 'package:kongde/pages/surround_listen_page.dart';
 import 'package:kongde/views/note_view.dart';
 import 'package:kongde/pages/clipboard_history_page.dart';
+import 'package:kongde/pages/game_2048_page.dart';
+import 'package:kongde/pages/game_snake_page.dart';
+import 'package:kongde/pages/game_minesweeper_page.dart';
+import 'package:kongde/pages/game_tetris_page.dart';
+import 'package:kongde/pages/white_noise_page.dart';
+import 'package:kongde/pages/zici_chars_page.dart';
+import 'package:kongde/pages/zici_words_page.dart';
+import 'package:kongde/pages/zici_dictation_page.dart';
+import 'package:kongde/pages/zici_word_frequency_page.dart';
 import 'package:kongde/widgets/common_app_bar.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -81,9 +90,29 @@ class _ContactsPageState extends State<ContactsPage> {
                       'onTap': () => Get.to(() => WubiQueryPage()),
                     },
                     {
-                      'icon': Icons.video_library,
-                      'title': 'menu.videoLibrary'.tr,
-                      'onTap': () => Get.to(() => VideoLibraryPage()),
+                      'icon': Icons.book,
+                      'title': 'menu.unifiedDict'.tr,
+                      'onTap': () => Get.to(() => const UnifiedDictPage()),
+                    },
+                    {
+                      'icon': Icons.abc,
+                      'title': '生字表',
+                      'onTap': () => Get.to(() => const ZiciCharsPage()),
+                    },
+                    {
+                      'icon': Icons.menu_book,
+                      'title': '生词表',
+                      'onTap': () => Get.to(() => const ZiciWordsPage()),
+                    },
+                    {
+                      'icon': Icons.record_voice_over,
+                      'title': '听写',
+                      'onTap': () => Get.to(() => const ZiciDictationPage()),
+                    },
+                    {
+                      'icon': Icons.bar_chart,
+                      'title': '词频',
+                      'onTap': () => Get.to(() => const ZiciWordFrequencyPage()),
                     },
                     {
                       'icon': Icons.photo_library,
@@ -92,20 +121,15 @@ class _ContactsPageState extends State<ContactsPage> {
                       'borderRadius': 0.0,
                     },
                     {
+                      'icon': Icons.video_library,
+                      'title': 'menu.videoLibrary'.tr,
+                      'onTap': () => Get.to(() => VideoLibraryPage()),
+                    },
+                    {
                       'icon': Icons.movie_creation,
                       'title': 'menu.melatoninMovies'.tr,
                       'onTap': () => Get.to(() => MelatoninMoviesPage()),
                       'borderRadius': 0.0,
-                    },
-                    {
-                      'icon': Icons.qr_code_scanner,
-                      'title': 'menu.scan'.tr,
-                      'onTap': () => Get.to(() => ScanPage()),
-                    },
-                    {
-                      'icon': Icons.book,
-                      'title': 'menu.unifiedDict'.tr,
-                      'onTap': () => Get.to(() => const UnifiedDictPage()),
                     },
                     {
                       'icon': Icons.headphones,
@@ -118,11 +142,6 @@ class _ContactsPageState extends State<ContactsPage> {
                       'onTap': () => Get.to(() => const LocalMusicPage()),
                     },
                     {
-                      'icon': Icons.note,
-                      'title': 'menu.noteManager'.tr,
-                      'onTap': () => Get.to(() => const NoteView()),
-                    },
-                    {
                       'icon': Icons.piano,
                       'title': 'menu.pianoKeyboard'.tr,
                       'onTap': () => Get.to(() => const PianoKeyboardPage()),
@@ -133,19 +152,24 @@ class _ContactsPageState extends State<ContactsPage> {
                       'onTap': () => Get.to(() => const SurroundListenPage()),
                     },
                     {
-                      'icon': Icons.build,
-                      'title': 'menu.tools'.tr,
-                      'onTap': () => Get.to(() => const ToolsHomePage()),
+                      'icon': Icons.waves,
+                      'title': '白噪音',
+                      'onTap': () => Get.to(() => const WhiteNoisePage()),
                     },
                     {
-                      'icon': Icons.folder,
-                      'title': 'menu.fileManager'.tr,
-                      'onTap': () => Get.to(() => const FileManagerPage()),
+                      'icon': Icons.note,
+                      'title': 'menu.noteManager'.tr,
+                      'onTap': () => Get.to(() => const NoteView()),
                     },
                     {
                       'icon': Icons.chat,
                       'title': '聊天',
                       'onTap': () => Get.to(() => const ChatHomePage()),
+                    },
+                    {
+                      'icon': Icons.folder,
+                      'title': 'menu.fileManager'.tr,
+                      'onTap': () => Get.to(() => const FileManagerPage()),
                     },
                     {
                       'icon': Icons.share,
@@ -156,6 +180,36 @@ class _ContactsPageState extends State<ContactsPage> {
                       'icon': Icons.content_paste,
                       'title': 'menu.clipboardHistory'.tr,
                       'onTap': () => Get.to(() => const ClipboardHistoryPage()),
+                    },
+                    {
+                      'icon': Icons.videogame_asset,
+                      'title': '2048',
+                      'onTap': () => Get.to(() => const Game2048Page()),
+                    },
+                    {
+                      'icon': Icons.linear_scale,
+                      'title': '贪吃蛇',
+                      'onTap': () => Get.to(() => const GameSnakePage()),
+                    },
+                    {
+                      'icon': Icons.grid_on,
+                      'title': '扫雷',
+                      'onTap': () => Get.to(() => const GameMinesweeperPage()),
+                    },
+                    {
+                      'icon': Icons.crop_square,
+                      'title': '俄罗斯方块',
+                      'onTap': () => Get.to(() => const GameTetrisPage()),
+                    },
+                    {
+                      'icon': Icons.qr_code_scanner,
+                      'title': 'menu.scan'.tr,
+                      'onTap': () => Get.to(() => ScanPage()),
+                    },
+                    {
+                      'icon': Icons.build,
+                      'title': 'menu.tools'.tr,
+                      'onTap': () => Get.to(() => const ToolsHomePage()),
                     },
                   ];
 

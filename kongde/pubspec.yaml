@@ -99,13 +99,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/sounds/Piano.sf2
-    - assets/foliate/
-    - assets/foliate/ui/
-    - assets/foliate/vendor/
-    - assets/foliate/vendor/pdfjs/
-    - assets/foliate/vendor/pdfjs/cmaps/
-    - assets/foliate/vendor/pdfjs/standard_fonts/
 
   fonts:
     - family: LXGWWenKaiMono

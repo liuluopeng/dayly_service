@@ -161,7 +161,7 @@ watch([currentGrade, currentTerm], ([newGrade, newTerm]) => {
 });
 
 // 加载和绘制汉字的函数
-const loadAndDrawCharacters = () => {
+const loadAndDrawCharacters = async () => {
   if (!wasmInitialized.value) {
     console.warn('wasm模块未初始化，跳过汉字加载');
     return;
@@ -169,7 +169,7 @@ const loadAndDrawCharacters = () => {
 
   // 从wasm获取汉字
   try {
-    charactersArray = get_new_chars(currentGrade.value, currentTerm.value);
+    charactersArray = await get_new_chars(currentGrade.value, currentTerm.value);
     console.log('从wasm获取的汉字数组:', charactersArray);
   } catch (error) {
     console.error('调用wasm函数失败:', error);

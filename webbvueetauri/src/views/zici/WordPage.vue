@@ -65,7 +65,7 @@ const updateCurrentWord = () => {
 };
 
 // 加载和绘制词语的函数
-const loadAndDrawWords = () => {
+const loadAndDrawWords = async () => {
   if (!wasmInitialized.value) {
     console.warn('wasm模块未初始化，跳过词语加载');
     return;
@@ -73,7 +73,7 @@ const loadAndDrawWords = () => {
 
   // 从wasm获取词语
   try {
-    wordsArray = get_new_words();
+    wordsArray = await get_new_words();
     console.log('从wasm获取的词语数组:', wordsArray);
   } catch (error) {
     console.error('调用wasm函数失败:', error);
