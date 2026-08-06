@@ -10,7 +10,7 @@ mkdir -p cold_data
 TARGET="${1:-$ROOT/cold_data/zici.db}"
 
 # 1. 基础表（生字/生词/词频）
-cargo run -p lx_dayly_service --bin gen_zici_db "$TARGET"
+SQLX_OFFLINE=true cargo run -p lx_dayly_service --example gen_zici_db "$TARGET"
 
 # 2. hanzi 笔画 SVG 表（node:sqlite 追加）
 TMP="$ROOT/target/hanzi-gen"
